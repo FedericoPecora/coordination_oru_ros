@@ -37,10 +37,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			//In this implementation, simply update the GUI
 			@Override
 			public void onPositionUpdate() {
-				
-				System.out.println("-------------------- CALLED ON POS UPDATE -------------------");
+
 				//Update the position of the robot in the GUI
 				RobotReport rr = getRobotReport();
+				metaCSPLogger.fine("Received position update for robot" + te.getRobotID() + ": " + rr);
 				double x = rr.getPose().getX();
 				double y = rr.getPose().getY();
 				double theta = rr.getPose().getTheta();
