@@ -1,11 +1,13 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.node.ConnectedNode;
 
+import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.RobotReport;
@@ -15,6 +17,7 @@ import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
 
 	protected ConnectedNode node = null;
+	protected HashMap<Integer,Task> currentTasks = new HashMap<Integer,Task>();
 	
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
@@ -29,10 +32,14 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	public long getCurrentTimeInMillis() {
 		return TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 	}
-
+	
+	public void setCurrentTask(int robotID, Task currentTask) {
+		this.currentTasks.put(robotID, currentTask);
+	}
+	
 	@Override
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
-		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, solver, trackingPeriodInMillis, cb, this.node) {		
+		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, solver, trackingPeriodInMillis, cb, this.node, this.currentTasks.get(te.getRobotID())) {		
 			//What should happen when a robot reaches a new pose along the path
 			//In this implementation, simply update the GUI
 			@Override

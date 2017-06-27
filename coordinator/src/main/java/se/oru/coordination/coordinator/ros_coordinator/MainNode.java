@@ -67,6 +67,8 @@ public class MainNode extends AbstractNodeMain {
 
 		this.node = connectedNode;
 		robotIDs.add(1);
+		robotIDs.add(2);
+		robotIDs.add(3);
 		
 		while (true) {
 			try {
@@ -98,7 +100,7 @@ public class MainNode extends AbstractNodeMain {
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotReport message) {
-							if (!initialLocations.containsKey(robotID)) {
+							if (!message.getStamp().isZero() && !initialLocations.containsKey(robotID)) {
 								Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 								Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 								initialLocations.put(robotID, pose);
@@ -179,19 +181,19 @@ public class MainNode extends AbstractNodeMain {
 				Mission m = new Mission(arg0.getTask().getTarget().getRobotId(), pathArray, "A", "B", fromPose, toPose);
 				tec.addMissions(m);
 				tec.computeCriticalSections();
-				callExecuteTaskService(arg0.getTask(), false);
+				callExecuteTaskService(arg0.getTask());
 			}
 			
 		});
 	}
 	
-	private void callExecuteTaskService(final Task task, final boolean update) {
+	private void callExecuteTaskService(final Task task) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
 		try { serviceClient = node.newServiceClient("/robot" + task.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
-		task.setUpdate(update);
+		task.setUpdate(false);
 		CoordinatorTimeVec cts = computeCTsFromDTs(task.getDts());
 		task.setCts(cts);
 		
@@ -204,15 +206,13 @@ public class MainNode extends AbstractNodeMain {
 		task.getTarget().setGoalOp(goalOp);
 		
 		request.setTask(task);
+		tec.setCurrentTask(task.getTarget().getRobotId(), task);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
 			@Override
 			public void onSuccess(ExecuteTaskResponse response) {
-				if (!update) {
 					System.out.println("Started execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
 					tec.startTrackingAddedMissions();
-				}
-				else System.out.println("Updated execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
 			}
 			@Override
 			public void onFailure(RemoteException arg0) {
