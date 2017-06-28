@@ -8,8 +8,9 @@ Please follow the installation instructions for the <a href="https://github.com/
 After installing the ```coordination_oru``` package as instructed above, clone this repository into your ```catkin_ws/src``` directory and compile the source code with ```catkin_make```, which in turn runs a gradle build (redistributable included):
 
 ```
-$ cd catkin_ws
+$ cd catkin_ws/src
 $ git clone https://github.com/FedericoPecora/coordination_oru_ros.git
+$ cd ..
 $ catkin_make
 ```
 
