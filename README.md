@@ -14,6 +14,7 @@ $ cd catkin_ws/src
 $ git clone https://github.com/FedericoPecora/coordination_oru_ros.git
 $ cd ..
 $ catkin_make
+$ source devel/setup.bash
 ```
 
 ## Examples
