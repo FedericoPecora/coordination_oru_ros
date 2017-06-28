@@ -17,7 +17,9 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
@@ -31,9 +33,12 @@ import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
+import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
+
+import com.vividsolutions.jts.geom.Coordinate;
 
 import se.oru.coordination.coordination_oru.Mission;
 import orunav_msgs.ComputeTask;
@@ -51,11 +56,12 @@ import orunav_msgs.Task;
 
 public class MainNode extends AbstractNodeMain {
 
-	private ArrayList<Integer> robotIDs = new ArrayList<Integer>();
+	private List<Integer> robotIDs = null;
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
 	private ConnectedNode node = null;
 	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
+	private Coordinate[] footprintCoords = null;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -66,9 +72,6 @@ public class MainNode extends AbstractNodeMain {
 	public void onStart(ConnectedNode connectedNode) {
 
 		this.node = connectedNode;
-		robotIDs.add(1);
-		robotIDs.add(2);
-		robotIDs.add(3);
 		
 		while (true) {
 			try {
@@ -78,6 +81,9 @@ public class MainNode extends AbstractNodeMain {
 			catch(NullPointerException e) { }
 		}
 
+		//read parameters from launch file
+		readParams();
+		
 		// This CancellableLoop will be canceled automatically when the node shuts down.
 		node.executeCancellableLoop(new CancellableLoop() {
 
@@ -92,6 +98,9 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				tec.setupGUI(null);
+				
+				//Set the footprint of the robots
+				tec.setFootprint(footprintCoords);
 				
 				for (final int robotID : robotIDs) {
 					
@@ -130,6 +139,23 @@ public class MainNode extends AbstractNodeMain {
 				Thread.sleep(1000);
 			}
 		});
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void readParams() {
+		ParameterTree params = node.getParameterTree();
+		footprintCoords = new Coordinate[4];
+		try {
+			footprintCoords[0] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_rear_left_x"),params.getDouble("/" + node.getName() + "/footprint_rear_left_y"));
+			footprintCoords[1] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_rear_right_x"),params.getDouble("/" + node.getName() + "/footprint_rear_right_y"));
+			footprintCoords[2] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_right_x"),params.getDouble("/" + node.getName() + "/footprint_front_right_y"));
+			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
+			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
+		}
+		catch (org.ros.exception.ParameterNotFoundException e) {
+			System.out.println("== Parameter not found ==");
+			e.printStackTrace();
+		}
 	}
 	
 	private void callComputeTaskService(geometry_msgs.PoseStamped goalPose, final int robotID) {
