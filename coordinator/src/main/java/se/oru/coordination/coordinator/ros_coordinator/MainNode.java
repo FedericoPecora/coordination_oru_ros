@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -92,11 +93,12 @@ public class MainNode extends AbstractNodeMain {
 			@Override
 			protected void setup() {
 				
+				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
 				
 				//Need to setup infrastructure that maintains the representation
-				tec.setupSolver(0, 100000000);
+				tec.setupSolver(origin, origin+100000000L);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				tec.setupGUI(null);
@@ -118,6 +120,7 @@ public class MainNode extends AbstractNodeMain {
 								//Place all robots in current positions
 								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
 								System.out.println("PLACED ROBOT " + robotID + " in " + pose);
+//								tec.centerView();
 							}
 						}
 					});
@@ -210,6 +213,7 @@ public class MainNode extends AbstractNodeMain {
 				PoseSteering[] pathArray = path.toArray(new PoseSteering[path.size()]);
 				Mission m = new Mission(arg0.getTask().getTarget().getRobotId(), pathArray, "A", "B", fromPose, toPose);
 				tec.addMissions(m);
+//				tec.centerView();
 				tec.computeCriticalSections();
 				callExecuteTaskService(arg0.getTask());
 			}
