@@ -32,7 +32,7 @@ The following launch file starts an example with three robots:
 $ roslaunch coordination_oru_ros multiple_trucks.launch
 ```
 
-The launch file opens an ```rviz``` window from which one can post goals for any of the three robots (via the three "2D Nav Goal" buttons on top). Goals can be posted online, and the robots will be coordinated according to the coordination algorithm implemented in the <a href="https://github.com/FedericoPecora/coordination_oru">coordination_oru</a> package (see <a href="https://github.com/FedericoPecora/coordination_oru#overview">here</a> for a brief explanation of the algorihtm).
+The launch file opens an ```rviz``` window from which one can post goals for any of the three robots (via the three "2D Nav Goal" buttons on top). Goals can be posted online, and the movements of the robots will be coordinated according to the coordination algorithm implemented in the <a href="https://github.com/FedericoPecora/coordination_oru">coordination_oru</a> package (see <a href="https://github.com/FedericoPecora/coordination_oru#overview">here</a> for a brief explanation of the algorihtm). The method relies on the ability of the ```vehicle_execution_node``` to accept task updates with a _critical point_, that is, an index of a pose along a robot's reference trajecotry at which the robot should stop. The coordination algorithm comptes these critical points online and updates the tasks executed by the ```vehicle_execution_node```s via calls to the ```ExecuteTask``` service with the ```update``` flag set to ```true``` (see method ```setCriticalPoint(int arg0)``` in class ```TrajectoryEnvelopeTrackerROS```).
 
 The images below show three moments during the coordinated navigation of the three robots.
 
@@ -41,3 +41,10 @@ The images below show three moments during the coordinated navigation of the thr
 ![alt text](images/coord2.png "LogBrowser GUI")
 
 ![alt text](images/coord3.png "LogBrowser GUI")
+
+## Coordinator paramteres
+The coordinator should be provided the following paramteres (see also example launch files):
+
+* ```robot_ids```: the list of identifiers of robots that are subject to coordination
+
+* ```footprint_rear_left_x```, ```footprint_rear_left_y``` etc.: coordinates that define the footprint of the robots
