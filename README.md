@@ -26,7 +26,7 @@ This will bring up an ```rviz``` window from which goals can be posted for the s
 The following launch file starts an example with three robots:
 
 ```
-$ roslaunch coordination_oru_ros multiple_truck.launch
+$ roslaunch coordination_oru_ros multiple_trucks.launch
 ```
 
 The launch file opens an ```rviz``` window from which one can post goals for any of the three robots (via the three "2D Nav Goal" buttons on top). Goals can be posted online, and the robots will be coordinated according to the coordination algorithm implemented in the <a href="https://github.com/FedericoPecora/coordination_oru">coordination_oru</a> package (see <a href="https://github.com/FedericoPecora/coordination_oru#overview">here</a> for a brief explanation of the algorihtm).
