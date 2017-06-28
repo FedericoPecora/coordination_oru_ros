@@ -7,7 +7,7 @@ Please follow the installation instructions for the <a href="https://github.com/
 You also need to install ROS Kinetic or Indigo on Ubuntu 16.04 or 14.04 (see <a href="http://wiki.ros.org/kinetic/Installation/Ubuntu">here</a> for instructions), the ```navigation_oru``` package (see <a href="https://github.com/OrebroUniversity/navigation_oru-release">here</a> for instructions), and ROSJava (please follow the instructions for your ROS distribution <a href="http://wiki.ros.org/rosjava">here</a>).
 
 ## Installation
-After installing ROS, ROSJava, and the ```navigation_oru``` and ```coordination_oru``` packages as instructed above, clone this repository into your ```catkin_ws/src``` directory and compile the source code with ```catkin_make```, which in turn runs a gradle build (redistributable included):
+After installing ROS, ROSJava, and the ```navigation_oru``` and ```coordination_oru``` packages as instructed above, clone this repository into your Catkin workspace and compile the source code with ```catkin_make``` (which in turn runs a gradle build, redistributable included):
 
 ```
 $ cd catkin_ws/src
