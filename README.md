@@ -24,7 +24,7 @@ Two launch files are provided, one involving a single robot, and one involving t
 $ roslaunch coordination_oru_ros single_truck.launch
 ```
 
-This will bring up an ```rviz``` window from which goals can be posted for robot via the "2D Nav Goal" button on top. Each time a goal is posted, the path is computed via a call to the ```ComputeTask``` service, and dispatched to the ```vehicle_execution_node``` via a call to the ```ExecuteTask``` service. The example does not involve coordaintion (as there is only one robot), and is meant to show how these services are called by the ```MainNode.java``` ROS node. The external behavior of the system is identical to that of the ```single_truck.launch``` launch file provided as an example in the <a href="https://github.com/OrebroUniversity/navigation_oru-release">navigation_oru</a> package.
+This will bring up an ```rviz``` window from which goals can be posted for robot via the "2D Nav Goal" button located on the top bar. Each time a goal is posted, the path is computed via a call to the ```ComputeTask``` service, and dispatched to the ```vehicle_execution_node``` via a call to the ```ExecuteTask``` service. The example does not involve coordaintion (as there is only one robot), and is meant to show how these services are called by the ```MainNode.java``` ROS node. The external behavior of the system is identical to that of the ```single_truck.launch``` launch file provided as an example in the <a href="https://github.com/OrebroUniversity/navigation_oru-release">navigation_oru</a> package.
 
 The following launch file starts an example with three robots:
 
