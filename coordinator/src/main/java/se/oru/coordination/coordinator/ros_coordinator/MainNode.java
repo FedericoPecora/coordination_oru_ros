@@ -62,6 +62,8 @@ public class MainNode extends AbstractNodeMain {
 	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
 	private Coordinate[] footprintCoords = null;
+	private int CONTROL_PERIOD = 1000;
+	private double TEMPORAL_RESOLUTION = 1000.0;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -91,7 +93,7 @@ public class MainNode extends AbstractNodeMain {
 			protected void setup() {
 				
 				//Instantiate a trajectory envelope coordinator (with ROS support)
-				tec = new TrajectoryEnvelopeCoordinatorROS(node);
+				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
 				
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(0, 100000000);
@@ -151,6 +153,8 @@ public class MainNode extends AbstractNodeMain {
 			footprintCoords[2] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_right_x"),params.getDouble("/" + node.getName() + "/footprint_front_right_y"));
 			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
+			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
+			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");

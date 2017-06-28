@@ -48,3 +48,7 @@ The coordinator should be provided the following paramteres (see also example la
 * ```robot_ids```: the list of identifiers of robots that are subject to coordination
 
 * ```footprint_rear_left_x```, ```footprint_rear_left_y``` etc.: coordinates that define the footprint of the robots
+
+* ```control_period```: the period at which the coordinator updates the critical points of the robots
+
+* ```temporal_resolution```: the temporal resolution at which the ```control_period``` is expressed (1000.0 if the ```control_period``` is in milliseconds)
