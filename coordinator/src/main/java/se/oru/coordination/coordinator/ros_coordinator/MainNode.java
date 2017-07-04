@@ -120,7 +120,6 @@ public class MainNode extends AbstractNodeMain {
 								//Place all robots in current positions
 								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
 								System.out.println("PLACED ROBOT " + robotID + " in " + pose);
-//								tec.centerView();
 							}
 						}
 					});
@@ -213,7 +212,6 @@ public class MainNode extends AbstractNodeMain {
 				PoseSteering[] pathArray = path.toArray(new PoseSteering[path.size()]);
 				Mission m = new Mission(arg0.getTask().getTarget().getRobotId(), pathArray, "A", "B", fromPose, toPose);
 				tec.addMissions(m);
-//				tec.centerView();
 				tec.computeCriticalSections();
 				callExecuteTaskService(arg0.getTask());
 			}

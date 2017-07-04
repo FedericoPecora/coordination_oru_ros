@@ -31,8 +31,8 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected Subscriber<orunav_msgs.RobotReport> subscriber = null;
 	protected Task currentTask = null;
 
-	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, final int trackingPeriodInMillis, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
-		super(te, temporalResolution, solver, trackingPeriodInMillis, cb);
+	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
+		super(te, temporalResolution, solver, 30, cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
 		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/report", orunav_msgs.RobotReport._TYPE);
@@ -42,7 +42,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 	    	  int index = message.getSequenceNum();
-	    	  currentRR = new RobotReport(pose, index, -1.0, -1.0, trackingPeriodInMillis);
+	    	  currentRR = new RobotReport(pose, index, -1.0, -1.0, -1);
 	    	  onPositionUpdate();
 	      }
 	    });
