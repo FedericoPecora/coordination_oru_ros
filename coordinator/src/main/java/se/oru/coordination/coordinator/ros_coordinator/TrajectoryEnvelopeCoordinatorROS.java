@@ -77,11 +77,6 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		};
 		return tet;
 	}
-	
-	@Override
-	public Comparator<TrajectoryEnvelope> getOrdering() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
 
 }

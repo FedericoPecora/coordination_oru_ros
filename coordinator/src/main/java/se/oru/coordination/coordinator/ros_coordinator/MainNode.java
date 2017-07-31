@@ -17,10 +17,9 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
@@ -41,7 +40,6 @@ import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
-import se.oru.coordination.coordination_oru.Mission;
 import orunav_msgs.ComputeTask;
 import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
@@ -54,6 +52,9 @@ import orunav_msgs.ExecuteTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Task;
+import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
+import se.oru.coordination.coordination_oru.Mission;
+import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
 
 public class MainNode extends AbstractNodeMain {
 
@@ -96,6 +97,14 @@ public class MainNode extends AbstractNodeMain {
 				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
+				tec.addComparator(new Comparator<AbstractTrajectoryEnvelopeTracker>() {
+					@Override
+					public int compare(AbstractTrajectoryEnvelopeTracker o1, AbstractTrajectoryEnvelopeTracker o2) {
+						if (o1.trackingStrated() && o2.trackingStrated()) return 0;
+						if (o1.trackingStrated()) return -1;
+						return 1;
+					}
+				});
 				
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
