@@ -53,7 +53,11 @@ import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
+import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
+import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
+import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
+import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
 
 public class MainNode extends AbstractNodeMain {
@@ -66,6 +70,8 @@ public class MainNode extends AbstractNodeMain {
 	private Coordinate[] footprintCoords = null;
 	private int CONTROL_PERIOD = 1000;
 	private double TEMPORAL_RESOLUTION = 1000.0;
+	private double MAX_ACCEL = 1.0;
+	private double MAX_VEL = 4.0;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -97,12 +103,13 @@ public class MainNode extends AbstractNodeMain {
 				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
-				tec.addComparator(new Comparator<AbstractTrajectoryEnvelopeTracker>() {
+				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
-					public int compare(AbstractTrajectoryEnvelopeTracker o1, AbstractTrajectoryEnvelopeTracker o2) {
-						if (o1.trackingStrated() && o2.trackingStrated()) return 0;
-						if (o1.trackingStrated()) return -1;
-						return 1;
+					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
+						CriticalSection cs = o1.getCriticalSection();
+						RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
+						RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+						return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 					}
 				});
 				
@@ -116,6 +123,10 @@ public class MainNode extends AbstractNodeMain {
 				tec.setFootprint(footprintCoords);
 				
 				for (final int robotID : robotIDs) {
+					
+					//Set the forward dynamic model for the robot so the coordinator
+					//can estimate whether the robot can stop
+					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL));
 					
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/report", orunav_msgs.RobotReport._TYPE);
@@ -166,6 +177,8 @@ public class MainNode extends AbstractNodeMain {
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
+			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
+			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");
