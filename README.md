@@ -52,3 +52,7 @@ The coordinator should be provided the following paramteres (see also example la
 * ```control_period```: the period at which the coordinator updates the critical points of the robots
 
 * ```temporal_resolution```: the temporal resolution at which the ```control_period``` is expressed (1000.0 if the ```control_period``` is in milliseconds)
+
+* ```forward_model_max_accel```: the (constant) acceleration used in the forward model, in m/s^2
+
+* ```forward_model_max_vel```: the maximum velocity used in the forward model, in m/s
