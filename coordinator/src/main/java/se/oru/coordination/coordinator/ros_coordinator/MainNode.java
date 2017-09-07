@@ -52,13 +52,11 @@ import orunav_msgs.ExecuteTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Task;
-import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
 import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
-import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
 
 public class MainNode extends AbstractNodeMain {
 
@@ -120,13 +118,13 @@ public class MainNode extends AbstractNodeMain {
 				tec.setupGUI(null);
 				
 				//Set the footprint of the robots
-				tec.setFootprint(footprintCoords);
+				tec.setDefaultFootprint(footprintCoords);
 				
 				for (final int robotID : robotIDs) {
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
-					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL));
+					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, -1, -1));
 					
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/report", orunav_msgs.RobotReport._TYPE);

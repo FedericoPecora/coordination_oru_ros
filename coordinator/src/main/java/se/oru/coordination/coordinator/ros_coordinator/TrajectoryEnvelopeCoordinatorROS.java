@@ -1,6 +1,5 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 

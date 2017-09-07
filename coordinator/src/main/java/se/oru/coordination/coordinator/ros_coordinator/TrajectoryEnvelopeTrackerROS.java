@@ -63,9 +63,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	}
 
 	@Override
-	public void onPositionUpdate() {
-		// TODO Auto-generated method stub
-	}
+	public void onPositionUpdate() { }
 
 	@Override
 	public void setCriticalPoint(int arg0) {
@@ -85,16 +83,11 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 			public void onFailure(RemoteException arg0) {
 				System.out.println("Failed to update execution of goal " + currentTask.getTarget().getGoalId() + " for robot " + currentTask.getTarget().getRobotId());
 			}
-		});		
-		// TODO Auto-generated method stub
-
+		});
 	}
 
 	@Override
-	public void startTracking() {
-		// TODO Auto-generated method stub
-
-	}
+	public void startTracking() { }
 	
 	@Override
 	protected void finishTracking() {
