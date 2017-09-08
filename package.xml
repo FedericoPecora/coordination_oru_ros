@@ -44,6 +44,7 @@
   <build_depend>rosjava</build_depend>
   <build_depend>rosjava_messages</build_depend>
   <build_depend>orunav_msgs</build_depend>
+  <build_depend>genjava</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
