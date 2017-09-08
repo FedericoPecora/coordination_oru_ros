@@ -40,7 +40,7 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>rosjava_build_tools</build_depend>
+  <buildtool_depend>rosjava_build_tools</buildtool_depend>
   <build_depend>rosjava</build_depend>
   <build_depend>rosjava_messages</build_depend>
   <build_depend>orunav_msgs</build_depend>
