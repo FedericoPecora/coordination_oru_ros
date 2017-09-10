@@ -35,6 +35,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		super(te, temporalResolution, solver, 30, cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
+		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
 		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/report", orunav_msgs.RobotReport._TYPE);
 	    subscriber.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 	      @Override
@@ -69,6 +70,10 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	public void setCriticalPoint(int arg0) {
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
 		try { serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
+		catch (NullPointerException npe) { 
+			System.out.println("WARNING: trying to set critical point (" + arg0 + ") when currentTask is " + currentTask);
+			throw new RosRuntimeException(npe);
+		}
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
 		currentTask.setUpdate(true);

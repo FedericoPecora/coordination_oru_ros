@@ -218,6 +218,9 @@ public class MainNode extends AbstractNodeMain {
 			@Override
 			public void onSuccess(ComputeTaskResponse arg0) {
 				System.out.println("Successfully called ComputeTask service for robot" + robotID + " (goalID: " + goalID + ")");
+				
+				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
+
 				ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
 				Pose fromPose = null;
 				Pose toPose = null;
@@ -258,7 +261,7 @@ public class MainNode extends AbstractNodeMain {
 		task.getTarget().setGoalOp(goalOp);
 		
 		request.setTask(task);
-		tec.setCurrentTask(task.getTarget().getRobotId(), task);
+		//tec.setCurrentTask(task.getTarget().getRobotId(), task);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
 			@Override

@@ -33,6 +33,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	}
 	
 	public void setCurrentTask(int robotID, Task currentTask) {
+		System.out.println("SET TASK (robotID,currentTask): (" + robotID + "," + currentTask + ")");
 		this.currentTasks.put(robotID, currentTask);
 	}
 	
