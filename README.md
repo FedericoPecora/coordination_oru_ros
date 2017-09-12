@@ -2,20 +2,22 @@
 This package provides an online coordination method for multiple robots for use with the <a href="https://github.com/OrebroUniversity/navigation_oru-release">navigation_oru</a> package. It is based on the <a href="https://github.com/FedericoPecora/coordination_oru">coordination_oru</a> implementation of a trajectory-envelope based coordination algorithm.
 
 ## Pre-requisites
-Please follow the installation instructions for the <a href="https://github.com/FedericoPecora/coordination_oru">coordination_oru</a> package first. This will make the ```coordination_oru``` library available to this package via your local Maven repository.
+This package requires ROS Kinetic or Indigo on Ubuntu 16.04 or 14.04 (see <a href="http://wiki.ros.org/kinetic/Installation/Ubuntu">here</a> for instructions), the ```navigation_oru``` package (see <a href="https://github.com/OrebroUniversity/navigation_oru-release">here</a> for instructions), and ROSJava (please follow the instructions for your ROS distribution <a href="http://wiki.ros.org/rosjava">here</a>).
 
-You also need to install ROS Kinetic or Indigo on Ubuntu 16.04 or 14.04 (see <a href="http://wiki.ros.org/kinetic/Installation/Ubuntu">here</a> for instructions), the ```navigation_oru``` package (see <a href="https://github.com/OrebroUniversity/navigation_oru-release">here</a> for instructions), and ROSJava (please follow the instructions for your ROS distribution <a href="http://wiki.ros.org/rosjava">here</a>).
+This package also requires the ```coordination_oru``` library, however this is included as a submodule in this GIT repository, so no special steps are necessary to install it (see below).
 
 ## Installation
-After installing ROS, ROSJava, and the ```navigation_oru``` and ```coordination_oru``` packages as instructed above, clone this repository into your Catkin workspace and compile the source code with ```catkin_make``` (which in turn runs a gradle build, redistributable included):
+After installing ROS, ROSJava, and the ```navigation_oru``` package as instructed above, clone this repository into your Catkin workspace and compile the source code with ```catkin_make``` (which in turn runs a gradle build, redistributable included):
 
 ```
 $ cd catkin_ws/src
-$ git clone https://github.com/FedericoPecora/coordination_oru_ros.git
+$ git clone --recursive https://github.com/FedericoPecora/coordination_oru_ros.git
 $ cd ..
 $ catkin_make
 $ source devel/setup.bash
 ```
+
+Please note: do not omit the ```--recursive``` flag in the clone command above, as this is responsible for including the ```coordination_oru``` library in the build.
 
 ## Examples
 Two launch files are provided, one involving a single robot, and one involving three robots. The single robot example is launched as follows:
