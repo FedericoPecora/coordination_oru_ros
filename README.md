@@ -22,7 +22,7 @@ Please note: do not omit the ```--recursive``` flag in the clone command above, 
 In order to automatically pull changes in ```coordination_oru``` whenever you pull ```coordination_oru_ros```, you can add the following alias:
 
 ```
-$ git config alias.spull 'submodule update --remote --merge'
+$ git config alias.spull '!git pull && git submodule update --remote --merge'
 ```
 
 This way, both repositories will be pulled whenever you issue the command
