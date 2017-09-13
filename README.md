@@ -31,7 +31,6 @@ This way, both repositories will be pulled whenever you issue the command
 $ git spull
 ```
 
-
 ## Examples
 Two launch files are provided, one involving a single robot, and one involving three robots. The single robot example is launched as follows:
 
