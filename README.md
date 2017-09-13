@@ -19,6 +19,19 @@ $ source devel/setup.bash
 
 Please note: do not omit the ```--recursive``` flag in the clone command above, as this is responsible for including the ```coordination_oru``` library in the build.
 
+In order to automatically pull changes in ```coordination_oru``` whenever you pull ```coordination_oru_ros```, you can add the following alias:
+
+```
+$ git config alias.spull 'submodule update --remote --merge'
+```
+
+This way, both repositories will be pulled whenever you issue the command
+
+```
+$ git spull
+```
+
+
 ## Examples
 Two launch files are provided, one involving a single robot, and one involving three robots. The single robot example is launched as follows:
 
