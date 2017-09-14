@@ -48,3 +48,6 @@ dependencies {
   compile 'org.metacsp:meta-csp-framework:1.3.3'
 }
 
+task deleteHorribleScripts(type: Delete) {
+     delete 'build/scripts'
+}
