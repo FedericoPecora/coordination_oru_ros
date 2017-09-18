@@ -13,17 +13,20 @@ find_package(catkin REQUIRED rosjava_build_tools)
 
 find_package(catkin REQUIRED genjava)
 
+find_package(catkin REQUIRED orunav_msgs)
+
 generate_rosjava_messages(
   PACKAGES
     orunav_msgs
 )
-
 
 # Set the gradle targets you want catkin's make to run by default, e.g.
 #   catkin_rosjava_setup(installApp)
 # Note that the catkin_create_rosjava_xxx scripts will usually automatically
 # add tasks to this for you when you create subprojects.
 catkin_rosjava_setup(installApp publish deleteHorribleScripts)
+
+#add_dependencies(coordination_oru_ros_generate_artifacts orunav_msgs_generate_messages_py)
 
 catkin_package()
 
