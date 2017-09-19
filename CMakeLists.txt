@@ -29,11 +29,13 @@ catkin_rosjava_setup(installApp publish deleteHorribleScripts)
 message(WARNING "FROM: ${CATKIN_DEVEL_PREFIX}/../../devel/share/maven")
 message(WARNING "TO: ${CATKIN_DEVEL_PREFIX}/share/maven")
 
-if(NOT EXISTS "${CATKIN_DEVEL_PREFIX}/share/maven")
+#if(NOT EXISTS "${CATKIN_DEVEL_PREFIX}/share/maven")
+if("${CATKIN_DEVEL_PREFIX}$" MATCHES "isolated")
+  message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven DOES NOT EXIST - will create symlink!!!")
   ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven" "${CATKIN_DEVEL_PREFIX}/share/maven")
+else()
+  message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven EXISTS - will not create symlink!!!")
 endif()
-
-#ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E echo "HELLO THERE")
 
 catkin_package()
 
