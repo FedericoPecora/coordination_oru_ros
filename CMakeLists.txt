@@ -24,8 +24,19 @@ generate_rosjava_messages(
 #   catkin_rosjava_setup(installApp)
 # Note that the catkin_create_rosjava_xxx scripts will usually automatically
 # add tasks to this for you when you create subprojects.
-catkin_rosjava_setup(installApp publish deleteHorribleScripts)
+catkin_rosjava_setup(installApp publishMavenJavaPublicationToMavenRepository deleteHorribleScripts)
 
+message(WARNING "FROM: ${CATKIN_DEVEL_PREFIX}/../../devel/share/maven")
+message(WARNING "TO: ${CATKIN_DEVEL_PREFIX}/share/maven")
+  
+ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven" "${CATKIN_DEVEL_PREFIX}/share/maven")
+#ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E echo "HELLO THERE")
+#add_dependencies(link_target )
+
+
+#/home/fpa/catkin_ws/devel/share/maven/
+#/home/fpa/catkin_ws/install_isolated/share/maven/
+		
 #add_dependencies(coordination_oru_ros_generate_artifacts orunav_msgs_generate_messages_py)
 
 catkin_package()
@@ -34,7 +45,11 @@ catkin_package()
 # Installation
 ##############################################################################
 
+message(WARNING "The devel is: ${CATKIN_DEVEL_PREFIX}")
+message(WARNING "The MVN dest is: ${CATKIN_GLOBAL_MAVEN_DESTINATION}")
+
 # Change this to match the maven group name you have specified in the
 # allprojects closure the root build.gradle
 install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_MAVEN_DESTINATION}/se/oru/coordination
         DESTINATION ${CATKIN_GLOBAL_MAVEN_DESTINATION}/se/oru/coordination)
+
