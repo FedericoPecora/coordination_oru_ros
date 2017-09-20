@@ -14,7 +14,7 @@
  * the License.
  */
 
-package se.oru.coordination.coordinator.ros_coordinator;
+package se.oru.coordination.coordinator.ros_coordinator.generic;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,6 +57,7 @@ import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
+import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 
 public class MainNode extends AbstractNodeMain {
 
