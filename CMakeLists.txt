@@ -32,7 +32,11 @@ message(WARNING "TO: ${CATKIN_DEVEL_PREFIX}/share/maven")
 #if(NOT EXISTS "${CATKIN_DEVEL_PREFIX}/share/maven")
 if("${CATKIN_DEVEL_PREFIX}$" MATCHES "isolated")
   message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven DOES NOT EXIST - will create symlink!!!")
-  ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven" "${CATKIN_DEVEL_PREFIX}/share/maven")
+  ADD_CUSTOM_TARGET(link_target ALL 
+        COMMAND mkdir -p "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven"
+	COMMAND ${CMAKE_COMMAND} -E create_symlink "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven" "${CATKIN_DEVEL_PREFIX}/share/maven"
+  )
+  ADD_DEPENDENCIES(coordination_oru_ros_generate_artifacts link_target)
 else()
   message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven EXISTS - will not create symlink!!!")
 endif()
