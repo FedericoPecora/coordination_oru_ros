@@ -1,6 +1,7 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -34,6 +35,10 @@ public class IliadMission extends Mission {
 		this.path = path;
 	}
 	
+	public void setStartPose(Pose startPose) {
+		this.fromPose = startPose;
+	}
+	
 	public OPERATION_TYPE getOperationType() {
 		return this.operationType;
 	}
@@ -52,6 +57,10 @@ public class IliadMission extends Mission {
 		for (IliadItem item : items) if (item.getName().equals(name)) ret.add(item);
 		if (ret.isEmpty()) return null;
 		return ret.toArray(new IliadItem[ret.size()]);
+	}
+	
+	public String toString() {
+		return super.toString() + " " + this.operationType + " " + Arrays.toString(items);
 	}
 
 }

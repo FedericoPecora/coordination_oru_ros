@@ -16,6 +16,7 @@
 
 package se.oru.coordination.coordinator.ros_coordinator.ncfm;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,13 +55,16 @@ import orunav_msgs.RobotTarget;
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
 import se.oru.coordination.coordination_oru.CriticalSection;
+import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
+import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
+import se.oru.coordination.coordinator.util.IliadMissions;
 
 public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 
@@ -74,9 +78,12 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	private double MAX_ACCEL = 1.0;
 	private double MAX_VEL = 4.0;
+	private String missionsFile = null;
+	private HashMap<Integer,Integer> robotID2MissionNumber = null;
+	private HashMap<Integer,Integer> robotID2NumberOfMissions = null;
 	
 	private HashMap<Integer,Boolean> robotsAlive;
-	private boolean doneGoalPosting = false;
+	private boolean loadedMissions = false;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -173,19 +180,40 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				boolean allRobotsAlive = true;
 				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
 				
-				if (allRobotsAlive && !doneGoalPosting) {
-					doneGoalPosting = true;
-					Pose startPose = tec.getRobotReport(1).getPose();
-					Pose goalPose = new Pose(startPose.getX()+5.0,startPose.getY()+5.0,startPose.getTheta());
-					
-					//IliadMission m1 = new IliadMission(1, "A", "B", startPose, goalPose, OPERATION_TYPE.LOAD_PALLET);
-					IliadMission m1 = new IliadMission(1, "A", "B", startPose, goalPose, new IliadItem("Cookie", 1.2, 2.2, 3.5, 0.8, true, ROTATION_TYPE.NONE));
-					callComputeTaskService(m1);
+				if (allRobotsAlive && !loadedMissions) {
+					loadedMissions = true;
+					IliadMissions.loadIliadMissions(missionsFile);
+					robotID2MissionNumber = new HashMap<Integer,Integer>();
+					for (int robotID : robotIDs) robotID2MissionNumber.put(robotID, 0);					
+				}
+				
+				for (int robotID : robotIDs) {
+					if (tec.isFree(robotID)) {
+						
+						ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
+						if (missions != null) {
+							//TODO: Should check if robot is close to intended start pose instead
+							//of overwriting it with current pose from RobotReport...
+							int missionNumber = robotID2MissionNumber.get(robotID);
+							robotID2MissionNumber.put(robotID,(missionNumber++)%IliadMissions.getMissions(robotID).size());
+							IliadMission mission = (IliadMission)missions.get(missionNumber);
+							Pose startPose = tec.getRobotReport(robotID).getPose();
+							mission.setFromPose(startPose);
+							//Compute the path and add it
+							//(we know adding will work because we checked that the robot is free)
+							callComputeTaskService(mission);
+						}
+
+					}
 				}
 				
 				Thread.sleep(1000);
 			}
 		});
+	}
+	
+	private void readMissions(String fileName) {
+		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -204,6 +232,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			robotsAlive = new HashMap<Integer,Boolean>();
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
+			missionsFile = params.getString("/" + node.getName() + "/missions_file");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");

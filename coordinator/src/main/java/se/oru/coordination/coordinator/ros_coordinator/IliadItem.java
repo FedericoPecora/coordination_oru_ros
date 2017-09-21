@@ -11,7 +11,7 @@ public class IliadItem implements Serializable {
 	
 	private boolean isCylinder;
 	
-	public IliadItem(String name, double x, double y, double z, double theta, boolean isCylinder, ROTATION_TYPE rotType) {
+	public IliadItem(String name, double x, double y, double z, boolean isCylinder, ROTATION_TYPE rotType) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
