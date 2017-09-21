@@ -82,8 +82,7 @@ public class IliadMissions extends Missions {
 						double y = Double.parseDouble(((Element)oneItemElement.getElementsByTagName("y").item(0)).getTextContent());
 						double z = Double.parseDouble(((Element)oneItemElement.getElementsByTagName("z").item(0)).getTextContent());
 						ROTATION_TYPE rotType = ROTATION_TYPE.valueOf(((Element)oneItemElement.getElementsByTagName("rotationType").item(0)).getTextContent());
-						boolean isCylinder = Boolean.parseBoolean(((Element)oneItemElement.getElementsByTagName("isCylinder").item(0)).getTextContent());
-						IliadItem item = new IliadItem(itemName, x, y, z, isCylinder, rotType);
+						IliadItem item = new IliadItem(itemName, x, y, z, rotType);
 						items.add(item);
 					}
 												

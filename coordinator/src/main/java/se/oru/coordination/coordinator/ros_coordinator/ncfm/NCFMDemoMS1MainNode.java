@@ -57,6 +57,7 @@ import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
+import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
@@ -162,7 +163,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.LOAD_PALLET);
+							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
 							callComputeTaskService(mission);
 							
 //							String out = "<Pose name=\"XXXPose\">\n";
@@ -198,24 +199,22 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				}
 				
 				for (int robotID : robotIDs) {
-					if (tec.isFree(robotID) && !isTaskComputing.get(robotID)) {
-						System.out.println("ROBOT robot" + robotID + " is FREE!!!");
-						ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
-						if (missions != null) {
-							//TODO: Should check if robot is close to intended start pose instead
-							//of overwriting it with current pose from RobotReport...
-							int missionNumber = robotID2MissionNumber.get(robotID);
-							robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
-							IliadMission mission = (IliadMission)missions.get(missionNumber);
-							Pose startPose = tec.getRobotReport(robotID).getPose();
-							mission.setFromPose(startPose);
-							//Compute the path and add it
-							//(we know adding will work because we checked that the robot is free)
-							callComputeTaskService(mission);
+					if (tec.isFree(robotID)) {
+						if (!isTaskComputing.get(robotID)) {
+							ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
+							if (missions != null) {
+								//TODO: Should check if robot is close to intended start pose instead
+								//of overwriting it with current pose from RobotReport...
+								int missionNumber = robotID2MissionNumber.get(robotID);
+								robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
+								IliadMission mission = (IliadMission)missions.get(missionNumber);
+								Pose startPose = tec.getRobotReport(robotID).getPose();
+								mission.setFromPose(startPose);
+								//Compute the path and add it
+								//(we know adding will work because we checked that the robot is free)
+								callComputeTaskService(mission);
+							}
 						}
-					}
-					else {
-						System.out.println("ROBOT robot" + robotID + " is BUSY!!!");
 					}
 				}
 				
@@ -307,13 +306,13 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				iliadMission.setPath(pathArray);
 				tec.addMissions(iliadMission);
 				tec.computeCriticalSections();
-				callExecuteTaskService(arg0.getTask());
+				callExecuteTaskService(iliadMission,arg0.getTask());
 			}
 			
 		});
 	}
 	
-	private void callExecuteTaskService(final Task task) {
+	private void callExecuteTaskService(final IliadMission mission, final Task task) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
 		try { serviceClient = node.newServiceClient("/robot" + task.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
@@ -328,7 +327,27 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 		startOp.setOperation(Operation.NO_OPERATION);
 		task.getTarget().setStartOp(startOp);
 		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(Operation.NO_OPERATION);
+		goalOp.setOperation(mission.getOperationType().ordinal());
+		//goalOp.setOperation(Operation.NO_OPERATION);
+		if (mission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
+			//TODO: remove overwrite of operation type when implemented in vehicle execution node
+			goalOp.setOperation(Operation.NO_OPERATION);
+			orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
+			ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+			for (IliadItem item : mission.getItems()) {
+				orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+				iliadItemMsg.setName(item.getName());
+				geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+				point.setX(item.getX());
+				point.setY(item.getY());
+				point.setZ(item.getZ());
+				iliadItemMsg.setPosition(point);
+				iliadItemMsg.setRotationType(item.getRotationType().ordinal());
+				itemList.add(iliadItemMsg);
+			}
+			iliadItemArrayMsg.setItems(itemList);
+			goalOp.setItemlist(iliadItemArrayMsg);
+		}
 		task.getTarget().setGoalOp(goalOp);
 		
 		request.setTask(task);

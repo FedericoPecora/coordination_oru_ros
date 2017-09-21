@@ -8,16 +8,13 @@ public class IliadItem implements Serializable {
 	private String name;
 	private double x, y, z;
 	private ROTATION_TYPE rotationType;
-	
-	private boolean isCylinder;
-	
-	public IliadItem(String name, double x, double y, double z, boolean isCylinder, ROTATION_TYPE rotType) {
+		
+	public IliadItem(String name, double x, double y, double z, ROTATION_TYPE rotType) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.rotationType = rotType;
-		this.isCylinder = isCylinder;
 	}
 
 	public String getName() {
@@ -34,10 +31,6 @@ public class IliadItem implements Serializable {
 
 	public double getY() {
 		return y;
-	}
-
-	public boolean isCylinder() {
-		return isCylinder;
 	}
 
 	public double getX() {

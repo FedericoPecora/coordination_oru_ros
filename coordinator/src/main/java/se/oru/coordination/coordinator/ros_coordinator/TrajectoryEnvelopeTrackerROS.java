@@ -30,8 +30,13 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected RobotReport currentRR = null;
 	protected Subscriber<orunav_msgs.RobotReport> subscriber = null;
 	protected Task currentTask = null;
+	protected VEHICLE_STATE currentVehicleState = null;
+	boolean waitingForGoalOperation = false;
 
-	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
+	//public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED}
+	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
+	
+	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
 		super(te, temporalResolution, solver, 30, cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
@@ -43,10 +48,24 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 	    	  int index = message.getSequenceNum();
-	    	  currentRR = new RobotReport(pose, index, -1.0, -1.0, -1);
+	    	  if (waitingForGoalOperation) {
+	    		  metaCSPLogger.info("Current state of robot" + te.getRobotID() + ": " + currentVehicleState);
+	    		  currentRR = new RobotReport(pose, te.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
+	    	  }
+	    	  else currentRR = new RobotReport(pose, index, -1.0, -1.0, -1);
+	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
+	    	  
 	      }
 	    });
+	}
+	
+	public VEHICLE_STATE getVehicleState() {
+		while (currentVehicleState == null) {
+			try { Thread.sleep(100); }
+			catch (InterruptedException e) { e.printStackTrace(); }
+		}
+		return currentVehicleState;
 	}
 	
 	@Override
@@ -96,6 +115,11 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	
 	@Override
 	protected void finishTracking() {
+		waitingForGoalOperation = true;
+		while (currentVehicleState != null && (!currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK))) {
+			try { Thread.sleep(100); }
+			catch (InterruptedException e) { e.printStackTrace(); }
+		}
 		super.finishTracking();
 		subscriber.shutdown();
 	}

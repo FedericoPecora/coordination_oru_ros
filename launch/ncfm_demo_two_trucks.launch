@@ -26,7 +26,7 @@
   </include>
 
   <!--include file="$(find gazebo_worlds_oru)/launch/empty_map_server.launch"/-->
-  <include file="$(find gazebo_worlds_oru)/launch/ncfm_map_server.launch"/>
+  <include file="$(find gazebo_worlds_oru)/launch/ncfm_map_server_old.launch"/>
   <!--include file="$(find orunav_mpc)/launch/citi1_simulation.launch"/-->
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.ncfm.NCFMDemoMS1MainNode" output="screen">
