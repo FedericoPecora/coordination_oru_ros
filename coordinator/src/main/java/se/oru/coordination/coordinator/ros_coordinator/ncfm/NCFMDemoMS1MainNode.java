@@ -167,6 +167,13 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							Pose startPose = tec.getRobotReport(robotID).getPose();
 							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.LOAD_PALLET);
 							callComputeTaskService(mission);
+							
+//							String out = "<Pose name=\"XXXPose\">\n";
+//							out += "   <x>" + goalPose.getX() + "</x>\n";
+//							out += "   <y>" + goalPose.getY() + "</y>\n";
+//							out += "   <theta>" + goalPose.getTheta() + "</theta>\n";
+//							out += "</Pose>";
+//							System.out.println(out);
 						}
 					});
 					
@@ -181,10 +188,12 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
 				
 				if (allRobotsAlive && !loadedMissions) {
-					loadedMissions = true;
-					IliadMissions.loadIliadMissions(missionsFile);
-					robotID2MissionNumber = new HashMap<Integer,Integer>();
-					for (int robotID : robotIDs) robotID2MissionNumber.put(robotID, 0);					
+					if (missionsFile != null) {
+						loadedMissions = true;
+						IliadMissions.loadIliadMissions(missionsFile);
+						robotID2MissionNumber = new HashMap<Integer,Integer>();
+						for (int robotID : robotIDs) robotID2MissionNumber.put(robotID, 0);
+					}
 				}
 				
 				for (int robotID : robotIDs) {
@@ -232,7 +241,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			robotsAlive = new HashMap<Integer,Boolean>();
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
-			missionsFile = params.getString("/" + node.getName() + "/missions_file");
+			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");
