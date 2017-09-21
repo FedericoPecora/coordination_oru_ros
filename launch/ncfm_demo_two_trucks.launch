@@ -4,6 +4,10 @@
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
   <rosparam command="load" file="$(find orunav_params)/config/citi2_simulation.cfg" />
 
+  <arg name="human_perception" default="false"/>
+  <arg name="delete_humans" default="true" unless="$(arg human_perception)"/>
+  <arg name="delete_humans" default="false" if="$(arg human_perception)"/>
+
   <!-- Load world -->
   <include file="$(find gazebo_worlds_oru)/launch/ncfm_world.launch"/>
 
@@ -39,16 +43,26 @@
     <param name="temporal_resolution" value="1000.0" />
     <param name="forward_model_max_accel" value="0.1" />
     <param name="forward_model_max_vel" value="0.3" />
-    <!--param name="missions_file" value="$(find coordination_oru_ros)/missions/NCFMScenarioMS1Missions.xml" /-->
+    <param name="missions_file" value="$(find coordination_oru_ros)/missions/NCFMScenarioMS1Missions.xml" />
   </node>
 
+  <!-- HUMAN PERCEPTION MASTER -->
+  <node name="delete_humans_from_gazebo" pkg="gazebo_models_oru" type="delete_humans_from_gazebo.py" output="screen" if="$(arg delete_humans)"/>
+  
+  <group if="$(arg human_perception)">
+    <include file="$(find iliad_human_perception_launch)/launch/master.launch">
+      <!-- Publish groundtruth tracked persons from Gazebo -->
+      <arg name="simulation" value="true"/>
+    </include>
+  </group>
+  
   <!-- ALL ROBOT SPECIFIC TASKS -->
-  <include file="$(find orunav_launch)/launch/motion_planning_and_control_smp.launch">
+  <include file="$(find orunav_launch)/launch/motion_planning_and_control.launch">
     <arg name="prefix" value="robot1"/>
     <arg name="robotid" value="1"/>
   </include>
   
-  <include file="$(find orunav_launch)/launch/motion_planning_and_control_smp.launch">
+  <include file="$(find orunav_launch)/launch/motion_planning_and_control.launch">
     <arg name="prefix" value="robot2"/>
     <arg name="robotid" value="2"/>
   </include>

@@ -1,19 +1,36 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Missions>
-  
-  <Mission type="PICK_ITEMS">
-    <robotID>3</robotID>
-    <fromLocation>A</fromLocation>
-    <toLocation>B</toLocation>
-    <Pose name="fromPose">
-      <x>3.5</x>
-      <y>16.5</y>
-      <theta>0.8</theta>
+<Missions>  
+
+  <!-- ROBOT 1 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>robot1_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="startPose">
+      <x>3.992443561553955</x>
+      <y>3.4948835372924805</y>
+      <theta>-1.5521551225716244</theta>
     </Pose>
     <Pose name="toPose">
-      <x>15.5</x>
-      <y>5.4</y>
-      <theta>0.8</theta>
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>1</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
     </Pose>
     <IliadItems>
       <IliadItem name="Oreos">
@@ -32,53 +49,150 @@
       </IliadItem>
     </IliadItems>
   </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>item_picking</fromLocation>
+    <toLocation>pallet_unloading</toLocation>
+    <Pose name="fromPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+  </Mission>
+
+  <Mission type="NO_OPERATION">
+    <robotID>1</robotID>
+    <fromLocation>pallet_unloading</fromLocation>
+    <toLocation>intermediate</toLocation>
+    <Pose name="fromPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+  </Mission>
+
+    <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>intermediate</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="fromPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>    
+  </Mission>
   
-  <Mission type="UNLOAD_PALLET">
-    <robotID>3</robotID>
-    <fromLocation>A</fromLocation>
-    <toLocation>B</toLocation>
-    <Pose name="fromPose">
-      <x>15.5</x>
-      <y>5.4</y>
-      <theta>0.8</theta>
-    </Pose>
-    <Pose name="toPose">
-      <x>3.5</x>
-      <y>16.5</y>
-      <theta>0.8</theta>
-    </Pose>
-  </Mission>
-
+  <!-- ROBOT 2 -->
   <Mission type="LOAD_PALLET">
-    <robotID>1</robotID>
-    <fromLocation>A</fromLocation>
-    <toLocation>B</toLocation>
-    <Pose name="fromPose">
-      <x>3.0</x>
-      <y>3.5</y>
-      <theta>0.8</theta>
+    <robotID>2</robotID>
+    <fromLocation>robot2_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="startPose">
+      <x>2.0055556297302246</x>
+      <y>3.975930690765381</y>
+      <theta>-1.5524818017464608</theta>
     </Pose>
     <Pose name="toPose">
-      <x>14.0</x>
-      <y>16.0</y>
-      <theta>0.8</theta>
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
     </Pose>
+  </Mission>
+  
+  <Mission type="PICK_ITEMS">
+    <robotID>2</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <IliadItems>
+      <IliadItem name="Oreos">
+        <x>1.0</x>
+        <y>1.0</y>
+        <z>1.0</z>
+        <rotationType>NONE</rotationType>
+	<isCylinder>false</isCylinder>
+      </IliadItem>
+      <IliadItem name="Pringles">
+        <x>2.0</x>
+        <y>2.0</y>
+        <z>2.0</z>
+        <rotationType>Y</rotationType>
+	<isCylinder>true</isCylinder>
+      </IliadItem>
+    </IliadItems>
   </Mission>
 
   <Mission type="UNLOAD_PALLET">
-    <robotID>1</robotID>
-    <fromLocation>A</fromLocation>
-    <toLocation>B</toLocation>
+    <robotID>2</robotID>
+    <fromLocation>item_picking</fromLocation>
+    <toLocation>pallet_unloading</toLocation>
     <Pose name="fromPose">
-      <x>14.0</x>
-      <y>16.0</y>
-      <theta>0.8</theta>
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
     </Pose>
     <Pose name="toPose">
-      <x>3.0</x>
-      <y>3.5</y>
-      <theta>0.8</theta>
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
     </Pose>
   </Mission>
+
+  <Mission type="NO_OPERATION">
+    <robotID>2</robotID>
+    <fromLocation>pallet_unloading</fromLocation>
+    <toLocation>intermediate</toLocation>
+    <Pose name="fromPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+  </Mission>
+
+    <Mission type="LOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>intermediate</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="fromPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>    
+    </Mission>
 
 </Missions>

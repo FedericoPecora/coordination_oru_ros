@@ -16,7 +16,6 @@
 
 package se.oru.coordination.coordinator.ros_coordinator.ncfm;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,9 +57,6 @@ import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
-import se.oru.coordination.coordination_oru.util.Missions;
-import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
-import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
@@ -81,6 +77,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	private String missionsFile = null;
 	private HashMap<Integer,Integer> robotID2MissionNumber = null;
 	private HashMap<Integer,Integer> robotID2NumberOfMissions = null;
+	private HashMap<Integer,Boolean> isTaskComputing = null;
 	
 	private HashMap<Integer,Boolean> robotsAlive;
 	private boolean loadedMissions = false;
@@ -192,19 +189,23 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 						loadedMissions = true;
 						IliadMissions.loadIliadMissions(missionsFile);
 						robotID2MissionNumber = new HashMap<Integer,Integer>();
-						for (int robotID : robotIDs) robotID2MissionNumber.put(robotID, 0);
+						isTaskComputing = new HashMap<Integer,Boolean>();
+						for (int robotID : robotIDs) {
+							robotID2MissionNumber.put(robotID, 0);
+							isTaskComputing.put(robotID, false);
+						}
 					}
 				}
 				
 				for (int robotID : robotIDs) {
-					if (tec.isFree(robotID)) {
-						
+					if (tec.isFree(robotID) && !isTaskComputing.get(robotID)) {
+						System.out.println("ROBOT robot" + robotID + " is FREE!!!");
 						ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
 						if (missions != null) {
 							//TODO: Should check if robot is close to intended start pose instead
 							//of overwriting it with current pose from RobotReport...
 							int missionNumber = robotID2MissionNumber.get(robotID);
-							robotID2MissionNumber.put(robotID,(missionNumber++)%IliadMissions.getMissions(robotID).size());
+							robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
 							IliadMission mission = (IliadMission)missions.get(missionNumber);
 							Pose startPose = tec.getRobotReport(robotID).getPose();
 							mission.setFromPose(startPose);
@@ -212,17 +213,15 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							//(we know adding will work because we checked that the robot is free)
 							callComputeTaskService(mission);
 						}
-
+					}
+					else {
+						System.out.println("ROBOT robot" + robotID + " is BUSY!!!");
 					}
 				}
 				
 				Thread.sleep(1000);
 			}
 		});
-	}
-	
-	private void readMissions(String fileName) {
-		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -251,6 +250,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	
 	private void callComputeTaskService(final IliadMission iliadMission) {
 		
+		isTaskComputing.put(iliadMission.getRobotID(), true);
 		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
 		try { serviceClient = node.newServiceClient("/robot" + iliadMission.getRobotID() + "/compute_task", ComputeTask._TYPE); }
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
@@ -339,6 +339,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			public void onSuccess(ExecuteTaskResponse response) {
 					System.out.println("Started execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
 					tec.startTrackingAddedMissions();
+					isTaskComputing.put(task.getTarget().getRobotId(), false);
 			}
 			@Override
 			public void onFailure(RemoteException arg0) {

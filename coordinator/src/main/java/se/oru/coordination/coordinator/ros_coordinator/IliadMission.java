@@ -10,7 +10,7 @@ import se.oru.coordination.coordination_oru.Mission;
 
 public class IliadMission extends Mission {
 
-	public static enum OPERATION_TYPE {LOAD_PALLET, UNLOAD_PALLET, PICK_ITEMS};
+	public static enum OPERATION_TYPE {LOAD_PALLET, UNLOAD_PALLET, PICK_ITEMS, NO_OPERATION};
 	private IliadItem[] items;
 	private OPERATION_TYPE operationType;
 	
