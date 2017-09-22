@@ -77,7 +77,6 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	private double MAX_VEL = 4.0;
 	private String missionsFile = null;
 	private HashMap<Integer,Integer> robotID2MissionNumber = null;
-	private HashMap<Integer,Integer> robotID2NumberOfMissions = null;
 	private HashMap<Integer,Boolean> isTaskComputing = null;
 	
 	private HashMap<Integer,Boolean> robotsAlive;
@@ -195,24 +194,27 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							robotID2MissionNumber.put(robotID, 0);
 							isTaskComputing.put(robotID, false);
 						}
+						Thread.sleep(10000);
 					}
 				}
 				
-				for (int robotID : robotIDs) {
-					if (tec.isFree(robotID)) {
-						if (!isTaskComputing.get(robotID)) {
-							ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
-							if (missions != null) {
-								//TODO: Should check if robot is close to intended start pose instead
-								//of overwriting it with current pose from RobotReport...
-								int missionNumber = robotID2MissionNumber.get(robotID);
-								robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
-								IliadMission mission = (IliadMission)missions.get(missionNumber);
-								Pose startPose = tec.getRobotReport(robotID).getPose();
-								mission.setFromPose(startPose);
-								//Compute the path and add it
-								//(we know adding will work because we checked that the robot is free)
-								callComputeTaskService(mission);
+				if (allRobotsAlive) {
+					for (int robotID : robotIDs) {
+						if (tec.isFree(robotID)) {
+							if (!isTaskComputing.get(robotID)) {
+								ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
+								if (missions != null) {
+									//TODO: Should check if robot is close to intended start pose instead
+									//of overwriting it with current pose from RobotReport...
+									int missionNumber = robotID2MissionNumber.get(robotID);
+									robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
+									IliadMission mission = (IliadMission)missions.get(missionNumber);
+									Pose startPose = tec.getRobotReport(robotID).getPose();
+									mission.setFromPose(startPose);
+									//Compute the path and add it
+									//(we know adding will work because we checked that the robot is free)
+									callComputeTaskService(mission);
+								}
 							}
 						}
 					}
