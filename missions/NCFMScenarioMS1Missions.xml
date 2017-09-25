@@ -2,7 +2,7 @@
 <Missions>  
 
   <!-- ROBOT 1 -->
-  <Mission type="NO_OPERATION">
+  <Mission type="LOAD_PALLET">
     <robotID>1</robotID>
     <fromLocation>robot1_parking</fromLocation>
     <toLocation>pallet_loading</toLocation>
@@ -656,7 +656,7 @@
     </IliadItems>
   </Mission>
 
-  <Mission type="NO_OPERATION">
+  <Mission type="UNLOAD_PALLET">
     <robotID>1</robotID>
     <fromLocation>small_item_picking</fromLocation>
     <toLocation>pallet_unloading</toLocation>
@@ -673,7 +673,7 @@
   </Mission>
   
   <!-- ROBOT 2 -->
-  <Mission type="NO_OPERATION">
+  <Mission type="LOAD_PALLET">
     <robotID>2</robotID>
     <fromLocation>robot2_parking</fromLocation>
     <toLocation>pallet_loading</toLocation>
@@ -1327,7 +1327,7 @@
     </IliadItems>
   </Mission>
 
-  <Mission type="NO_OPERATION">
+  <Mission type="UNLOAD_PALLET">
     <robotID>2</robotID>
     <fromLocation>small_item_picking</fromLocation>
     <toLocation>pallet_unloading</toLocation>
