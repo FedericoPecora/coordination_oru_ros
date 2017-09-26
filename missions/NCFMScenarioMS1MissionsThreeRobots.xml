@@ -1,0 +1,2018 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Missions>  
+
+  <!-- ROBOT 1 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>robot1_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="startPose">
+      <x>3.992443561553955</x>
+      <y>3.4948835372924805</y>
+      <theta>-1.5521551225716244</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>1</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>big_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <IliadItems>
+      <!-- heavy items here -->
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>1</robotID>
+    <fromLocation>big_item_picking</fromLocation>
+    <toLocation>small_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <IliadItems>
+      <!-- light items here -->
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>small_item_picking</fromLocation>
+    <toLocation>pallet_unloading</toLocation>
+    <Pose name="fromPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+  </Mission>
+  
+  <!-- ROBOT 2 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>robot2_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="startPose">
+      <x>2.0055556297302246</x>
+      <y>3.975930690765381</y>
+      <theta>-1.5524818017464608</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>2</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>big_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <IliadItems>
+      <!-- heavy items here -->
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>2</robotID>
+    <fromLocation>big_item_picking</fromLocation>
+    <toLocation>small_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <IliadItems>
+      <!-- light items here -->
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>small_item_picking</fromLocation>
+    <toLocation>pallet_unloading</toLocation>
+    <Pose name="fromPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+  </Mission>
+
+<!-- ROBOT 3 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>3</robotID>
+    <fromLocation>robot3_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <Pose name="startPose">
+      <x>0.0</x>
+      <y>2.5</y>
+      <theta>-1.5524818017464608</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>3</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>big_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>2.9727120399475098</x>
+      <y>-3.9762299060821533</y>
+      <theta>-3.1238448446604794</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <IliadItems>
+      <!-- heavy items here -->
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>570.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>760.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>0.0</y>
+        <z>950.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>140.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>280.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>3</robotID>
+    <fromLocation>big_item_picking</fromLocation>
+    <toLocation>small_item_picking</toLocation>
+    <Pose name="fromPose">
+      <x>-4.252623558044434</x>
+      <y>0.051172733306884766</y>
+      <theta>-0.005226923516850496</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <IliadItems>
+      <!-- light items here -->
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>290.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>420.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>550.0</y>
+        <z>730.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>580.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>680.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>710.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>810.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>840.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>350.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>320.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>480.0</x>
+        <y>940.0</y>
+        <z>700.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>3</robotID>
+    <fromLocation>small_item_picking</fromLocation>
+    <toLocation>pallet_unloading</toLocation>
+    <Pose name="fromPose">
+      <x>-21.755008697509766</x>
+      <y>2.7174549102783203</y>
+      <theta>-1.5736400093450944</theta>
+    </Pose>
+    <Pose name="toPose">
+      <x>-22.966995239257812</x>
+      <y>-5.024758815765381</y>
+      <theta>0.01564559473350094</theta>
+    </Pose>
+  </Mission>
+  
+  
+</Missions>
