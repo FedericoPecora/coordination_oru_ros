@@ -81,6 +81,7 @@
     <arg name="robotid" value="3"/>
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks3_ncfm.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/ncfm_three_cititrucks.rviz"/>
+
   
 </launch>

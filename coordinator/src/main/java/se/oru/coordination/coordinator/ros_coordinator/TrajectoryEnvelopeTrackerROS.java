@@ -33,7 +33,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected VEHICLE_STATE currentVehicleState = null;
 	boolean waitingForGoalOperation = false;
 
-	//public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED}
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 	
 	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {

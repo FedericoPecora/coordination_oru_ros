@@ -164,13 +164,6 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							Pose startPose = tec.getRobotReport(robotID).getPose();
 							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
 							callComputeTaskService(mission);
-							
-//							String out = "<Pose name=\"XXXPose\">\n";
-//							out += "   <x>" + goalPose.getX() + "</x>\n";
-//							out += "   <y>" + goalPose.getY() + "</y>\n";
-//							out += "   <theta>" + goalPose.getTheta() + "</theta>\n";
-//							out += "</Pose>";
-//							System.out.println(out);
 						}
 					});
 					
@@ -194,6 +187,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 							robotID2MissionNumber.put(robotID, 0);
 							isTaskComputing.put(robotID, false);
 						}
+						//This is to ensure that the motion primitives have been loaded by the motion planner
 						Thread.sleep(10000);
 					}
 				}
@@ -353,7 +347,6 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 		task.getTarget().setGoalOp(goalOp);
 		
 		request.setTask(task);
-		//tec.setCurrentTask(task.getTarget().getRobotId(), task);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
 			@Override

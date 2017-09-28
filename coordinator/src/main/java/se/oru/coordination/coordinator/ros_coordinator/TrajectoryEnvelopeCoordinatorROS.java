@@ -38,9 +38,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		this.currentTasks.put(robotID, currentTask);
 	}
 	
+	public Task getCurrentTask(int robotID) {
+		return this.currentTasks.get(robotID);
+	}
+	
 	@Override
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
-		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, solver, cb, this.node, this.currentTasks.get(te.getRobotID())) {		
+		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, solver, cb, this.node, getCurrentTask(te.getRobotID())) {		
 			//What should happen when a robot reaches a new pose along the path
 			//In this implementation, simply update the GUI
 			@Override

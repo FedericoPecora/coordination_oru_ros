@@ -262,7 +262,6 @@ public class MainNode extends AbstractNodeMain {
 		task.getTarget().setGoalOp(goalOp);
 		
 		request.setTask(task);
-		//tec.setCurrentTask(task.getTarget().getRobotId(), task);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
 			@Override
