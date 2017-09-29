@@ -46,7 +46,6 @@ public class IliadMissions extends Missions {
 
 			for (int temp = 0; temp < nList.getLength(); temp++) {
 				Node oneMissionNode = nList.item(temp);
-				//System.out.println("\nCurrent Element: " + oneMissionNode.getNodeName());
 				if (oneMissionNode.getNodeType() == Node.ELEMENT_NODE) {
 					Element eElement = (Element)oneMissionNode;
 					int robotID = Integer.parseInt(eElement.getElementsByTagName("robotID").item(0).getTextContent());
@@ -64,14 +63,12 @@ public class IliadMissions extends Missions {
 							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
 							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
 							fromPose = new Pose(x,y,theta);
-							System.out.println(fromPose);
 						}
 						else if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("toPose")) {
 							double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
 							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
 							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
 							goalPose = new Pose(x,y,theta);
-							System.out.println(goalPose);
 						}
 
 					}
