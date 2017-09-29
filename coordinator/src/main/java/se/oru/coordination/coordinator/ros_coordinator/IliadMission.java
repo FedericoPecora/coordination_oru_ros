@@ -60,7 +60,8 @@ public class IliadMission extends Mission {
 	}
 	
 	public String toString() {
-		return super.toString() + " " + this.operationType + " " + Arrays.toString(items);
+		//return this.operationType + " " + (this.items != null ? Arrays.toString(items) + " " : "") + super.toString();
+		return this.operationType + " " + (this.items != null ? items.length + " items " : "") + super.toString();
 	}
 
 }

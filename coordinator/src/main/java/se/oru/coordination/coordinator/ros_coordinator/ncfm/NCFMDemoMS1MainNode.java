@@ -177,22 +177,25 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				boolean allRobotsAlive = true;
 				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
 				
-				if (allRobotsAlive && !loadedMissions) {
-					if (missionsFile != null) {
-						loadedMissions = true;
-						IliadMissions.loadIliadMissions(missionsFile);
-						robotID2MissionNumber = new HashMap<Integer,Integer>();
-						isTaskComputing = new HashMap<Integer,Boolean>();
-						for (int robotID : robotIDs) {
-							robotID2MissionNumber.put(robotID, 0);
-							isTaskComputing.put(robotID, false);
-						}
-						//This is to ensure that the motion primitives have been loaded by the motion planner
-						Thread.sleep(10000);
-					}
-				}
-				
 				if (allRobotsAlive) {
+
+					//This is done once
+					if (!loadedMissions) {
+						if (missionsFile != null) {
+							loadedMissions = true;
+							IliadMissions.loadIliadMissions(missionsFile);
+							robotID2MissionNumber = new HashMap<Integer,Integer>();
+							isTaskComputing = new HashMap<Integer,Boolean>();
+							for (int robotID : robotIDs) {
+								robotID2MissionNumber.put(robotID, 0);
+								isTaskComputing.put(robotID, false);
+							}
+							//This is to ensure that the motion primitives have been loaded by the motion planner
+							Thread.sleep(10000);
+						}
+					}
+				
+					//This is done at every cycle
 					for (int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {
 							if (!isTaskComputing.get(robotID)) {

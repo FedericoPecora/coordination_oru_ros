@@ -36,5 +36,10 @@ public class IliadItem implements Serializable {
 	public double getX() {
 		return x;
 	}
+	
+	@Override
+	public String toString() {
+		return name + " (" + x + "," + y + "," + z + ") " + rotationType;
+	}
 
 }

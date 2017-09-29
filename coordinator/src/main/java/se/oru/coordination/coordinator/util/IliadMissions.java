@@ -3,12 +3,14 @@ package se.oru.coordination.coordinator.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.utility.logging.MetaCSPLogging;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,8 +25,10 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TY
 
 public class IliadMissions extends Missions {
 	
+	private static Logger metaCSPLogger = MetaCSPLogging.getLogger(IliadMission.class);
+	
 	/**
-	 * Load mision data from XML file.
+	 * Load mission data from XML file.
 	 * @param fileName The file to load the data from.
 	 */
 	public static void loadIliadMissions(String fileName) {
@@ -42,7 +46,7 @@ public class IliadMissions extends Missions {
 
 			for (int temp = 0; temp < nList.getLength(); temp++) {
 				Node oneMissionNode = nList.item(temp);
-				System.out.println("\nCurrent Element: " + oneMissionNode.getNodeName());
+				//System.out.println("\nCurrent Element: " + oneMissionNode.getNodeName());
 				if (oneMissionNode.getNodeType() == Node.ELEMENT_NODE) {
 					Element eElement = (Element)oneMissionNode;
 					int robotID = Integer.parseInt(eElement.getElementsByTagName("robotID").item(0).getTextContent());
@@ -85,9 +89,9 @@ public class IliadMissions extends Missions {
 						IliadItem item = new IliadItem(itemName, x, y, z, rotType);
 						items.add(item);
 					}
-												
+							
 					if (missionType.equals(OPERATION_TYPE.PICK_ITEMS)) {
-						IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]); 
+						IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
 						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, itemsArray));
 					}
 					else {
@@ -97,6 +101,7 @@ public class IliadMissions extends Missions {
 			}
 			for (IliadMission mission : missions) {
 				Missions.putMission(mission);
+				metaCSPLogger.info("Loaded mission " + mission);
 			}
 		}
 		catch (IOException e) { e.printStackTrace(); } catch (ParserConfigurationException e) { e.printStackTrace(); }
