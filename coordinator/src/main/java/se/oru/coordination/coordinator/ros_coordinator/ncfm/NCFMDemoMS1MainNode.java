@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
+import org.metacsp.utility.logging.MetaCSPLogging;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
@@ -81,6 +82,8 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	
 	private HashMap<Integer,Boolean> robotsAlive;
 	private boolean loadedMissions = false;
+	
+	private boolean ignorePickItems = true;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -237,6 +240,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			robotsAlive = new HashMap<Integer,Boolean>();
+			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
 		}
@@ -329,8 +333,10 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 		goalOp.setOperation(mission.getOperationType().ordinal());
 		//goalOp.setOperation(Operation.NO_OPERATION);
 		if (mission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
-			//TODO: remove overwrite of operation type when implemented in vehicle execution node
-			goalOp.setOperation(Operation.NO_OPERATION);
+			if (ignorePickItems) {
+				System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
+				goalOp.setOperation(Operation.NO_OPERATION);
+			}
 			orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
 			ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
 			for (IliadItem item : mission.getItems()) {
