@@ -45,6 +45,7 @@
     <param name="forward_model_max_vel" value="0.3" />
     <param name="missions_file" value="$(find coordination_oru_ros)/missions/NCFMScenarioMS1Missions.xml" />
     <!--param name="ignore_pick_items" value="false" /-->
+    <!--param name="copy_goal_operation_to_start_operation" value="true" /-->
   </node>
 
   <!-- HUMAN PERCEPTION MASTER -->

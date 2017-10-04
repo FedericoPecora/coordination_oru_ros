@@ -84,6 +84,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	private boolean loadedMissions = false;
 	
 	private boolean ignorePickItems = true;
+	private boolean copyGoalOperationToStartoperation = false;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -241,6 +242,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			robotsAlive = new HashMap<Integer,Boolean>();
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
+			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
 		}
@@ -326,9 +328,6 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 		task.setCts(cts);
 		
 		//Operations used by the current execution service
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		task.getTarget().setStartOp(startOp);
 		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
 		goalOp.setOperation(mission.getOperationType().ordinal());
 		//goalOp.setOperation(Operation.NO_OPERATION);
@@ -354,7 +353,12 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			goalOp.setItemlist(iliadItemArrayMsg);
 		}
 		task.getTarget().setGoalOp(goalOp);
-		
+
+		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		startOp.setOperation(Operation.NO_OPERATION);
+		if (copyGoalOperationToStartoperation ) task.getTarget().setStartOp(goalOp);
+		else task.getTarget().setStartOp(startOp);
+
 		request.setTask(task);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
