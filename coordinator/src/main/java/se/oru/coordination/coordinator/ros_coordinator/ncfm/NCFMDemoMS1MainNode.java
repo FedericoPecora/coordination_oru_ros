@@ -356,7 +356,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 
 		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
 		startOp.setOperation(Operation.NO_OPERATION);
-		if (copyGoalOperationToStartoperation ) task.getTarget().setStartOp(goalOp);
+		if (copyGoalOperationToStartoperation) task.getTarget().setStartOp(goalOp);
 		else task.getTarget().setStartOp(startOp);
 
 		request.setTask(task);
