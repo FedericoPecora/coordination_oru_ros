@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
-import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelopeSolver;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceNotFoundException;
@@ -22,6 +21,7 @@ import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
+import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 
 public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTracker {
 
@@ -35,8 +35,8 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 	
-	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeSolver solver, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
-		super(te, temporalResolution, solver, 30, cb);
+	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
+		super(te, temporalResolution, tec, 30, cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
@@ -49,9 +49,9 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  int index = message.getSequenceNum();
 	    	  if (waitingForGoalOperation) {
 	    		  metaCSPLogger.info("Current state of robot" + te.getRobotID() + ": " + currentVehicleState);
-	    		  currentRR = new RobotReport(pose, te.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
+	    		  currentRR = new RobotReport(te.getRobotID(), pose, te.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
 	    	  }
-	    	  else currentRR = new RobotReport(pose, index, -1.0, -1.0, -1);
+	    	  else currentRR = new RobotReport(te.getRobotID(), pose, index, -1.0, -1.0, -1);
 	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
 	    	  
@@ -80,9 +80,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		}
 		return currentRR;
 	}
-
-	@Override
-	public void onPositionUpdate() { }
 
 	@Override
 	public void setCriticalPoint(int arg0) {

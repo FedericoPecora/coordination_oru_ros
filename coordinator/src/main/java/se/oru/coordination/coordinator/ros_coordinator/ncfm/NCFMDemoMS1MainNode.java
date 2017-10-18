@@ -58,6 +58,7 @@ import se.oru.coordination.coordination_oru.CriticalSection;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
+import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
@@ -130,7 +131,8 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				tec.setupSolver(origin, origin+100000000L);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
-				tec.setupGUI(null);
+				final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization(tec);
+				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
