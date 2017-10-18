@@ -5,8 +5,6 @@ import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +34,6 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 import nav_msgs.OccupancyGrid;
 import se.oru.coordination.coordination_oru.RobotReport;
-import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 import se.oru.coordination.coordination_oru.util.FleetVisualization;
 import se.oru.coordination.coordination_oru.util.Missions;
 import visualization_msgs.MarkerArray;
@@ -44,7 +41,6 @@ import visualization_msgs.MarkerArray;
 public class RVizVisualization implements FleetVisualization, NodeMain {
 
 	private ConnectedNode node = null;
-	//private TrajectoryEnvelopeCoordinator tec = null;
 	private HashMap<Integer,Publisher<visualization_msgs.MarkerArray>> robotStatusPublishers = null;
 	private HashMap<Integer,Publisher<visualization_msgs.MarkerArray>> dependencyPublishers = null;
 	private HashMap<Integer,ArrayList<visualization_msgs.Marker>> robotStatusMarkers = null;
@@ -53,8 +49,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 	private boolean ready = false;
 	private String mapFileName = null;
 	
-	public RVizVisualization(TrajectoryEnvelopeCoordinator tec) throws URISyntaxException, UnknownHostException {
-		//this.tec = tec;
+	public RVizVisualization() {
 		this.robotStatusPublishers = new HashMap<Integer,Publisher<visualization_msgs.MarkerArray>>();
 		this.dependencyPublishers = new HashMap<Integer,Publisher<visualization_msgs.MarkerArray>>();
 		this.robotStatusMarkers = new HashMap<Integer,ArrayList<visualization_msgs.Marker>>();

@@ -55,7 +55,7 @@ public class TestTrajectoryEnvelopeCoordinatorThreeRobots {
 
 		//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 //		JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization(tec);
-		RVizVisualization viz = new RVizVisualization(tec);
+		RVizVisualization viz = new RVizVisualization();
 		//viz.setMapFileName("/home/fpa/gitroot.github/coordination_oru/maps/map.yaml", "/home/fpa/gitroot.github/coordination_oru/maps");
 		tec.setVisualization(viz);
 

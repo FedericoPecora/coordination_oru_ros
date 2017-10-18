@@ -131,7 +131,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				tec.setupSolver(origin, origin+100000000L);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
-				final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization(tec);
+				final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
