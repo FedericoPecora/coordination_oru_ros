@@ -1,6 +1,10 @@
 package se.oru.coordination.coordinator.util;
 
+import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -69,25 +73,45 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 	}
 
 	private BufferedImage toGrayScale(BufferedImage imgIn) {
-		// Create a new buffer to BYTE_GRAY
 		BufferedImage img = new BufferedImage(imgIn.getWidth(), imgIn.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-		WritableRaster raster = img.getRaster();
-		WritableRaster rasterJPEG = imgIn.getRaster();
-		// Foreach pixel we transform it to Gray Scale and put it on the same image
-		for(int h=0; h < img.getHeight(); h++)
-			for(int w=0; w < img.getWidth(); w++) {
-				int[] p = new int[4];
-				rasterJPEG.getPixel(w, h, p);
-				p[0] = (int) (0.3 * p[0]);
-				p[1] = (int) (0.59 * p[1]);
-				p[2] = (int) (0.11 * p[2]);
-				int y = p[0] + p[1] + p[2];
-				raster.setSample(w,h,0,y);
-			}
-		return img;
+        ColorConvertOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+        op.filter(imgIn, img);
+        return img;
+	}
+	
+	private BufferedImage toBlackAndWhite(BufferedImage image, int threshold) {
+	    BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+	    result.getGraphics().drawImage(image, 0, 0, null);
+	    WritableRaster raster = result.getRaster();
+	    int[] pixels = new int[image.getWidth()];
+	    for (int y = 0; y < image.getHeight(); y++) {
+	        raster.getPixels(0, y, image.getWidth(), 1, pixels);
+	        for (int i = 0; i < pixels.length; i++) {
+	            if (pixels[i] < threshold) pixels[i] = 0;
+	            else pixels[i] = 255;
+	        }
+	        raster.setPixels(0, y, image.getWidth(), 1, pixels);
+	    }
+	    return result;
+	}
+	
+	private BufferedImage flipVertically(BufferedImage imgIn) {
+        AffineTransform tx = AffineTransform.getScaleInstance(1, -1);
+        tx.translate(0, -imgIn.getHeight(null));
+        AffineTransformOp op1 = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        imgIn = op1.filter(imgIn, null);
+        return imgIn;
 	}
 
-	public void setMapFileName(String mapYAMLFile, String prefix) {
+	private BufferedImage flipHorizontally(BufferedImage imgIn) {
+		AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+		tx.translate(-imgIn.getWidth(null), 0);
+		AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+		imgIn = op.filter(imgIn, null);        
+        return imgIn;
+	}
+
+	public void setMapFileName(String mapYAMLFile, String prefix, boolean flipHorizontally, boolean flipVertically) {
 		this.mapFileName = Missions.getProperty("image", mapYAMLFile);
 		if (prefix != null) this.mapFileName = prefix + File.separator + this.mapFileName;
 		while (!ready) {
@@ -97,8 +121,11 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 		if (mapFileName != null) {
 			try {
 				final OccupancyGrid occMap = node.getTopicMessageFactory().newFromType(OccupancyGrid._TYPE);
-				BufferedImage imgIn = ImageIO.read(new File(mapFileName));
-				BufferedImage img = toGrayScale(imgIn);
+				BufferedImage img = ImageIO.read(new File(mapFileName));
+				//img = toGrayScale(img);
+				img = toBlackAndWhite(img, 128);
+				if (flipHorizontally) img = flipHorizontally(img);
+				if (flipVertically) img = flipVertically(img);
 				System.out.println("Loaded map: " + img.getHeight() + "x" + img.getWidth());
 				WritableRaster raster = img.getRaster();
 				DataBufferByte data = (DataBufferByte)raster.getDataBuffer();
@@ -138,9 +165,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 
 			visualization_msgs.Marker marker = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
 			marker.getHeader().setFrameId("/map");
-			marker.getScale().setX(0.1f);
-			marker.getScale().setY(0.1f);
-			marker.getScale().setZ(0.1f);
+			marker.getScale().setX(0.2f);
 			marker.getColor().setR(100f);
 			marker.getColor().setG(0.0f);
 			marker.getColor().setB(0.0f);
@@ -324,8 +349,6 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 		visualization_msgs.Marker marker = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
 		marker.getHeader().setFrameId("/map");
 		marker.getScale().setX(0.1f);
-		marker.getScale().setY(0.1f);
-		marker.getScale().setZ(0.1f);
 		marker.getColor().setR(50f);
 		marker.getColor().setG(50.0f);
 		marker.getColor().setB(0.0f);
@@ -359,6 +382,10 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 		synchronized(envelopeMarkers) {
 			this.envelopeMarkers.remove(te.getRobotID());
 		}		
+	}
+	
+	public static void main(String[] args) {
+		System.out.println("test");
 	}
 
 }

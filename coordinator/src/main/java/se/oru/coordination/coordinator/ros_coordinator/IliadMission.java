@@ -1,7 +1,6 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;

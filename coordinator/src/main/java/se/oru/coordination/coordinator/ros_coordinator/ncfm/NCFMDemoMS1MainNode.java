@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
-import org.metacsp.utility.logging.MetaCSPLogging;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;

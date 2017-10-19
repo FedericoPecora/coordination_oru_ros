@@ -1,6 +1,5 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -9,11 +8,8 @@ import org.ros.node.ConnectedNode;
 
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
-import se.oru.coordination.coordination_oru.Dependency;
-import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
-import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
 
