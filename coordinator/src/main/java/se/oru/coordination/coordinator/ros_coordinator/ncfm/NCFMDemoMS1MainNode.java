@@ -299,8 +299,6 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			public void onSuccess(ComputeTaskResponse arg0) {
 				System.out.println("Successfully called ComputeTask service for robot" + iliadMission.getRobotID() + " (goalID: " + goalID + ")");
 				
-				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
-
 				ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
 				for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
 					orunav_msgs.PoseSteering onePS = arg0.getTask().getPath().getPath().get(i);
@@ -310,100 +308,47 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				}
 				PoseSteering[] pathArray = path.toArray(new PoseSteering[path.size()]);
 				iliadMission.setPath(pathArray);
+				
+				//Operations used by the current execution service
+				Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+				goalOp.setOperation(iliadMission.getOperationType().ordinal());
+				//goalOp.setOperation(Operation.NO_OPERATION);
+				if (iliadMission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
+					if (ignorePickItems) {
+						System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
+						goalOp.setOperation(Operation.NO_OPERATION);
+					}
+					orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
+					ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+					for (IliadItem item : iliadMission.getItems()) {
+						orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+						iliadItemMsg.setName(item.getName());
+						geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+						point.setX(item.getX());
+						point.setY(item.getY());
+						point.setZ(item.getZ());
+						iliadItemMsg.setPosition(point);
+						iliadItemMsg.setRotationType(item.getRotationType().ordinal());
+						itemList.add(iliadItemMsg);
+					}
+					iliadItemArrayMsg.setItems(itemList);
+					goalOp.setItemlist(iliadItemArrayMsg);
+				}
+				arg0.getTask().getTarget().setGoalOp(goalOp);
+
+				Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+				startOp.setOperation(Operation.NO_OPERATION);
+				if (copyGoalOperationToStartoperation) arg0.getTask().getTarget().setStartOp(goalOp);
+				else arg0.getTask().getTarget().setStartOp(startOp);
+
+				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
 				tec.addMissions(iliadMission);
 				tec.computeCriticalSections();
-				callExecuteTaskService(iliadMission,arg0.getTask());
+				tec.startTrackingAddedMissions();
+				isTaskComputing.put(arg0.getTask().getTarget().getRobotId(), false);
 			}
 			
 		});
 	}
-	
-	private void callExecuteTaskService(final IliadMission mission, final Task task) {
-
-		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + task.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		final ExecuteTaskRequest request = serviceClient.newMessage();
-		task.setUpdate(false);
-		CoordinatorTimeVec cts = computeCTsFromDTs(task.getDts());
-		task.setCts(cts);
-		
-		//Operations used by the current execution service
-		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(mission.getOperationType().ordinal());
-		//goalOp.setOperation(Operation.NO_OPERATION);
-		if (mission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
-			if (ignorePickItems) {
-				System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
-				goalOp.setOperation(Operation.NO_OPERATION);
-			}
-			orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
-			ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
-			for (IliadItem item : mission.getItems()) {
-				orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
-				iliadItemMsg.setName(item.getName());
-				geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
-				point.setX(item.getX());
-				point.setY(item.getY());
-				point.setZ(item.getZ());
-				iliadItemMsg.setPosition(point);
-				iliadItemMsg.setRotationType(item.getRotationType().ordinal());
-				itemList.add(iliadItemMsg);
-			}
-			iliadItemArrayMsg.setItems(itemList);
-			goalOp.setItemlist(iliadItemArrayMsg);
-		}
-		task.getTarget().setGoalOp(goalOp);
-
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		if (copyGoalOperationToStartoperation) task.getTarget().setStartOp(goalOp);
-		else task.getTarget().setStartOp(startOp);
-
-		request.setTask(task);
-
-		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
-			@Override
-			public void onSuccess(ExecuteTaskResponse response) {
-					System.out.println("Started execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
-					tec.startTrackingAddedMissions();
-					isTaskComputing.put(task.getTarget().getRobotId(), false);
-			}
-			@Override
-			public void onFailure(RemoteException arg0) {
-				System.out.println("Failed to start execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
-			}
-		});		
-		
-	}
-	
-	private CoordinatorTimeVec computeCTsFromDTs(DeltaTVec dts) {
-		CoordinatorTimeVec cts = node.getTopicMessageFactory().newFromType(CoordinatorTimeVec._TYPE);
-		cts.setGoalId(dts.getGoalId());
-		cts.setId(dts.getTrajId());
-		ArrayList<CoordinatorTime> ctList = new ArrayList<CoordinatorTime>();
-//		double currentTime = node.getCurrentTime().toSeconds();
-//		double[] fastDTs = dts.getDts().get(0).getDt();
-//		double[] slowDTs = dts.getDts().get(1).getDt();
-//		double[] fastCTs = new double[fastDTs.length];
-//		double[] slowCTs = new double[slowDTs.length];
-		CoordinatorTime ctFast = node.getTopicMessageFactory().newFromType(CoordinatorTime._TYPE);
-		CoordinatorTime ctSlow = node.getTopicMessageFactory().newFromType(CoordinatorTime._TYPE);
-//		fastCTs[0] = currentTime;
-//		slowCTs[0] = currentTime;
-//		for (int i = 1; i < fastDTs.length; i++) {
-//			fastCTs[i] = fastDTs[i]+fastCTs[i-1];
-//		    slowCTs[i] = slowDTs[i]+slowCTs[i-1];
-//		}
-//		ctFast.setT(fastCTs);
-//		ctSlow.setT(slowCTs);
-		ctFast.setT(new double[] {-1, -1});
-		ctSlow.setT(new double[] {-1, -1});
-		ctList.add(ctFast);
-		ctList.add(ctSlow);
-		cts.setTs(ctList);
-		return cts;
-	}
-
 
 }

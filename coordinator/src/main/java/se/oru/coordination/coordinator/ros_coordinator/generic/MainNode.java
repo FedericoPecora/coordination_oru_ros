@@ -239,73 +239,10 @@ public class MainNode extends AbstractNodeMain {
 				Mission m = new Mission(arg0.getTask().getTarget().getRobotId(), pathArray, "A", "B", fromPose, toPose);
 				tec.addMissions(m);
 				tec.computeCriticalSections();
-				callExecuteTaskService(arg0.getTask());
+				tec.startTrackingAddedMissions();
+				//callExecuteTaskService(arg0.getTask());
 			}
 			
 		});
 	}
-	
-	private void callExecuteTaskService(final Task task) {
-
-		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + task.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		final ExecuteTaskRequest request = serviceClient.newMessage();
-		task.setUpdate(false);
-		CoordinatorTimeVec cts = computeCTsFromDTs(task.getDts());
-		task.setCts(cts);
-		
-		//Operations used by the current execution service
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		task.getTarget().setStartOp(startOp);
-		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(Operation.NO_OPERATION);
-		task.getTarget().setGoalOp(goalOp);
-		
-		request.setTask(task);
-
-		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
-			@Override
-			public void onSuccess(ExecuteTaskResponse response) {
-					System.out.println("Started execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
-					tec.startTrackingAddedMissions();
-			}
-			@Override
-			public void onFailure(RemoteException arg0) {
-				System.out.println("Failed to start execution of goal " + task.getTarget().getGoalId() + " for robot " + task.getTarget().getRobotId());
-			}
-		});		
-		
-	}
-	
-	private CoordinatorTimeVec computeCTsFromDTs(DeltaTVec dts) {
-		CoordinatorTimeVec cts = node.getTopicMessageFactory().newFromType(CoordinatorTimeVec._TYPE);
-		cts.setGoalId(dts.getGoalId());
-		cts.setId(dts.getTrajId());
-		ArrayList<CoordinatorTime> ctList = new ArrayList<CoordinatorTime>();
-//		double currentTime = node.getCurrentTime().toSeconds();
-//		double[] fastDTs = dts.getDts().get(0).getDt();
-//		double[] slowDTs = dts.getDts().get(1).getDt();
-//		double[] fastCTs = new double[fastDTs.length];
-//		double[] slowCTs = new double[slowDTs.length];
-		CoordinatorTime ctFast = node.getTopicMessageFactory().newFromType(CoordinatorTime._TYPE);
-		CoordinatorTime ctSlow = node.getTopicMessageFactory().newFromType(CoordinatorTime._TYPE);
-//		fastCTs[0] = currentTime;
-//		slowCTs[0] = currentTime;
-//		for (int i = 1; i < fastDTs.length; i++) {
-//			fastCTs[i] = fastDTs[i]+fastCTs[i-1];
-//		    slowCTs[i] = slowDTs[i]+slowCTs[i-1];
-//		}
-//		ctFast.setT(fastCTs);
-//		ctSlow.setT(slowCTs);
-		ctFast.setT(new double[] {-1, -1});
-		ctSlow.setT(new double[] {-1, -1});
-		ctList.add(ctFast);
-		ctList.add(ctSlow);
-		cts.setTs(ctList);
-		return cts;
-	}
-
-
 }
