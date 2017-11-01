@@ -45,6 +45,9 @@ import visualization_msgs.MarkerArray;
 public class RVizVisualization implements FleetVisualization, NodeMain {
 
 	private ConnectedNode node = null;
+	private HashMap<String,Publisher<visualization_msgs.MarkerArray>> boxMarkerPublishers = null;
+	private HashMap<String,ArrayList<visualization_msgs.Marker>> boxMarkerMarkers = null;
+
 	private HashMap<Integer,Publisher<visualization_msgs.MarkerArray>> robotStatusPublishers = null;
 	private HashMap<Integer,Publisher<visualization_msgs.MarkerArray>> dependencyPublishers = null;
 	private HashMap<Integer,ArrayList<visualization_msgs.Marker>> robotStatusMarkers = null;
@@ -58,6 +61,9 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 		this.dependencyPublishers = new HashMap<Integer,Publisher<visualization_msgs.MarkerArray>>();
 		this.robotStatusMarkers = new HashMap<Integer,ArrayList<visualization_msgs.Marker>>();
 		this.dependencyMarkers = new HashMap<Integer,ArrayList<visualization_msgs.Marker>>();
+
+		this.boxMarkerPublishers = new HashMap<String,Publisher<visualization_msgs.MarkerArray>>();
+		this.boxMarkerMarkers = new HashMap<String,ArrayList<visualization_msgs.Marker>>();
 
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic("localhost");
 		NodeMainExecutor executor = DefaultNodeMainExecutor.newDefault();
@@ -226,6 +232,71 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 			}
 		}
 	}
+	
+	public void displayBox(String markerLabel, Coordinate[] shape, int markerID, double x, double y, double durationInSeconds) {
+		if (ready) {
+			visualization_msgs.Marker marker = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
+			marker.getHeader().setFrameId("/map");
+			marker.getScale().setX(0.2f);
+			marker.getColor().setR(0.0f);
+			marker.getColor().setG(100.0f);
+			marker.getColor().setB(0.0f);
+			marker.getColor().setA(0.8f);
+			marker.setAction(visualization_msgs.Marker.ADD);                                
+			marker.setNs("box_marker");
+			marker.setType(visualization_msgs.Marker.LINE_STRIP);
+			marker.setId(markerID);
+			marker.setLifetime(new Duration(durationInSeconds));
+
+			ArrayList<geometry_msgs.Point> points = new ArrayList<geometry_msgs.Point>();
+			for (Coordinate coord : shape) {
+				geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+				point.setX(coord.x);
+				point.setY(coord.y);
+				point.setZ(0.0);
+				points.add(point);
+			}
+			points.add(points.get(0));
+			marker.setPoints(points);
+			if (!this.boxMarkerPublishers.containsKey(markerLabel)) {
+				Publisher<visualization_msgs.MarkerArray> markerArrayPublisher = node.newPublisher(markerLabel, visualization_msgs.MarkerArray._TYPE);
+				this.boxMarkerPublishers.put(markerLabel, markerArrayPublisher);
+				synchronized(boxMarkerMarkers) {
+					this.boxMarkerMarkers.put(markerLabel, new ArrayList<visualization_msgs.Marker>());
+				}
+			}
+			synchronized(boxMarkerMarkers) {
+				this.boxMarkerMarkers.get(markerLabel).add(marker);
+			}
+
+			//////////////
+			visualization_msgs.Marker markerName = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
+			markerName.getHeader().setFrameId("/map");
+			markerName.getScale().setX(1.0f);
+			markerName.getScale().setY(1.0f);
+			markerName.getScale().setZ(1.0f);
+			markerName.getColor().setR(1.0f);
+			markerName.getColor().setG(1.0f);
+			markerName.getColor().setB(1.0f);
+			markerName.getColor().setA(0.8f);
+			markerName.setAction(visualization_msgs.Marker.ADD);                                
+			markerName.setNs("label");
+			markerName.setType(visualization_msgs.Marker.TEXT_VIEW_FACING);
+			//markerName.setId(te.getRobotID());
+			markerName.setLifetime(new Duration(durationInSeconds));
+			markerName.setText(markerLabel);
+			geometry_msgs.Pose pose = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+			geometry_msgs.Point pos = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+			pos.setX(x);
+			pos.setY(y);
+			pos.setZ(0);
+			pose.setPosition(pos);
+			markerName.setPose(pose);
+			synchronized(boxMarkerMarkers) {
+				this.boxMarkerMarkers.get(markerLabel).add(markerName);
+			}
+		}
+	}
 
 	@Override
 	public void displayDependency(RobotReport rrWaiting, RobotReport rrDriving, String dependencyDescriptor) {
@@ -286,6 +357,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 				}
 			}
 		}
+		
 		for (Entry<Integer, Publisher<MarkerArray>> entry : dependencyPublishers.entrySet()) {
 			synchronized(dependencyMarkers) {
 				if (!dependencyMarkers.get(entry.getKey()).isEmpty()) { 				
@@ -298,6 +370,20 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 				}
 			}
 		}
+		
+		for (Entry<String, Publisher<MarkerArray>> entry : boxMarkerPublishers.entrySet()) {
+			synchronized(boxMarkerMarkers) {
+				if (!boxMarkerMarkers.get(entry.getKey()).isEmpty()) { 
+					visualization_msgs.MarkerArray ma = node.getTopicMessageFactory().newFromType(visualization_msgs.MarkerArray._TYPE);
+					ArrayList<visualization_msgs.Marker> copy = new ArrayList<visualization_msgs.Marker>();
+					for (visualization_msgs.Marker m : boxMarkerMarkers.get(entry.getKey())) copy.add(m);
+					ma.setMarkers(copy);
+					entry.getValue().publish(ma);
+					boxMarkerMarkers.get(entry.getKey()).clear();
+				}
+			}
+		}
+
 	}
 
 
