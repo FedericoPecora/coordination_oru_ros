@@ -7,8 +7,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +58,60 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 	private HashMap<Integer,visualization_msgs.Marker> envelopeMarkers = null;
 	private boolean ready = false;
 	private String mapFileName = null;
+	
+	private static String rvizEntry = ""+
+			"    - Class: rviz/MarkerArray\n" + 
+			"      Enabled: true\n" + 
+			"      Marker Topic: /ROBOTi/deps\n" + 
+			"      Name: MarkerArray\n" + 
+			"      Namespaces:\n" + 
+			"        {}\n" + 
+			"      Queue Size: 100\n" + 
+			"      Value: true\n" + 
+			"    - Class: rviz/MarkerArray\n" + 
+			"      Enabled: true\n" + 
+			"      Marker Topic: /ROBOTi/status\n" + 
+			"      Name: MarkerArray\n" + 
+			"      Namespaces:\n" + 
+			"        {}\n" + 
+			"      Queue Size: 100\n" + 
+			"      Value: true\n";
+
+	public static void writeRVizConfigFile(int ... robotIDs) {
+		try {
+			File filePre = new File("../coordinator_default_config_pre.rviz");
+			File filePost = new File("../coordinator_default_config_post.rviz");
+			File file = new File("../config.rviz");
+			
+			//Read pre
+			BufferedReader br = new BufferedReader(new FileReader(filePre));
+			String output = "";
+			String st;
+			while((st=br.readLine()) != null){
+				output += st+"\n";
+			}
+			br.close();
+			
+			//Make robot specific entries
+			for (int robotID : robotIDs) {
+            	output += rvizEntry.replaceAll("ROBOTi", "robot"+robotID);
+            }
+			
+			//Read post
+			br = new BufferedReader(new FileReader(filePost));
+			while((st=br.readLine()) != null){
+				output += st+"\n";
+			}
+			br.close();
+		
+			//Dump it out
+            PrintWriter writer = new PrintWriter(file);
+            writer.write(output);
+            writer.close();
+		}
+		catch (IOException e) { e.printStackTrace(); }
+
+	}
 	
 	public RVizVisualization() {
 		this.robotStatusPublishers = new HashMap<Integer,Publisher<visualization_msgs.MarkerArray>>();
@@ -163,7 +220,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 
 
 	@Override
-	public void displayRobotState(TrajectoryEnvelope te, RobotReport rr) {
+	public void displayRobotState(TrajectoryEnvelope te, RobotReport rr, String ... extraStatusInfo) {
 		if (ready) {
 			double x = rr.getPose().getX();
 			double y = rr.getPose().getY();
@@ -219,7 +276,9 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 			markerName.setType(visualization_msgs.Marker.TEXT_VIEW_FACING);
 			//markerName.setId(te.getRobotID());
 			markerName.setLifetime(new Duration(10.0));
-			markerName.setText("R" + te.getRobotID() + ": " + rr.getPathIndex());
+			String markerText  = "R" + te.getRobotID() + ": " + rr.getPathIndex();
+			if (extraStatusInfo != null) for (String extra : extraStatusInfo) markerText += "\n" + extra;
+			markerName.setText(markerText);
 			geometry_msgs.Pose pose = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
 			geometry_msgs.Point pos = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
 			pos.setX(x);
@@ -230,6 +289,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 			synchronized(robotStatusMarkers) {
 				this.robotStatusMarkers.get(rr.getRobotID()).add(markerName);
 			}
+
 		}
 	}
 	

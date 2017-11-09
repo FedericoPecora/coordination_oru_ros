@@ -35,8 +35,8 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 
 	public static void main(String[] args) throws InterruptedException {
 
-		double MAX_ACCEL = 1.0;
-		double MAX_VEL = 4.0;
+		double MAX_ACCEL = 3.0;
+		double MAX_VEL = 14.0;
 		//Instantiate a trajectory envelope coordinator.
 		//The TrajectoryEnvelopeCoordinatorSimulation implementation provides
 		// -- the factory method getNewTracker() which returns a trajectory envelope tracker
@@ -76,6 +76,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 		tec.setVisualization(viz);
 
 		tec.setUseInternalCriticalPoints(false);
+		tec.setYieldIfParking(false);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
@@ -99,8 +100,11 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 		}
 		catch (IOException e) { e.printStackTrace(); }
 
-
-		int[] robotIDs = new int[] {1,2,3,4,5,6,7,8};
+		int numRobots = 22;
+		int[] robotIDs = new int[numRobots];
+		for (int i = 0; i < numRobots; i++) robotIDs[i] = i+1;
+		RVizVisualization.writeRVizConfigFile(robotIDs);
+		
 		for (int index = 0; index < robotIDs.length; index++) {
 			int robotID = robotIDs[index];
 			//You probably also want to provide a non-trivial forward model
