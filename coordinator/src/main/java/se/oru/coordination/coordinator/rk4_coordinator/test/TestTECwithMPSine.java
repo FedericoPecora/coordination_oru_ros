@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -27,8 +28,8 @@ import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.util.RVizVisualization;
 
-@DemoDescription(desc = "Coordination of 4 robots along wave-like paths obtained with the ReedsSheppCarPlanner in opposing directions.")
-public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
+@DemoDescription(desc = "Coordination of up to 8 robots along multiple constrictions path obtained with the ReedsSheppCarPlanner in opposing directions.")
+public class TestTECwithMPSine {
 
 	public static int MIN_DELAY = 500;
 	public static int MAX_DELAY = 0;
@@ -70,13 +71,13 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 		tec.setupSolver(0, 100000000);
 
 		//Setup a simple GUI (null means empty map, otherwise provide yaml file)
-//		String yamlFile = "../maps/map-empty.yaml";
+		String yamlFile = "../maps/map-empty.yaml";
 		//JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization(yamlFile);
 		RVizVisualization viz = new RVizVisualization();
 		tec.setVisualization(viz);
-
 		tec.setUseInternalCriticalPoints(false);
 		tec.setYieldIfParking(false);
+		tec.setBreakDeadlocks(true);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
@@ -88,19 +89,26 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 //		rsp.setMapResolution(res);
 		rsp.setRadius(0.2);
 		rsp.setFootprint(footprint1, footprint2, footprint3, footprint4);
-		rsp.setTurningRadius(4.0);
-		rsp.setDistanceBetweenPathPoints(0.5);
+		rsp.setTurningRadius(1.0);
+		rsp.setDistanceBetweenPathPoints(0.2);
 		double deltaY = 3;
 		double height = deltaY/2;
+//		double mapHeight = -1;
+//		double mapWidht = -1;
 		double mapHeight = 100;
+		double mapWidht = 100;
 
 //		try {
 //			BufferedImage img = ImageIO.read(new File(mapFile));
 //			mapHeight = img.getHeight()*res*0.9;
+//			mapWidht = img.getWidth()*res*0.9;
 //		}
 //		catch (IOException e) { e.printStackTrace(); }
 
-		int numRobots = 50;
+		int numRobots = 10;
+		int tNs = 3;	//This changes the periods of the pseudo sine wave
+		int numOfSineP = 3+2*(tNs-1);
+		
 		int[] robotIDs = new int[numRobots];
 		for (int i = 0; i < numRobots; i++) robotIDs[i] = i+1;
 		RVizVisualization.writeRVizConfigFile(robotIDs);
@@ -112,23 +120,11 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
 			ArrayList<Pose> posesRobot = new ArrayList<Pose>();
 			//if (index%2==0) {
-			if (robotID%2==0) {
-				posesRobot.add(new Pose(2.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(10.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(18.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(26.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(34.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(42.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(50.0,mapHeight-deltaY-height*index,0.0));
-			}
-			else {
-				posesRobot.add(new Pose(50.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(42.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(34.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(26.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(18.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(10.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(2.0,mapHeight-height*(index-1),Math.PI));
+			for (int x = 1; x<=numOfSineP; x++) {
+				if (x%2==0) {
+					posesRobot.add(new Pose(Math.floor(mapWidht/numOfSineP*x),Math.floor(mapHeight/2),0.0)); //The even points are effectively minimums with A from starting height to mid point
+				}
+				else posesRobot.add(new Pose(Math.floor(mapWidht/numOfSineP*x),mapHeight-(4*robotID),0.0));
 			}
 			tec.placeRobot(robotID, posesRobot.get(0));
 			
@@ -143,8 +139,9 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 			Missions.putMission(new Mission(robotID, robotPathInv));
 		}
 
-		System.out.println("Added missions " + Missions.getMissions());
+		System.out.println("Computed missions " + Missions.getMissions());
 
+		//starting missions one by one:
 		final Random rand = new Random(Calendar.getInstance().getTimeInMillis());
 		//Start a mission dispatching thread for each robot, which will run forever
 		for (final int robotID : robotIDs) {
@@ -179,6 +176,22 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 			//Start the thread!
 			t.start();
 		}
+		
+//		//starting all missions at the same time:
+//		while (true) {
+//			ArrayList<Mission> missionsToAdd = new ArrayList<Mission>();
+//			for (int robotID : robotIDs) {
+//				if (tec.isFree(robotID)) {
+//					Mission m = Missions.popMission(robotID);
+//					missionsToAdd.add(m);
+//					Missions.putMission(m);				
+//				}
+//			}
+//			tec.addMissions(missionsToAdd.toArray(new Mission[missionsToAdd.size()]));
+//			tec.computeCriticalSections();
+//			tec.startTrackingAddedMissions();
+//			Thread.sleep(1000);
+//		}
 
 	}
 

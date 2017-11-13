@@ -1,14 +1,9 @@
 package se.oru.coordination.coordinator.rk4_coordinator.test;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Random;
-
-import javax.imageio.ImageIO;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -21,18 +16,44 @@ import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.demo.DemoDescription;
-import se.oru.coordination.coordination_oru.motionplanning.ReedsSheppCarPlanner;
 import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
-import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.util.RVizVisualization;
 
 @DemoDescription(desc = "Coordination of 4 robots along wave-like paths obtained with the ReedsSheppCarPlanner in opposing directions.")
-public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
+public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner5 {
 
 	public static int MIN_DELAY = 500;
 	public static int MAX_DELAY = 0;
 
+	private static PoseSteering[] getSinePath(double period, double magnitude, Pose from, Pose to) {
+		if (from.getY() != to.getY()) throw new Error("Can only do straight sine waves ;)");
+		ArrayList<Coordinate> coords = new ArrayList<Coordinate>();
+		double delta = 0.1;
+		double t = 0.0;
+		while (t < to.getX()-from.getX()) {
+			double value = magnitude*Math.sin(((2*Math.PI)/period)*t);
+			Coordinate coord = new Coordinate(t+from.getX(),value+from.getY());
+			coords.add(coord);
+			t += delta;
+		}
+		PoseSteering[] pss = new PoseSteering[coords.size()];
+		pss[0] = new PoseSteering(coords.get(0).x, coords.get(0).y, Math.atan2(coords.get(1).y-coords.get(0).y, coords.get(1).x-coords.get(0).x),0.0);
+		pss[coords.size()-1] = new PoseSteering(coords.get(coords.size()-1).x, coords.get(coords.size()-1).y, Math.atan2(coords.get(coords.size()-1).y-coords.get(coords.size()-2).y, coords.get(coords.size()-1).x-coords.get(coords.size()-2).x),0.0);
+		for (int i = 1; i < coords.size()-1; i++) {
+			pss[i] = new PoseSteering(coords.get(i).x,coords.get(i).y,Math.atan2(coords.get(i+1).y-coords.get(i).y, coords.get(i+1).x-coords.get(i).x),0.0);
+		}		
+		return pss;
+	}
+	
+	private static PoseSteering[] invertPath(PoseSteering[] path) {
+		PoseSteering[] ret = new PoseSteering[path.length];
+		for (int i = 0; i < path.length; i++) {
+			ret[i] = path[path.length-i-1];
+		}
+		return ret;
+	}
+	
 	public static void main(String[] args) throws InterruptedException {
 
 		double MAX_ACCEL = 3.0;
@@ -80,65 +101,25 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
-		//Instantiate a simple motion planner
-		ReedsSheppCarPlanner rsp = new ReedsSheppCarPlanner();
-//		String mapFile = "../maps"+File.separator+Missions.getProperty("image", yamlFile);
-//		rsp.setMapFilename(mapFile);
-//		double res = Double.parseDouble(Missions.getProperty("resolution", yamlFile));
-//		rsp.setMapResolution(res);
-		rsp.setRadius(0.2);
-		rsp.setFootprint(footprint1, footprint2, footprint3, footprint4);
-		rsp.setTurningRadius(4.0);
-		rsp.setDistanceBetweenPathPoints(0.5);
 		double deltaY = 3;
-		double height = deltaY/2;
-		double mapHeight = 100;
-
-//		try {
-//			BufferedImage img = ImageIO.read(new File(mapFile));
-//			mapHeight = img.getHeight()*res*0.9;
-//		}
-//		catch (IOException e) { e.printStackTrace(); }
-
-		int numRobots = 50;
+		int numRobots = 20;
 		int[] robotIDs = new int[numRobots];
 		for (int i = 0; i < numRobots; i++) robotIDs[i] = i+1;
 		RVizVisualization.writeRVizConfigFile(robotIDs);
 		
 		for (int index = 0; index < robotIDs.length; index++) {
 			int robotID = robotIDs[index];
-			//You probably also want to provide a non-trivial forward model
-			//(the default assumes that robots can always stop)
+			double period = 18;
+			double mag = deltaY;
+
 			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
-			ArrayList<Pose> posesRobot = new ArrayList<Pose>();
-			//if (index%2==0) {
-			if (robotID%2==0) {
-				posesRobot.add(new Pose(2.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(10.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(18.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(26.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(34.0,mapHeight-deltaY-height*index,0.0));
-				posesRobot.add(new Pose(42.0,mapHeight-height*index,0.0));
-				posesRobot.add(new Pose(50.0,mapHeight-deltaY-height*index,0.0));
-			}
-			else {
-				posesRobot.add(new Pose(50.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(42.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(34.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(26.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(18.0,mapHeight-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(10.0,mapHeight-deltaY-height*(index-1),Math.PI));
-				posesRobot.add(new Pose(2.0,mapHeight-height*(index-1),Math.PI));
-			}
-			tec.placeRobot(robotID, posesRobot.get(0));
-			
-			rsp.setStart(posesRobot.get(0));
-			rsp.setGoals(posesRobot.subList(1, posesRobot.size()).toArray(new Pose[posesRobot.size()-1]));
-			rsp.clearObstacles();
-			if (!rsp.plan()) throw new Error ("No path along goals " + posesRobot);			
-			PoseSteering[] robotPath = rsp.getPath();
-			PoseSteering[] robotPathInv = rsp.getPathInv();
-			
+			Pose from = new Pose(0.0,index*deltaY,0.0);
+			Pose to = new Pose(5*period,index*deltaY,0.0);
+			tec.placeRobot(robotID, from);
+
+			if (index%2 != 0) mag*=(-1);
+			PoseSteering[] robotPath = getSinePath(period, mag, from, to);
+			PoseSteering[] robotPathInv = invertPath(robotPath);
 			Missions.putMission(new Mission(robotID, robotPath));
 			Missions.putMission(new Mission(robotID, robotPathInv));
 		}
@@ -179,7 +160,22 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 			//Start the thread!
 			t.start();
 		}
-
+		
+//		while (true) {
+//			ArrayList<Mission> missionsToAdd = new ArrayList<Mission>();
+//			for (int robotID : robotIDs) {
+//				if (tec.isFree(robotID)) {
+//					Mission m = Missions.popMission(robotID);
+//					missionsToAdd.add(m);
+//					Missions.putMission(m);				
+//				}
+//			}
+//			tec.addMissions(missionsToAdd.toArray(new Mission[missionsToAdd.size()]));
+//			tec.computeCriticalSections();
+//			tec.updateDependencies();
+//			tec.startTrackingAddedMissions();
+//			Thread.sleep(1000);
+//		}
 	}
 
 }
