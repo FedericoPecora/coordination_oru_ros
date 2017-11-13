@@ -58,6 +58,7 @@ import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
+import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 
 public class MainNode extends AbstractNodeMain {
@@ -72,7 +73,8 @@ public class MainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	private double MAX_ACCEL = 1.0;
 	private double MAX_VEL = 4.0;
-	
+	private String locationsFile = null;
+    
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
@@ -122,6 +124,8 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
+				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
+
 				
 				for (final int robotID : robotIDs) {
 					
@@ -160,8 +164,10 @@ public class MainNode extends AbstractNodeMain {
 
 			@Override
 			protected void loop() throws InterruptedException {
-
-				Thread.sleep(1000);
+			    if (locationsFile != null) {
+				//INSERT GOAL LOGIC HERE
+			    }
+			    Thread.sleep(1000);
 			}
 		});
 	}
@@ -180,6 +186,7 @@ public class MainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
+			locationsFile = params.getString("/" + node.getName() + "/locations_file");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");
