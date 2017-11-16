@@ -42,7 +42,8 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 		// -- the factory method getNewTracker() which returns a trajectory envelope tracker
 		// -- the getCurrentTimeInMillis() method, which is used by the coordinator to keep time
 		//You still need to add one or more comparators to determine robot orderings thru critical sections (comparators are evaluated in the order in which they are added)
-		final TrajectoryEnvelopeCoordinatorSimulation tec = new TrajectoryEnvelopeCoordinatorSimulation(MAX_VEL,MAX_ACCEL);
+		final TrajectoryEnvelopeCoordinatorSimulation tec = new TrajectoryEnvelopeCoordinatorSimulation(3000, 1000.0, MAX_VEL,MAX_ACCEL);
+		//final TrajectoryEnvelopeCoordinatorSimulation tec = new TrajectoryEnvelopeCoordinatorSimulation(MAX_VEL,MAX_ACCEL);
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
@@ -100,7 +101,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 //		}
 //		catch (IOException e) { e.printStackTrace(); }
 
-		int numRobots = 50;
+		int numRobots = 15;
 		int[] robotIDs = new int[numRobots];
 		for (int i = 0; i < numRobots; i++) robotIDs[i] = i+1;
 		RVizVisualization.writeRVizConfigFile(robotIDs);
