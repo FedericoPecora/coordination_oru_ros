@@ -189,6 +189,10 @@
   </group>
 
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2.rviz"/>
+  <node name="rviz1" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2_aass_0.rviz"/>
+
+  <node name="rviz2" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2_aass_1.rviz"/>
+
+  <node name="rviz3" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2_aass_2.rviz"/>
 
 </launch>

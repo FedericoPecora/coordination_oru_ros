@@ -65,7 +65,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2b {
 
 		double MAX_ACCEL = 3.0;
 		double MAX_VEL = 14.0;
-		int CONTROL_PERIOD = 3000;
+		int CONTROL_PERIOD = 200;
 		//Instantiate a trajectory envelope coordinator.
 		//The TrajectoryEnvelopeCoordinatorSimulation implementation provides
 		// -- the factory method getNewTracker() which returns a trajectory envelope tracker
@@ -196,7 +196,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2b {
 					long startTime = Calendar.getInstance().getTimeInMillis();
 					while (true && totalIterations > 0) {
 						synchronized(tec) {
-							if (tec.isFree(robotID)) {
+							if (tec.isFree(robotID) && robotID == 5) {
 								if (!firstTime) {
 									long elapsed = Calendar.getInstance().getTimeInMillis()-startTime;
 									System.out.println("Time to reach " + lastDestination + " (Robot" + robotID + "): " + elapsed);
