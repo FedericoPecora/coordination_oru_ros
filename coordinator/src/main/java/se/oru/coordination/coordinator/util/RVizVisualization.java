@@ -79,9 +79,9 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 
 	public static void writeRVizConfigFile(int ... robotIDs) {
 		try {
-			File filePre = new File("../coordinator_default_config_pre.rviz");
-			File filePost = new File("../coordinator_default_config_post.rviz");
-			File file = new File("../config.rviz");
+			File filePre = new File(System.getProperty("user.home")+File.separator+"coordinator_default_config_pre.rviz");
+			File filePost = new File(System.getProperty("user.home")+File.separator+"coordinator_default_config_post.rviz");
+			File file = new File(System.getProperty("user.home")+File.separator+"config.rviz");
 			
 			//Read pre
 			BufferedReader br = new BufferedReader(new FileReader(filePre));
