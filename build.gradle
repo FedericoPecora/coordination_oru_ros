@@ -31,6 +31,9 @@ apply plugin: 'catkin'
 allprojects {
     group 'se.oru.coordination'
     version = project.catkin.pkg.version
+    repositories {
+      maven { url 'https://jitpack.io' }
+    }
 }
 
 subprojects {

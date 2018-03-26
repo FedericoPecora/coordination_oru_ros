@@ -39,6 +39,7 @@ import org.ros.node.topic.Publisher;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
+import geometry_msgs.Transform;
 import nav_msgs.OccupancyGrid;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.util.FleetVisualization;
@@ -121,7 +122,7 @@ public class RVizVisualization implements FleetVisualization, NodeMain {
 
 		this.boxMarkerPublishers = new HashMap<String,Publisher<visualization_msgs.MarkerArray>>();
 		this.boxMarkerMarkers = new HashMap<String,ArrayList<visualization_msgs.Marker>>();
-
+		
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic("localhost");
 		NodeMainExecutor executor = DefaultNodeMainExecutor.newDefault();
 		executor.execute(this, nodeConfiguration);

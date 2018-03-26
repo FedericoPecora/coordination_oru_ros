@@ -16,7 +16,7 @@ import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.demo.DemoDescription;
-import se.oru.coordination.coordination_oru.motionplanning.ReedsSheppCarPlanner;
+import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.rk4_coordinator.test.icaps.TrajectoryEnvelopeCoordinatorSimulationICAPS;
 import se.oru.coordination.coordinator.util.RVizVisualization;
