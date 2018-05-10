@@ -18,8 +18,8 @@ import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.demo.DemoDescription;
 import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
 import se.oru.coordination.coordination_oru.util.Missions;
+import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.rk4_coordinator.test.icaps.TrajectoryEnvelopeCoordinatorSimulationICAPS;
-import se.oru.coordination.coordinator.util.RVizVisualization;
 
 @DemoDescription(desc = "Coordination of up to 8 robots along multiple constrictions path obtained with the ReedsSheppCarPlanner in opposing directions.")
 public class TestTECwithMPSine {

@@ -20,8 +20,8 @@ import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.demo.DemoDescription;
 import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
 import se.oru.coordination.coordination_oru.util.Missions;
+import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.rk4_coordinator.test.icaps.TrajectoryEnvelopeCoordinatorSimulationICAPS;
-import se.oru.coordination.coordinator.util.RVizVisualization;
 
 @DemoDescription(desc = "Coordination of robots along sine wave paths obtained without the ReedsSheppCarPlanner in opposing directions.")
 public class TestTECWithoutMPSineNet {

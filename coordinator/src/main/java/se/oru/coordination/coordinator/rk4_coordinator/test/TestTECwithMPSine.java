@@ -26,7 +26,7 @@ import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPla
 import se.oru.coordination.coordination_oru.simulation2D.TrajectoryEnvelopeCoordinatorSimulation;
 import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 import se.oru.coordination.coordination_oru.util.Missions;
-import se.oru.coordination.coordinator.util.RVizVisualization;
+import se.oru.coordination.coordination_oru.util.RVizVisualization;
 
 @DemoDescription(desc = "Coordination of up to 8 robots along multiple constrictions path obtained with the ReedsSheppCarPlanner in opposing directions.")
 public class TestTECwithMPSine {
