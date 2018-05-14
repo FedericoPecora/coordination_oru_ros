@@ -87,7 +87,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES coordination_oru_msgs
-  CATKIN_DEPENDS genjava orunav_msgs python-rosdistro rosjava_build_tools roslib
+  CATKIN_DEPENDS genjava orunav_msgs rosjava_build_tools roslib
 #  DEPENDS system_lib
 )
 
