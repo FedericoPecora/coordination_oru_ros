@@ -64,6 +64,7 @@ import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
 import se.oru.coordination.coordination_oru.util.Missions;
+import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 
 public class MainNode extends AbstractNodeMain {
@@ -128,7 +129,8 @@ public class MainNode extends AbstractNodeMain {
 				tec.setYieldIfParking(false);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
-				final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
+				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
+				final RVizVisualization viz = new RVizVisualization(node);
 				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
