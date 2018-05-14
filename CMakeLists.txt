@@ -52,6 +52,6 @@ message(WARNING "The MVN dest is: ${CATKIN_GLOBAL_MAVEN_DESTINATION}")
 
 # Change this to match the maven group name you have specified in the
 # allprojects closure the root build.gradle
-install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_MAVEN_DESTINATION}/se/oru/coordination
-        DESTINATION ${CATKIN_GLOBAL_MAVEN_DESTINATION}/se/oru/coordination)
 
+install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_MAVEN_DESTINATION}/.
+        DESTINATION ${CATKIN_GLOBAL_MAVEN_DESTINATION})
