@@ -2,6 +2,13 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* .gitignore updated to not include cradle build files
+* message generation
+* added message_generation
+* Contributors: Marc Hanheide
+
 0.2.0 (2018-05-14)
 ------------------
 * Merge branch 'master' of github.com:FedericoPecora/coordination_oru_ros
