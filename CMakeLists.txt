@@ -41,7 +41,7 @@ message(WARNING "TO: ${CATKIN_DEVEL_PREFIX}/share/maven")
   #message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven EXISTS - will not create symlink!!!")
 #endif()
 
-ADD_DEPENDENCIES(gradle-coordination_oru_ros orunav_msgs_generate_messages_java)
+ADD_DEPENDENCIES(gradle-coordination_oru_ros coordination_oru_ros_generate_artifacts)
 
 catkin_package()
 
