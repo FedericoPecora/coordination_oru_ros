@@ -2,8 +2,8 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.1 (2018-05-14)
+------------------
 * added missing dep
 * Contributors: Marc Hanheide
 
