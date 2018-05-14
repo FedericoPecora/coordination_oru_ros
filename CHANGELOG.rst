@@ -2,6 +2,9 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.2.1 (2018-05-14)
 ------------------
 * .gitignore updated to not include cradle build files
