@@ -13,7 +13,7 @@ find_package(catkin REQUIRED rosjava_build_tools)
 
 find_package(catkin REQUIRED genjava)
 
-find_package(catkin REQUIRED orunav_msgs)
+find_package(catkin REQUIRED orunav_msgs message_generation)
 
 generate_rosjava_messages(
   PACKAGES
