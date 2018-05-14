@@ -2,6 +2,9 @@
 Changelog for package coordination_oru_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.3.0 (2018-05-14)
 ------------------
 * removed invalid dep
