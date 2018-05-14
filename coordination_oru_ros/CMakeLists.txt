@@ -13,12 +13,7 @@ find_package(catkin REQUIRED rosjava_build_tools)
 
 find_package(catkin REQUIRED genjava)
 
-find_package(catkin REQUIRED orunav_msgs message_generation)
-
-generate_rosjava_messages(
-  PACKAGES
-    orunav_msgs
-)
+find_package(catkin REQUIRED coordination_oru_msgs)
 
 # Set the gradle targets you want catkin's make to run by default, e.g.
 #   catkin_rosjava_setup(installApp)
@@ -26,31 +21,11 @@ generate_rosjava_messages(
 # add tasks to this for you when you create subprojects.
 catkin_rosjava_setup(installApp publish deleteHorribleScripts)
 
-message(WARNING "FROM: ${CATKIN_DEVEL_PREFIX}/../../devel/share/maven")
-message(WARNING "TO: ${CATKIN_DEVEL_PREFIX}/share/maven")
-
-#if(NOT EXISTS "${CATKIN_DEVEL_PREFIX}/share/maven")
-#if("${CATKIN_DEVEL_PREFIX}$" MATCHES "isolated")
-  #message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven DOES NOT EXIST - will create symlink!!!")
-  #ADD_CUSTOM_TARGET(link_target ALL 
-#        COMMAND mkdir -p "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven"
-#	COMMAND ${CMAKE_COMMAND} -E create_symlink "${CATKIN_DEVEL_PREFIX}/../../devel/share/maven" "${CATKIN_DEVEL_PREFIX}/share/maven"
-#  )
-  #ADD_DEPENDENCIES(orunav_msgs_generate_messages_java link_target)
-#else()
-  #message(WARNING "${CATKIN_DEVEL_PREFIX}/share/maven EXISTS - will not create symlink!!!")
-#endif()
-
-ADD_DEPENDENCIES(gradle-coordination_oru_ros orunav_msgs_generate_messages_java)
-
 catkin_package()
 
 ##############################################################################
 # Installation
 ##############################################################################
-
-message(WARNING "The devel is: ${CATKIN_DEVEL_PREFIX}")
-message(WARNING "The MVN dest is: ${CATKIN_GLOBAL_MAVEN_DESTINATION}")
 
 # Change this to match the maven group name you have specified in the
 # allprojects closure the root build.gradle
