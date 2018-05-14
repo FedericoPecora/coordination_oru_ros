@@ -7,15 +7,12 @@ project(coordination_oru_msgs)
 find_package(catkin REQUIRED COMPONENTS
   genjava
   orunav_msgs
-  python-rosdistro
   rosjava_build_tools
   roslib
 )
 
-generate_rosjava_messages(
-  PACKAGES
-    orunav_msgs
-)
+
+#add_dependencies(install orunav_msgs_generate_messages_java)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -90,7 +87,7 @@ generate_rosjava_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES coordination_oru_msgs
-#  CATKIN_DEPENDS genjava orunav_msgs python-rosdistro rosjava_build_tools roslib
+  CATKIN_DEPENDS genjava orunav_msgs python-rosdistro rosjava_build_tools roslib
 #  DEPENDS system_lib
 )
 
@@ -101,6 +98,12 @@ catkin_package(
 #############
 ## Install ##
 #############
+
+generate_rosjava_messages(
+  PACKAGES
+    orunav_msgs
+)
+
 
 install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_MAVEN_DESTINATION}/.
         DESTINATION ${CATKIN_GLOBAL_MAVEN_DESTINATION})
