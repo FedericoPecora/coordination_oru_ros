@@ -55,22 +55,28 @@ public class IliadMissions extends Missions {
 					Pose goalPose = null;
 					OPERATION_TYPE missionType = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("type").getTextContent());
 					NodeList poseList = eElement.getElementsByTagName("Pose");
-					for (int j = 0; j < poseList.getLength(); j++) {
-						Node onePose = poseList.item(j);
-						Element onePoseElement = (Element)onePose;
-						if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("fromPose")) {
-							double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
-							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
-							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
-							fromPose = new Pose(x,y,theta);
+					if (poseList.getLength() != 0) {
+						for (int j = 0; j < poseList.getLength(); j++) {
+							Node onePose = poseList.item(j);
+							Element onePoseElement = (Element)onePose;
+							if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("fromPose")) {
+								double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
+								double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
+								double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
+								fromPose = new Pose(x,y,theta);
+							}
+							else if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("toPose")) {
+								double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
+								double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
+								double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
+								goalPose = new Pose(x,y,theta);
+							}
 						}
-						else if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("toPose")) {
-							double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
-							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
-							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
-							goalPose = new Pose(x,y,theta);
-						}
-
+					}
+					//Assume locations are known
+					else {
+						fromPose = Missions.getLocation(fromLocation);
+						goalPose = Missions.getLocation(toLocation);
 					}
 					
 					ArrayList<IliadItem> items = new ArrayList<IliadItem>();
