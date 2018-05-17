@@ -60,12 +60,12 @@
   <!-- ALL ROBOT SPECIFIC TASKS -->
   <include file="$(find orunav_launch)/launch/motion_planning_and_control.launch">
     <arg name="prefix" value="robot1"/>
-    <arg name="robotid" value="1"/>
+    <arg name="robot_id" value="1"/>
   </include>
   
   <include file="$(find orunav_launch)/launch/motion_planning_and_control.launch">
     <arg name="prefix" value="robot2"/>
-    <arg name="robotid" value="2"/>
+    <arg name="robot_id" value="2"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2.rviz"/>
