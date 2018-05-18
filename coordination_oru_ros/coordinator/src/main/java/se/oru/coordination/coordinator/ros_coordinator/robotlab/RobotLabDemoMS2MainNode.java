@@ -17,6 +17,7 @@
 package se.oru.coordination.coordinator.ros_coordinator.robotlab;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
+import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
@@ -39,14 +41,21 @@ import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.geom.util.AffineTransformation;
 
+import geometry_msgs.Point;
 import orunav_msgs.ComputeTask;
 import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
+import orunav_msgs.Shape;
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
 import se.oru.coordination.coordination_oru.CriticalSection;
+import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
@@ -130,6 +139,7 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 				
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
+				tec.setBreakDeadlocks(false);
 				
 				for (final int robotID : robotIDs) {
 					
@@ -287,6 +297,39 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 		rt.setTaskId(goalID);
 		rt.setGoalId(goalID);
 		request.setTarget(rt);
+
+		//Add extra obstacles to request
+		for (Dependency dep : tec.getCurrentDependencies()) {
+			int drivingID = dep.getDrivingRobotID();
+			int waitingID = dep.getWaitingRobotID();
+			int robotID = iliadMission.getRobotID();
+			if (robotID  == drivingID) {
+				Pose waitingPose = dep.getWaitingPose();
+				Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
+				Coordinate[] coords_ = tec.getFootprint(waitingID);
+				Coordinate[] coords = new Coordinate[coords_.length+1];
+				for (int i = 0; i < coords_.length; i++) coords[i] = coords_[i];
+				coords[coords_.length] = coords_[0];
+				GeometryFactory gf = new GeometryFactory();
+				Geometry poly = gf.createPolygon(coords);
+				AffineTransformation at = new AffineTransformation();
+				at.rotate(waitingPose.getTheta());
+				at.translate(waitingPose.getX(), waitingPose.getY());
+				poly = at.transform(poly);
+				Coordinate[] transCoords = poly.getCoordinates();
+				for (Coordinate coord : transCoords) {
+					Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
+					pnt.setX(coord.x);
+					pnt.setY(coord.y);
+					shape.getPoints().add(pnt);
+				}
+				//Shape is a polygon (type = 1)
+				shape.setType(1);
+				request.getExtraObstacles().add(shape);
+				System.out.println("Added extra obstacle when planning for " + iliadMission + " to account for dependency " + dep);
+			}
+		}
+				
 		serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
 
 			@Override
