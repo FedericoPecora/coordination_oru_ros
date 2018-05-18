@@ -12,22 +12,37 @@ public class IliadMission extends Mission {
 	public static enum OPERATION_TYPE {_IGNORE_, NO_OPERATION, UNLOAD_PALLET, LOAD_PALLET, LOAD_DETECT, ACTIVATE_SUPPORT_LEGS, LOAD_DETECT_ACTIVE, PICK_ITEMS, UNWRAP_PALLET};
 	private IliadItem[] items;
 	private OPERATION_TYPE operationType;
+	private boolean repeat = true;
 	
+	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, IliadItem ... items) {
+		this(robotID, fromLocation, toLocation, fromPose, toPose, true, items);
+	}
+
+	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat, IliadItem ... items) {
+		this(robotID, null, fromLocation, toLocation, fromPose, toPose, repeat);
+		this.items = items;
+		this.operationType = OPERATION_TYPE.PICK_ITEMS;
+		this.repeat = repeat;
+	}
+
 	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE opType) {
-		this(robotID, null, fromLocation, toLocation, fromPose, toPose);
+		this(robotID, fromLocation, toLocation, fromPose, toPose, opType, true);
+	}
+	
+	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE opType, boolean repeat) {
+		this(robotID, null, fromLocation, toLocation, fromPose, toPose, repeat);
 		this.items = null;
 		this.operationType = opType;
 	}
-	
-	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, IliadItem ... items) {
-		this(robotID, null, fromLocation, toLocation, fromPose, toPose);
-		this.items = items;
-		this.operationType = OPERATION_TYPE.PICK_ITEMS;
+
+	private IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat) {
+		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
+		this.repeat = repeat;
+		// TODO Auto-generated constructor stub
 	}
 	
-	private IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose) {
-		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
-		// TODO Auto-generated constructor stub
+	public boolean repeatMission() {
+		return this.repeat;
 	}
 	
 	public void setPath(PoseSteering[] path) {

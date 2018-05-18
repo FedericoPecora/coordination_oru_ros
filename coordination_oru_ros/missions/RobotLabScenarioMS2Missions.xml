@@ -6,6 +6,7 @@
     <robotID>1</robotID>
     <fromLocation>robot1_parking</fromLocation>
     <toLocation>pallet_loading</toLocation>
+    <repeat>false</repeat>
   </Mission>
 
   <Mission type="PICK_ITEMS">
@@ -55,12 +56,20 @@
     <fromLocation>small_item_picking</fromLocation>
     <toLocation>pallet_unloading</toLocation>
   </Mission>
+
+  <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>pallet_unloading</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+  </Mission>
+
   
   <!-- ROBOT 2 -->
   <Mission type="LOAD_PALLET">
     <robotID>2</robotID>
     <fromLocation>robot2_parking</fromLocation>
     <toLocation>pallet_loading</toLocation>
+    <repeat>false</repeat>
   </Mission>
 
   <Mission type="PICK_ITEMS">
@@ -110,5 +119,11 @@
     <fromLocation>small_item_picking_rack</fromLocation>
     <toLocation>pallet_unloading</toLocation>
   </Mission>
-  
+
+  <Mission type="LOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>pallet_unloading</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+  </Mission>
+
 </Missions>

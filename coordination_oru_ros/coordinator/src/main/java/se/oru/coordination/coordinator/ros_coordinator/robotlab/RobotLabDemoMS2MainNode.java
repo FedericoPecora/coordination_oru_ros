@@ -59,6 +59,7 @@ import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
+import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
@@ -88,6 +89,17 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	
 	private boolean ignorePickItems = true;
 	private boolean copyGoalOperationToStartoperation = false;
+	
+	private int maxLanes = 0;
+	private HashMap<Integer,Integer> currentMarshallingLane = new HashMap<Integer,Integer>();
+	
+	private int getMaxMarshallingLane() {
+		int ret = -1;
+		for (int laneNo : currentMarshallingLane.values()) {
+			if (laneNo > ret) ret = laneNo;
+		}
+		return (ret > maxLanes) ? 1 : ret;
+	}
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -139,7 +151,8 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 				
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
-				tec.setBreakDeadlocks(false);
+				//tec.setBreakDeadlocks(false);
+				//tec.setYieldIfParking(true);
 				
 				for (final int robotID : robotIDs) {
 					
@@ -193,6 +206,12 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 					if (!loadedMissions) {
 						if (locationsFile != null) {
 							IliadMissions.loadLocationAndPathData(locationsFile);
+							for (String mlane : IliadMissions.getLocations().keySet()) {
+								if (mlane.startsWith("marshalling_lane_")) {
+									for (int robotID : robotIDs) currentMarshallingLane.put(robotID, 0);
+									maxLanes++;
+								}
+							}
 						}
 						if (missionsFile != null) {
 							loadedMissions = true;
@@ -216,11 +235,24 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 								if (missions != null) {
 									//TODO: Should check if robot is close to intended start pose instead
 									//of overwriting it with current pose from RobotReport...
-									int missionNumber = robotID2MissionNumber.get(robotID);
-									robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
-									IliadMission mission = (IliadMission)missions.get(missionNumber);
+									//int missionNumber = robotID2MissionNumber.get(robotID);
+									//robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
+									//IliadMission mission = (IliadMission)missions.get(missionNumber);
+									IliadMission mission = (IliadMission)IliadMissions.popMission(robotID);
+									//IliadMission mission = (IliadMission)missions.get(missionNumber);
+									if (mission.repeatMission()) IliadMissions.putMission(mission);
 									Pose startPose = tec.getRobotReport(robotID).getPose();
 									mission.setFromPose(startPose);
+									if (mission.getFromLocation().startsWith("marshalling_lane_")) {
+										mission.setFromLocation(mission.getFromLocation().replace("*", ""+currentMarshallingLane.get(mission.getRobotID())));
+										mission.setFromPose(Missions.getLocation(mission.getFromLocation()));
+									}
+									if (mission.getToLocation().startsWith("marshalling_lane_")) {
+										int maxLaneNo = getMaxMarshallingLane();
+										currentMarshallingLane.put(mission.getRobotID(),maxLaneNo+1);
+										mission.setToLocation(mission.getToLocation().replace("*", ""+currentMarshallingLane.get(mission.getRobotID())));
+										mission.setToPose(Missions.getLocation(mission.getToLocation()));
+									}
 									//Compute the path and add it
 									//(we know adding will work because we checked that the robot is free)
 									callComputeTaskService(mission);
@@ -265,6 +297,8 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	private void callComputeTaskService(final IliadMission iliadMission) {
 		
 		isTaskComputing.put(iliadMission.getRobotID(), true);
+		
+		System.out.println("#############\n## CALLING COMPUTE TASK for Mission: \n## " + iliadMission + "\n#############");
 		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
 		try { serviceClient = node.newServiceClient("/robot" + iliadMission.getRobotID() + "/compute_task", ComputeTask._TYPE); }
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
@@ -299,34 +333,39 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 		request.setTarget(rt);
 
 		//Add extra obstacles to request
+		// ... one obstacle per robot that is waiting for this robot,
+		// ... placed in the waiting robot's waiting pose
 		for (Dependency dep : tec.getCurrentDependencies()) {
 			int drivingID = dep.getDrivingRobotID();
 			int waitingID = dep.getWaitingRobotID();
 			int robotID = iliadMission.getRobotID();
+			int numObstacles = 1;
 			if (robotID  == drivingID) {
-				Pose waitingPose = dep.getWaitingPose();
-				Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
-				Coordinate[] coords_ = tec.getFootprint(waitingID);
-				Coordinate[] coords = new Coordinate[coords_.length+1];
-				for (int i = 0; i < coords_.length; i++) coords[i] = coords_[i];
-				coords[coords_.length] = coords_[0];
-				GeometryFactory gf = new GeometryFactory();
-				Geometry poly = gf.createPolygon(coords);
-				AffineTransformation at = new AffineTransformation();
-				at.rotate(waitingPose.getTheta());
-				at.translate(waitingPose.getX(), waitingPose.getY());
-				poly = at.transform(poly);
-				Coordinate[] transCoords = poly.getCoordinates();
-				for (Coordinate coord : transCoords) {
-					Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
-					pnt.setX(coord.x);
-					pnt.setY(coord.y);
-					shape.getPoints().add(pnt);
+				for (int i = 0; i < numObstacles; i++) {
+					Pose waitingPose  = dep.getWaitingTrajectoryEnvelope().getTrajectory().getPose()[dep.getWaitingPoint()+i];
+					Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
+					Coordinate[] coords_ = tec.getFootprint(waitingID);
+					Coordinate[] coords = new Coordinate[coords_.length+1];
+					for (int j = 0; j < coords_.length; j++) coords[j] = coords_[j];
+					coords[coords_.length] = coords_[0];
+					GeometryFactory gf = new GeometryFactory();
+					Geometry poly = gf.createPolygon(coords);
+					AffineTransformation at = new AffineTransformation();
+					at.rotate(waitingPose.getTheta());
+					at.translate(waitingPose.getX(), waitingPose.getY());
+					poly = at.transform(poly);
+					Coordinate[] transCoords = poly.getCoordinates();
+					for (Coordinate coord : transCoords) {
+						Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
+						pnt.setX(coord.x);
+						pnt.setY(coord.y);
+						shape.getPoints().add(pnt);
+					}
+					//Shape is a polygon (type = 1)
+					shape.setType(1);
+					request.getExtraObstacles().add(shape);
+					System.out.println("Added extra obstacle when planning for " + iliadMission + " to account for dependency " + dep);
 				}
-				//Shape is a polygon (type = 1)
-				shape.setType(1);
-				request.getExtraObstacles().add(shape);
-				System.out.println("Added extra obstacle when planning for " + iliadMission + " to account for dependency " + dep);
 			}
 		}
 				
