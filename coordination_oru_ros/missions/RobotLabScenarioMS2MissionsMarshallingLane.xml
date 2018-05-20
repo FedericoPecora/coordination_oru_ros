@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Missions>  
+
+  <!-- ROBOT 1 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>robot1_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <repeat>false</repeat>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>1</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>big_item_picking</toLocation>
+    <IliadItems>
+      <!-- heavy items here -->
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>560.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>1</robotID>
+    <fromLocation>big_item_picking</fromLocation>
+    <toLocation>small_item_picking</toLocation>
+    <IliadItems>
+      <!-- light items here -->
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>small_item_picking</fromLocation>
+    <toLocation>marshalling_lane_*</toLocation>
+  </Mission>
+
+  <Mission type="LOAD_PALLET">
+    <robotID>1</robotID>
+    <fromLocation>marshalling_lane_*</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+  </Mission>
+
+  
+  <!-- ROBOT 2 -->
+  <Mission type="LOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>robot2_parking</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+    <repeat>false</repeat>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>2</robotID>
+    <fromLocation>pallet_loading</fromLocation>
+    <toLocation>big_item_picking_rack</toLocation>
+    <IliadItems>
+      <!-- heavy items here -->
+      <IliadItem name="Hallonsoppa">
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>0.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Hallonsoppa">
+        <x>420.0</x>
+        <y>290.0</y>
+        <z>190.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="PICK_ITEMS">
+    <robotID>2</robotID>
+    <fromLocation>big_item_picking_rack</fromLocation>
+    <toLocation>small_item_picking_rack</toLocation>
+    <IliadItems>
+      <!-- light items here -->
+      <IliadItem name="Jacky">
+        <x>0.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+      <IliadItem name="Jacky">
+        <x>160.0</x>
+        <y>290.0</y>
+        <z>380.0</z>
+        <rotationType>NONE</rotationType>
+      </IliadItem>
+    </IliadItems>
+  </Mission>
+
+  <Mission type="UNLOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>small_item_picking_rack</fromLocation>
+    <toLocation>marshalling_lane_*</toLocation>
+  </Mission>
+
+  <Mission type="LOAD_PALLET">
+    <robotID>2</robotID>
+    <fromLocation>marshalling_lane_*</fromLocation>
+    <toLocation>pallet_loading</toLocation>
+  </Mission>
+
+</Missions>

@@ -90,6 +90,8 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	private boolean ignorePickItems = true;
 	private boolean copyGoalOperationToStartoperation = false;
 	
+	private boolean computeTasksOneAtATime = false;
+	
 	private int maxLanes = 0;
 	private HashMap<Integer,Integer> currentMarshallingLane = new HashMap<Integer,Integer>();
 	
@@ -104,6 +106,15 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
+	}
+	
+	private boolean canComputeTask(int robotID) {
+		if (computeTasksOneAtATime) {
+			for (Boolean isComp : isTaskComputing.values()) {
+				if (isComp) return false;
+			}
+		}
+		return !isTaskComputing.get(robotID);
 	}
 
 	@Override
@@ -230,7 +241,7 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 					//This is done at every cycle
 					for (int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {
-							if (!isTaskComputing.get(robotID)) {
+							if (canComputeTask(robotID)) {
 								ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
 								if (missions != null) {
 									//TODO: Should check if robot is close to intended start pose instead
@@ -283,6 +294,7 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			robotsAlive = new HashMap<Integer,Boolean>();
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
+			computeTasksOneAtATime = params.getBoolean("/" + node.getName() + "/compute_tasks_one_at_a_time",false);
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");

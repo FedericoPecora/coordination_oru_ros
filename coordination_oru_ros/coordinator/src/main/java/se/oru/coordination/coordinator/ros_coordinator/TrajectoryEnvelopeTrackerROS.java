@@ -91,6 +91,9 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	@Override
 	public void setCriticalPoint(int arg0) {
+//		int cp = -1;
+//		if (arg0 != -1) cp = Math.max(0, arg0-1);
+//		callExecuteTaskService(cp, calledExecuteFirstTime);
 		callExecuteTaskService(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
 	}

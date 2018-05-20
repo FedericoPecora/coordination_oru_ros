@@ -42,8 +42,9 @@
     <param name="forward_model_max_accel" value="0.1" />
     <param name="forward_model_max_vel" value="0.3" />
     <param name="locations_file" value="$(find coordination_oru_ros)/missions/robot_lab_locations.txt" />
-    <param name="missions_file" value="$(find coordination_oru_ros)/missions/RobotLabScenarioMS2Missions.xml" />
+    <param name="missions_file" value="$(find coordination_oru_ros)/missions/RobotLabScenarioMS2MissionsMarshallingLane.xml" />
     <param name="ignore_pick_items" value="true" />
+    <param name="compute_tasks_one_at_a_time" value="true"/>
     <param name="copy_goal_operation_to_start_operation" value="false" />
   </node>
 
