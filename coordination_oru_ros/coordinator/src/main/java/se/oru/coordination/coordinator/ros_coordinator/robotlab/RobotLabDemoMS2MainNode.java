@@ -92,15 +92,22 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	
 	private boolean computeTasksOneAtATime = false;
 	
-	private int maxLanes = 0;
-	private HashMap<Integer,Integer> currentMarshallingLane = new HashMap<Integer,Integer>();
+	private int numMarshallingLaneLocations = 0;
+	private HashMap<Integer,Boolean> marshallingLaneLocationOccupied = new HashMap<Integer,Boolean>();
 	
-	private int getMaxMarshallingLane() {
-		int ret = -1;
-		for (int laneNo : currentMarshallingLane.values()) {
-			if (laneNo > ret) ret = laneNo;
+
+	private void setFreeMarshallingLaneLocation(int locNum) {
+		marshallingLaneLocationOccupied.put(locNum, false);
+	}
+	
+	private int getFreeMarshallingLaneLocation() {
+		for (int locationNum : marshallingLaneLocationOccupied.keySet()) {
+			if (!marshallingLaneLocationOccupied.get(locationNum)) return locationNum;
 		}
-		return (ret > maxLanes) ? 1 : ret;
+		for (int locationNum : marshallingLaneLocationOccupied.keySet()) {
+			setFreeMarshallingLaneLocation(locationNum);
+		}
+		return getFreeMarshallingLaneLocation();
 	}
 	
 	@Override
@@ -219,8 +226,10 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 							IliadMissions.loadLocationAndPathData(locationsFile);
 							for (String mlane : IliadMissions.getLocations().keySet()) {
 								if (mlane.startsWith("marshalling_lane_")) {
-									for (int robotID : robotIDs) currentMarshallingLane.put(robotID, 0);
-									maxLanes++;
+									//We have a new marshalling lane location...
+									numMarshallingLaneLocations++;
+									//... make the marshalling lane location free
+									marshallingLaneLocationOccupied.put(numMarshallingLaneLocations, false);
 								}
 							}
 						}
@@ -242,27 +251,25 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 					for (int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {
 							if (canComputeTask(robotID)) {
-								ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
-								if (missions != null) {
+								if (IliadMissions.getMissions(robotID) != null) {
 									//TODO: Should check if robot is close to intended start pose instead
 									//of overwriting it with current pose from RobotReport...
-									//int missionNumber = robotID2MissionNumber.get(robotID);
-									//robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
-									//IliadMission mission = (IliadMission)missions.get(missionNumber);
 									IliadMission mission = (IliadMission)IliadMissions.popMission(robotID);
-									//IliadMission mission = (IliadMission)missions.get(missionNumber);
-									if (mission.repeatMission()) IliadMissions.putMission(mission);
+									if (mission.repeatMission()) IliadMissions.pushMission(mission);
 									Pose startPose = tec.getRobotReport(robotID).getPose();
 									mission.setFromPose(startPose);
-									if (mission.getFromLocation().startsWith("marshalling_lane_")) {
-										mission.setFromLocation(mission.getFromLocation().replace("*", ""+currentMarshallingLane.get(mission.getRobotID())));
-										mission.setFromPose(Missions.getLocation(mission.getFromLocation()));
-									}
 									if (mission.getToLocation().startsWith("marshalling_lane_")) {
-										int maxLaneNo = getMaxMarshallingLane();
-										currentMarshallingLane.put(mission.getRobotID(),maxLaneNo+1);
-										mission.setToLocation(mission.getToLocation().replace("*", ""+currentMarshallingLane.get(mission.getRobotID())));
+										//Change toLocation of this mission
+										int freeMLLocation = getFreeMarshallingLaneLocation();
+										marshallingLaneLocationOccupied.put(freeMLLocation, true);
+										String newMLLocationName = mission.getToLocation().substring(0, mission.getToLocation().lastIndexOf("_")+1)+freeMLLocation;
+										System.out.println("Setting marshalling lane location: " + newMLLocationName);
+										mission.setToLocation(newMLLocationName);
 										mission.setToPose(Missions.getLocation(mission.getToLocation()));
+										//Change fromLocation of next mission
+										IliadMission nextMission = (IliadMission)IliadMissions.peekMission(robotID);
+										nextMission.setFromLocation(newMLLocationName);
+										nextMission.setFromPose(Missions.getLocation(nextMission.getFromLocation()));
 									}
 									//Compute the path and add it
 									//(we know adding will work because we checked that the robot is free)
