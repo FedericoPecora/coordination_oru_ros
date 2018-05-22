@@ -6,15 +6,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.metacsp.multi.spatioTemporal.paths.Trajectory;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
+import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
@@ -25,12 +28,13 @@ import orunav_msgs.ExecuteTask;
 import orunav_msgs.ExecuteTaskRequest;
 import orunav_msgs.ExecuteTaskResponse;
 import orunav_msgs.Operation;
-import orunav_msgs.PoseSteering;
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
+import std_msgs.Empty;
+import std_msgs.Int32;
 
 public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTracker {
 
@@ -46,7 +50,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	private long lastUpdateTime = -1;
 
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
-	
+		
 	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
 		super(te, temporalResolution, tec, 30, cb);
 		this.node = connectedNode;
@@ -197,13 +201,30 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	@Override
 	public void onTrajectoryEnvelopeUpdate(TrajectoryEnvelope te) {
-		orunav_msgs.Path path = currentTask.getPath();
-		List<PoseSteering> ps = path.getPath();
-		for (int i = te.getTrajectory().getPoseSteering().length; i < ps.size(); i++) {
-			ps.remove(i);
+		PoseSteering[] newPS = te.getTrajectory().getPoseSteering();
+		ArrayList<orunav_msgs.PoseSteering> newPath = new ArrayList<orunav_msgs.PoseSteering>();
+		for (PoseSteering ps : newPS) {
+			orunav_msgs.PoseSteering onePS = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+			geometry_msgs.Pose oneP = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+			geometry_msgs.Point onePnt = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+			onePnt.setX(ps.getX());
+			onePnt.setY(ps.getY());
+			onePnt.setZ(0.0);
+			oneP.setPosition(onePnt);
+			Quaternion quat = new Quaternion(ps.getTheta());
+			geometry_msgs.Quaternion oneQ = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
+			oneQ.setX(quat.getX());
+			oneQ.setY(quat.getY());
+			oneQ.setZ(quat.getZ());
+			oneQ.setW(quat.getW());
+			oneP.setOrientation(oneQ);
+			onePS.setPose(oneP);
+			onePS.setSteering(ps.getSteering());
+			newPath.add(onePS);
 		}
-		currentTask.getPath().setPath(ps);
-		callExecuteTaskService(-1, true);
+		currentTask.getPath().setPath(newPath);
+		System.out.println("%%%% Going to send new PATH OF SIZE: " + currentTask.getPath().getPath().size());
+		tec.setCriticalPoint(te.getRobotID(), -1);		
 	}
 
 

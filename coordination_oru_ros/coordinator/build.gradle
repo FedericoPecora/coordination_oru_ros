@@ -43,6 +43,7 @@ dependencies {
   /* Example of a local subproject dependency */
   /* compile project(':sibling_gradle_project') */
   compile 'org.ros.rosjava_messages:orunav_msgs:[0.0.0,)'
+  compile 'org.ros.rosjava_messages:std_msgs:[0.0.0,)'
   compile 'org.ros.rosjava_messages:visualization_msgs:[0.0.0,)'
   //compile project(':coordination_oru')
   //compile 'org.metacsp:meta-csp-framework:1.3.3'
