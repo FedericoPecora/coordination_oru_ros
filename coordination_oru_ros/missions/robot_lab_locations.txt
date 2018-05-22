@@ -9,10 +9,10 @@ small_item_picking	10.0	8.0	-1.5707
 big_item_picking_rack	2.6	3.0	1.5707
 small_item_picking_rack	3.6	3.0	1.5707
 pallet_unloading	3.0	6.4	-1.5707
-marshalling_lane_1	3.0	6.4	-1.5707
-marshalling_lane_2	5.0	6.4	-1.5707
-marshalling_lane_3	7.0	6.4	-1.5707
-marshalling_lane_4	9.0	6.4	-1.5707
+marshalling_lane_1	2.0	6.4	-1.5707
+marshalling_lane_2	4.0	6.4	-1.5707
+marshalling_lane_3	6.0	6.4	-1.5707
+marshalling_lane_4	8.0	6.4	-1.5707
 
 #Paths
 #robot1_parking -> big_item_picking	path_file.path

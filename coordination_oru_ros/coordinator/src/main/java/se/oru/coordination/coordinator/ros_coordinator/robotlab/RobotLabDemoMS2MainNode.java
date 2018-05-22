@@ -18,8 +18,10 @@ package se.oru.coordination.coordinator.ros_coordinator.robotlab;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -91,11 +93,13 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	private boolean copyGoalOperationToStartoperation = false;
 	
 	private boolean computeTasksOneAtATime = false;
+	private HashSet<Integer> interruptedRobots = new HashSet<Integer>();
 	
 	private int numMarshallingLaneLocations = 0;
 	private HashMap<Integer,Boolean> marshallingLaneLocationOccupied = new HashMap<Integer,Boolean>();
 	
-
+	private long startTime = Calendar.getInstance().getTimeInMillis();
+	
 	private void setFreeMarshallingLaneLocation(int locNum) {
 		marshallingLaneLocationOccupied.put(locNum, false);
 	}
@@ -115,13 +119,24 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 		return GraphName.of("coordinator");
 	}
 	
+	private boolean isInterrupted(int robotID) {
+		return interruptedRobots.contains(robotID);
+	}
+	
 	private boolean canComputeTask(int robotID) {
+		if (isInterrupted(robotID)) return false;
 		if (computeTasksOneAtATime) {
 			for (Boolean isComp : isTaskComputing.values()) {
 				if (isComp) return false;
 			}
 		}
 		return !isTaskComputing.get(robotID);
+	}
+	
+	private void interruptRobot(int robotID) {
+		System.out.println("#########\n#########\n### INTERRPUTING ROBOT " + robotID + "\n#########\n#########");
+		this.interruptedRobots.add(robotID);
+		tec.truncateEnvelope(robotID);
 	}
 
 	@Override
@@ -279,6 +294,12 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 						}
 					}
 				}
+				
+//				int interruptRobotID = 1;
+//				long delay = 40000;
+//				if (Calendar.getInstance().getTimeInMillis() - startTime > delay && !isInterrupted(interruptRobotID)) {
+//					interruptRobot(interruptRobotID);
+//				}
 				
 				Thread.sleep(1000);
 			}
