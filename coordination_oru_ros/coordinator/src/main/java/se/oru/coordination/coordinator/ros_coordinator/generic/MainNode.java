@@ -219,8 +219,10 @@ public class MainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
-			locationsFile = params.getString("/" + node.getName() + "/locations_file");
-			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file");
+			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
+			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
+			if (locationsFile.equals("NULL")) locationsFile = null;
+			if (goalSequenceFile.equals("NULL")) goalSequenceFile = null;
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");

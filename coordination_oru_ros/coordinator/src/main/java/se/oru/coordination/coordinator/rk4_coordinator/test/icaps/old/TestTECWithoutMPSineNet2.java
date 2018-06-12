@@ -193,7 +193,7 @@ public class TestTECWithoutMPSineNet2 {
 		}
 		tec.addMissions(missionsToAdd.toArray(new Mission[missionsToAdd.size()]));
 		tec.computeCriticalSections();
-		tec.updateDependencies();
+		//tec.updateDependencies();
 		tec.startTrackingAddedMissions();
 
 	}
