@@ -33,6 +33,7 @@ allprojects {
     version = project.catkin.pkg.version
     repositories {
       maven { url 'https://jitpack.io' }
+      mavenLocal()
     }
 }
 

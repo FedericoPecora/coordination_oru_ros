@@ -72,7 +72,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  else {
 	    		  Trajectory traj = te.getTrajectory();
 	    		  double newDistance = 0.0;
-	    		  for (int i = 0; i < index; i++) {
+	    		  for (int i = 0; i < index-1; i++) {
 	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
 	    		  }
 	    		  long currentTime = getCurrentTimeInMillis(); 
@@ -116,9 +116,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	@Override
 	public void setCriticalPoint(int arg0) {
-//		int cp = -1;
-//		if (arg0 != -1) cp = Math.max(0, arg0-1);
-//		callExecuteTaskService(cp, calledExecuteFirstTime);
 		callExecuteTaskService(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
 	}
@@ -140,7 +137,11 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	private void callExecuteTaskService(int cp, boolean update) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
+		try {
+			System.out.println("-------> Going to call service: /robot" + currentTask.getTarget().getRobotId() + "/execute_task");
+			System.out.println("----------> and my TE is " + te);
+			serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE);
+		}
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
 		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
@@ -223,7 +224,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 			newPath.add(onePS);
 		}
 		currentTask.getPath().setPath(newPath);
-		System.out.println("%%%% Going to send new PATH OF SIZE: " + currentTask.getPath().getPath().size());
+		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
 		tec.setCriticalPoint(te.getRobotID(), -1);		
 	}
 

@@ -3,10 +3,14 @@ package se.oru.coordination.coordinator.ros_coordinator;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.exception.ServiceException;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceResponseBuilder;
+
+import com.vividsolutions.jts.geom.Geometry;
 
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
@@ -23,8 +27,8 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
-				//System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID().getData());
-				truncateEnvelope(arg0.getRobotID().getData());
+				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
+				truncateEnvelope(arg0.getRobotID());
 			}
 		});
 	}
@@ -57,6 +61,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
 		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, this, cb, this.node, getCurrentTask(te.getRobotID()));
 		return tet;
+	}
+
+	//Override necessary in next release... 
+	@Override
+	protected PoseSteering[] doReplanning(Pose fromPose, Pose toPose, Geometry... obstaclesToConsider) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

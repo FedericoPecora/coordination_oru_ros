@@ -93,7 +93,6 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 	private boolean copyGoalOperationToStartoperation = false;
 	
 	private boolean computeTasksOneAtATime = false;
-	private HashSet<Integer> interruptedRobots = new HashSet<Integer>();
 	
 	private int numMarshallingLaneLocations = 0;
 	private HashMap<Integer,Boolean> marshallingLaneLocationOccupied = new HashMap<Integer,Boolean>();
@@ -119,24 +118,14 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 		return GraphName.of("coordinator");
 	}
 	
-	private boolean isInterrupted(int robotID) {
-		return interruptedRobots.contains(robotID);
-	}
 	
 	private boolean canComputeTask(int robotID) {
-		if (isInterrupted(robotID)) return false;
 		if (computeTasksOneAtATime) {
 			for (Boolean isComp : isTaskComputing.values()) {
 				if (isComp) return false;
 			}
 		}
 		return !isTaskComputing.get(robotID);
-	}
-	
-	private void interruptRobot(int robotID) {
-		System.out.println("#########\n#########\n### INTERRPUTING ROBOT " + robotID + "\n#########\n#########");
-		this.interruptedRobots.add(robotID);
-		tec.truncateEnvelope(robotID);
 	}
 
 	@Override
