@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-  <include file="$(find cititruck_gazebo)/launch/cititrucks_arena.launch"/>
+  <include file="$(find cititruck_gazebo)/launch/cititrucks_arena_2.launch"/>
   <include file="$(find gazebo_worlds_oru)/launch/arena_map_server.launch"/>
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
@@ -21,7 +21,7 @@
     <param name="temporal_resolution" value="1000.0" />
     <param name="forward_model_max_accel" value="0.08" />
     <param name="forward_model_max_vel" value="0.28" />
-    <param name="locations_file" value="$(find coordination_oru_ros)/missions/arena_locations.txt" />
+    <param name="locations_file" value="$(find coordination_oru_ros)/missions/arena_locations_2.txt" />
     <param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/arena_goal_sequence.txt" />
     <param name="repeat_missions" value="true" />
   </node>

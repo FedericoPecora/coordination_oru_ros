@@ -81,8 +81,9 @@ public class MainNode extends AbstractNodeMain {
 	private double MAX_VEL = 4.0;
 	private String locationsFile = null;
 	private String goalSequenceFile = null;
+	private boolean repeatMissions = false;
 	private HashMap<Integer,Boolean> computing = new HashMap<Integer,Boolean>();
-	private HashMap<Integer,Integer> missionNumber = new HashMap<Integer,Integer>();
+	//private HashMap<Integer,Integer> missionNumber = new HashMap<Integer,Integer>();
     
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -149,7 +150,7 @@ public class MainNode extends AbstractNodeMain {
 				for (final int robotID : robotIDs) {
 					
 					computing.put(robotID, false);
-					missionNumber.put(robotID, 0);
+					//missionNumber.put(robotID, 0);
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
@@ -188,14 +189,20 @@ public class MainNode extends AbstractNodeMain {
 			protected void loop() throws InterruptedException {
 			    if (locationsFile != null && goalSequenceFile != null) {
 			    	for (int robotID : robotIDs) {
-			    		if (initialLocations.containsKey(robotID) && !computing.get(robotID) && tec.isFree(robotID)) {
-			    			Mission m = Missions.getMission(robotID, missionNumber.get(robotID));
-			    			missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
+			    		if (Missions.hasMissions(robotID) && !Missions.getMissions(robotID).isEmpty() && initialLocations.containsKey(robotID) && !computing.get(robotID) && tec.isFree(robotID)) {
+			    			Mission m = Missions.popMission(robotID);
+			    			//missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
 			    			if (m.getFromLocation() == null) {
 			    				m.setFromLocation("currentLocation");
 			    				m.setFromPose(tec.getRobotReport(robotID).getPose());
-			    				callComputeTaskService(m);
-			    				System.out.println("######################\n######################\n### SENDING MISSION:\n### " + m + "\n######################\n######################\n");
+			    			}
+		    				callComputeTaskService(m);
+		    				System.out.println("######################\n######################\n### SENDING MISSION:\n### " + m + "\n######################\n######################\n");
+			    			if (repeatMissions) {
+			    				m.setFromLocation(null);
+			    				m.setFromPose(null);
+			    				Missions.pushMission(m);
+			    				System.out.println(">>>>>>>>>>>>>>>>>>> RE-ENQUEUED MISSION " + m);
 			    			}
 			    		}
 			    	}			    	
@@ -223,6 +230,9 @@ public class MainNode extends AbstractNodeMain {
 			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
 			if (locationsFile.equals("NULL")) locationsFile = null;
 			if (goalSequenceFile.equals("NULL")) goalSequenceFile = null;
+			repeatMissions = params.getBoolean("/" + node.getName() + "/repeat_missions", false);
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> REPEAT MISSIONS IS " + repeatMissions);
+
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");
@@ -240,7 +250,8 @@ public class MainNode extends AbstractNodeMain {
 					int robotID = Integer.parseInt(oneline[0]);
 					String goalLocation = oneline[1];
 					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
-					Missions.putMission(m);
+					Missions.pushMission(m);
+					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
 				}
 			}
 			in.close();
