@@ -32,11 +32,22 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 		});
 	}
+	
+	private void setupReverseService() {
+		node.newServiceServer("coordinator/reverse", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
+				reverseEnvelope(arg0.getRobotID());
+			}
+		});
+	}
 
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
 		this.node = connectedNode;
 		setupAbortService();
+		setupReverseService();
 	}
 
 	public TrajectoryEnvelopeCoordinatorROS(final ConnectedNode connectedNode) {

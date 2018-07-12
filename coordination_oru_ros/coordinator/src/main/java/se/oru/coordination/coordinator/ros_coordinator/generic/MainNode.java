@@ -32,6 +32,7 @@ import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
+import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
@@ -39,12 +40,17 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.util.AffineTransformation;
 
 import cern.colt.Arrays;
+import geometry_msgs.Point;
 import orunav_msgs.ComputeTask;
 import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
@@ -56,9 +62,11 @@ import orunav_msgs.ExecuteTaskRequest;
 import orunav_msgs.ExecuteTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
+import orunav_msgs.Shape;
 import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
 import se.oru.coordination.coordination_oru.CriticalSection;
+import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
@@ -70,6 +78,7 @@ import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordin
 public class MainNode extends AbstractNodeMain {
 
 	private List<Integer> robotIDs = null;
+	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
 	private ConnectedNode node = null;
 	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
@@ -88,6 +97,22 @@ public class MainNode extends AbstractNodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
+	}
+	
+	private void setupActivateServices() {
+		node.newServiceServer("coordinator/activate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(">>>>>>>>>>>>>> ACTIVATING Robot" + arg0.getRobotID());
+				activeRobots.put(arg0.getRobotID(),true);
+			}
+		});
+		node.newServiceServer("coordinator/deactivate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(">>>>>>>>>>>>>> DEACTIVATING Robot" + arg0.getRobotID());
+				activeRobots.put(arg0.getRobotID(),false);			}
+		});
 	}
 
 	@Override
@@ -147,6 +172,8 @@ public class MainNode extends AbstractNodeMain {
 					e.printStackTrace();
 				}
 				
+				setupActivateServices();
+				
 				for (final int robotID : robotIDs) {
 					
 					computing.put(robotID, false);
@@ -164,6 +191,12 @@ public class MainNode extends AbstractNodeMain {
 							if (!message.getStamp().isZero() && !initialLocations.containsKey(robotID)) {
 								Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 								Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
+								try {
+									Thread.sleep(4000);
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
 								initialLocations.put(robotID, pose);
 								//Place all robots in current positions
 								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
@@ -190,19 +223,21 @@ public class MainNode extends AbstractNodeMain {
 			    if (locationsFile != null && goalSequenceFile != null) {
 			    	for (int robotID : robotIDs) {
 			    		if (Missions.hasMissions(robotID) && !Missions.getMissions(robotID).isEmpty() && initialLocations.containsKey(robotID) && !computing.get(robotID) && tec.isFree(robotID)) {
-			    			Mission m = Missions.popMission(robotID);
-			    			//missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
-			    			if (m.getFromLocation() == null) {
-			    				m.setFromLocation("currentLocation");
-			    				m.setFromPose(tec.getRobotReport(robotID).getPose());
-			    			}
-		    				callComputeTaskService(m);
-		    				System.out.println("######################\n######################\n### SENDING MISSION:\n### " + m + "\n######################\n######################\n");
-			    			if (repeatMissions) {
-			    				m.setFromLocation(null);
-			    				m.setFromPose(null);
-			    				Missions.pushMission(m);
-			    				System.out.println(">>>>>>>>>>>>>>>>>>> RE-ENQUEUED MISSION " + m);
+			    			if (activeRobots.get(robotID)) {
+				    			Mission m = Missions.popMission(robotID);
+				    			//missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
+				    			if (m.getFromLocation() == null) {
+				    				m.setFromLocation("currentLocation");
+				    				m.setFromPose(tec.getRobotReport(robotID).getPose());
+				    			}
+			    				callComputeTaskService(m);
+			    				System.out.println("######################\n######################\n### SENDING MISSION:\n### " + m + "\n######################\n######################\n");
+				    			if (repeatMissions) {
+				    				m.setFromLocation(null);
+				    				m.setFromPose(null);
+				    				Missions.pushMission(m);
+				    				System.out.println(">>>>>>>>>>>>>>>>>>> RE-ENQUEUED MISSION " + m);
+				    			}
 			    			}
 			    		}
 			    	}			    	
@@ -222,6 +257,9 @@ public class MainNode extends AbstractNodeMain {
 			footprintCoords[2] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_right_x"),params.getDouble("/" + node.getName() + "/footprint_front_right_y"));
 			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
+			for (Integer robotID : robotIDs) activeRobots.put(robotID, false);
+			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids");
+			for (Integer active : activeIDs) activeRobots.put(active, true);
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
@@ -286,6 +324,7 @@ public class MainNode extends AbstractNodeMain {
 		rt.setTaskId(goalID);
 		rt.setGoalId(goalID);
 		request.setTarget(rt);
+		
 		serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
 
 			@Override
@@ -353,6 +392,45 @@ public class MainNode extends AbstractNodeMain {
 		rt.setTaskId(goalID);
 		rt.setGoalId(goalID);
 		request.setTarget(rt);
+		
+		//Add extra obstacles to request
+		// ... one obstacle per robot that is waiting for this robot,
+		// ... placed in the waiting robot's waiting pose
+		for (Dependency dep : tec.getCurrentDependencies()) {
+			int drivingID = dep.getDrivingRobotID();
+			int waitingID = dep.getWaitingRobotID();
+			int numObstacles = 1;
+			if (robotID  == drivingID) {
+				for (int i = 0; i < numObstacles; i++) {
+					Pose waitingPose  = dep.getWaitingTrajectoryEnvelope().getTrajectory().getPose()[dep.getWaitingPoint()+i];
+					Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
+					Coordinate[] coords_ = tec.getFootprint(waitingID);
+					Coordinate[] coords = new Coordinate[coords_.length+1];
+					for (int j = 0; j < coords_.length; j++) coords[j] = coords_[j];
+					coords[coords_.length] = coords_[0];
+					//Inflate
+					GeometryFactory gf = new GeometryFactory();
+					Geometry poly = gf.createPolygon(coords);
+					AffineTransformation at = new AffineTransformation();
+					//at.scale(1.05, 1.05);
+					at.rotate(waitingPose.getTheta());
+					at.translate(waitingPose.getX(), waitingPose.getY());
+					poly = at.transform(poly);
+					Coordinate[] transCoords = poly.getCoordinates();
+					for (Coordinate coord : transCoords) {
+						Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
+						pnt.setX(coord.x);
+						pnt.setY(coord.y);
+						shape.getPoints().add(pnt);
+					}
+					//Shape is a polygon (type = 1)
+					shape.setType(1);
+					request.getExtraObstacles().add(shape);
+					System.out.println("Added extra obstacle when planning for mission " + m + " to account for dependency " + dep);
+				}
+			}
+		}
+		
 		serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
 
 			@Override
