@@ -258,8 +258,14 @@ public class MainNode extends AbstractNodeMain {
 			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
 			for (Integer robotID : robotIDs) activeRobots.put(robotID, false);
-			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids");
-			for (Integer active : activeIDs) activeRobots.put(active, true);
+			ArrayList<Integer> defaultList = new ArrayList<Integer>();
+			defaultList.add(-1);
+			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
+			if (activeIDs.contains(-1)) {
+				activeIDs = new ArrayList<Integer>();
+				for (int robotID : robotIDs) activeIDs.add(robotID);
+				for (Integer active : activeIDs) activeRobots.put(active, true);
+			}
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
