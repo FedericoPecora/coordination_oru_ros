@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <include file="$(find gazebo_worlds_oru)/launch/arena_map_server.launch"/>
+    <include file="$(find gazebo_worlds_oru)/launch/arena_map_server_scaled.launch"/>
   
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
  <rosparam command="load" file="$(find orunav_params)/config/citi1.cfg" />

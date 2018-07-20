@@ -67,7 +67,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  if (lastUpdateTime == -1) lastUpdateTime = getCurrentTimeInMillis();
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
-	    	  int index = message.getSequenceNum();
+	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
 	    	  //Need to estimate velocity and distance traveled for use in the FW model...
 	    	  if (waitingForGoalOperation) {
 	    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
