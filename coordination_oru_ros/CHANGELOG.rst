@@ -2,8 +2,8 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.0 (2018-09-03)
+------------------
 * post demo
 * Arena demo done
 * New cycle 3 and reverse service implemented in tracker
