@@ -2,6 +2,29 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* post demo
+* Arena demo done
+* New cycle 3 and reverse service implemented in tracker
+* Added remote launch files and modified truncating service
+* Added arena launch files; now depends on coordination_oru v. 0.3.2
+* Bumped up version of coordination_oru to 0.3.1
+* Point and click remote launch.
+* Fixed remapping of topics...
+* Added service to abort mission
+* Adding ability to interrupt mission (incomplete); now estimates vel and dist from RobotReport message
+* Using refactored mission stack management in coordination_oru (new release 0.2.0)
+* Compute tasks sequentially in marshalling lane example
+* Now depends on new coordination_oru release (0.1.9)
+* Added new launch files
+* Added deadlock elimination with prioritized motion planning
+* Added launch file for smp planner
+* Fixed two trucks in robot lab launch file
+* Added preliminary version of RobotLab coord demo
+* Added multiple trucks launch file in robot_lab
+* Contributors: Federico Pecora, Henrik Andreasson
+
 0.4.0 (2018-05-15)
 ------------------
 * Corrected iliad_smp_global_planner reference in launch files
