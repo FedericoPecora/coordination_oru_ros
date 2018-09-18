@@ -59,7 +59,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		final TrajectoryEnvelopeTrackerROS thisTracker = this;
 		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
-		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/report", orunav_msgs.RobotReport._TYPE);
+		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/control/report", orunav_msgs.RobotReport._TYPE);
 	    subscriber.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 	      @Override
 	      public void onNewMessage(orunav_msgs.RobotReport message) {

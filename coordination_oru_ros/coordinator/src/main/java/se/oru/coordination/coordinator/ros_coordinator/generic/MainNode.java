@@ -184,7 +184,7 @@ public class MainNode extends AbstractNodeMain {
 					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, TEMPORAL_RESOLUTION));
 					
 					//Get all initial locations of robots (this is done once)
-					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/report", orunav_msgs.RobotReport._TYPE);
+					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/control/report", orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotReport message) {
