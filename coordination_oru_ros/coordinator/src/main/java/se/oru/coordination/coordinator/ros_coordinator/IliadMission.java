@@ -77,5 +77,37 @@ public class IliadMission extends Mission {
 		//return this.operationType + " " + (this.items != null ? Arrays.toString(items) + " " : "") + super.toString();
 		return this.operationType + " " + (this.items != null ? items.length + " items " : "") + super.toString();
 	}
+	
+	public String toXML() {
+		String ret = "<Mission type=\"" + this.getOperationType() + "\">\n";
+		ret += "   <robotID>" + this.robotID + "</robotID>\n";
+		ret += "   <fromLocation>" + this.getFromLocation() + "</fromLocation>\n";
+		ret += "   <toLocation>" + this.getToLocation() + "</toLocation>\n";
+		ret += "   <Pose name=\"startPose\">\n";
+		ret += "      <x>" + this.getFromPose().getX() + "</x>\n";
+		ret += "      <y>" + this.getFromPose().getY() + "</y>\n";
+		ret += "      <theta>" + this.getFromPose().getTheta() + "</theta>\n";
+		ret += "   </Pose>\n";
+		ret += "   <Pose name=\"toPose\">\n";
+		ret += "      <x>" + this.getToPose().getX() + "</x>\n";
+		ret += "      <y>" + this.getToPose().getY() + "</y>\n";
+		ret += "      <theta>" + this.getToPose().getTheta() + "</theta>\n";
+		ret += "   </Pose>\n";
+		if (this.getItems() != null && this.getItems().length > 0) {
+			ret += "   <IliadItems>\n";
+			for (IliadItem item : this.getItems()) {
+				ret += "      <IliadItem name=\"" + item.getName() + "\">\n";
+				ret += "         <x>" + item.getX() + "</x>\n";
+				ret += "         <y>" + item.getY() + "</y>\n";
+				ret += "         <z>" + item.getY() + "</z>\n";
+				ret += "         <rotationType>" + item.getRotationType() + "</rotationType>\n";
+				ret += "      </IliadItem>\n";
+			}
+			ret += "   </IliadItems>\n";
+		}
+		ret += "</Mission>\n";
+		
+		return ret;
+	}
 
 }

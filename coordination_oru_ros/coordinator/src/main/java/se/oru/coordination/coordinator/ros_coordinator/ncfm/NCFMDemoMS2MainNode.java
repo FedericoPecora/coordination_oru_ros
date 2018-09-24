@@ -16,6 +16,10 @@
 
 package se.oru.coordination.coordinator.ros_coordinator.ncfm;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,6 +32,7 @@ import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
+import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
@@ -35,6 +40,7 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
@@ -60,6 +66,7 @@ import se.oru.coordination.coordinator.util.IliadMissions;
 public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 
 	private List<Integer> robotIDs = null;
+	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
 	private ConnectedNode node = null;
 	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
@@ -85,6 +92,22 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
+	}
+
+	private void setupActivateServices() {
+		node.newServiceServer("coordinator/activate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(">>>>>>>>>>>>>> ACTIVATING Robot" + arg0.getRobotID());
+				activeRobots.put(arg0.getRobotID(),true);
+			}
+		});
+		node.newServiceServer("coordinator/deactivate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(">>>>>>>>>>>>>> DEACTIVATING Robot" + arg0.getRobotID());
+				activeRobots.put(arg0.getRobotID(),false);			}
+		});
 	}
 
 	@Override
@@ -133,6 +156,8 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
 				
+				setupActivateServices();
+				
 				for (final int robotID : robotIDs) {
 					
 					//Set the forward dynamic model for the robot so the coordinator
@@ -165,6 +190,15 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
 							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+							System.out.println("POSTED MISSION:\n" + mission.toXML());
+							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
+							PrintWriter writer;
+							try {
+								writer = new PrintWriter(new FileOutputStream(new File(postedGoalLog), true));
+								writer.println(mission.toXML());
+					            writer.close();
+							}
+							catch (FileNotFoundException e) { e.printStackTrace(); } 
 							callComputeTaskService(mission);
 						}
 					});
@@ -200,7 +234,7 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 					//This is done at every cycle
 					for (int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {
-							if (!isTaskComputing.get(robotID)) {
+							if (!isTaskComputing.get(robotID) && activeRobots.get(robotID)) {
 								ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
 								if (missions != null) {
 									//TODO: Should check if robot is close to intended start pose instead
@@ -235,6 +269,16 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 			footprintCoords[2] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_right_x"),params.getDouble("/" + node.getName() + "/footprint_front_right_y"));
 			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
+			for (Integer robotID : robotIDs) activeRobots.put(robotID, false);
+			ArrayList<Integer> defaultList = new ArrayList<Integer>();
+			defaultList.add(-1);
+			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
+			//If param was not specified, assume all robots are active
+			if (activeIDs.contains(-1)) {
+				activeIDs = new ArrayList<Integer>();
+				for (int robotID : robotIDs) activeIDs.add(robotID);
+			}
+			for (Integer active : activeIDs) activeRobots.put(active, true);
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
