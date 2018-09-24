@@ -16,10 +16,13 @@ import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
+import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
+
+import com.vividsolutions.jts.geom.Coordinate;
 
 import orunav_msgs.CoordinatorTime;
 import orunav_msgs.CoordinatorTimeVec;
@@ -57,9 +60,22 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		this.currentTask = currentTask;
 		
 		final TrajectoryEnvelopeTrackerROS thisTracker = this;
+
+		String reportTopic = "report";
+		///
+		ParameterTree params = node.getParameterTree();
+		try {
+			reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
+		}
+		catch (org.ros.exception.ParameterNotFoundException e) {
+			System.out.println("== Parameter not found ==");
+			e.printStackTrace();
+		}
+		///
+		
 		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
-		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/control/report", orunav_msgs.RobotReport._TYPE);
+		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 	    subscriber.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 	      @Override
 	      public void onNewMessage(orunav_msgs.RobotReport message) {

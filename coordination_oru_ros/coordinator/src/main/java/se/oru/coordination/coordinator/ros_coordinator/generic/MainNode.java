@@ -93,6 +93,7 @@ public class MainNode extends AbstractNodeMain {
 	private boolean repeatMissions = false;
 	private HashMap<Integer,Boolean> computing = new HashMap<Integer,Boolean>();
 	//private HashMap<Integer,Integer> missionNumber = new HashMap<Integer,Integer>();
+	private String reportTopic = "report";
     
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -156,7 +157,7 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node);
+				final RVizVisualization viz = new RVizVisualization(node,"map_laser2d");
 				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
@@ -184,7 +185,7 @@ public class MainNode extends AbstractNodeMain {
 					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, TEMPORAL_RESOLUTION));
 					
 					//Get all initial locations of robots (this is done once)
-					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/control/report", orunav_msgs.RobotReport._TYPE);
+					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotReport message) {
@@ -276,6 +277,7 @@ public class MainNode extends AbstractNodeMain {
 			if (goalSequenceFile.equals("NULL")) goalSequenceFile = null;
 			repeatMissions = params.getBoolean("/" + node.getName() + "/repeat_missions", false);
 			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> REPEAT MISSIONS IS " + repeatMissions);
+			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
