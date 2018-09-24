@@ -94,6 +94,7 @@ public class MainNode extends AbstractNodeMain {
 	private HashMap<Integer,Boolean> computing = new HashMap<Integer,Boolean>();
 	//private HashMap<Integer,Integer> missionNumber = new HashMap<Integer,Integer>();
 	private String reportTopic = "report";
+	private String mapFrameID = "map";
     
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -157,7 +158,7 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node,"map_laser2d");
+				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
 				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
@@ -278,6 +279,7 @@ public class MainNode extends AbstractNodeMain {
 			repeatMissions = params.getBoolean("/" + node.getName() + "/repeat_missions", false);
 			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> REPEAT MISSIONS IS " + repeatMissions);
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
+			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
 
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
