@@ -87,6 +87,9 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 	private boolean ignorePickItems = true;
 	private boolean copyGoalOperationToStartoperation = false;
 	
+	private String reportTopic = "report";
+	private String mapFrameID = "map";
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
@@ -132,7 +135,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node);
+				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
 				tec.setVisualization(viz);
 				
 				//Set the footprint of the robots
@@ -145,7 +148,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, TEMPORAL_RESOLUTION));
 					
 					//Get all initial locations of robots (this is done once)
-					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/report", orunav_msgs.RobotReport._TYPE);
+					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotReport message) {
@@ -248,6 +251,8 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
+			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
+			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");

@@ -38,7 +38,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
-				reverseEnvelope(arg0.getRobotID());
+				//reverseEnvelope(arg0.getRobotID());
 			}
 		});
 	}
