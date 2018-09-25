@@ -672,7 +672,7 @@
     </Pose>
   </Mission>
   
-  <!-- ROBOT 2 -->
+  <!-- ROBOT 5 -->
   <Mission type="LOAD_PALLET">
     <robotID>5</robotID>
     <fromLocation>robot2_parking</fromLocation>
