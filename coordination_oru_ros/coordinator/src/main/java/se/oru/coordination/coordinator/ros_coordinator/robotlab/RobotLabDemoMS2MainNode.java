@@ -258,8 +258,8 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 								if (IliadMissions.getMissions(robotID) != null) {
 									//TODO: Should check if robot is close to intended start pose instead
 									//of overwriting it with current pose from RobotReport...
-									IliadMission mission = (IliadMission)IliadMissions.popMission(robotID);
-									if (mission.repeatMission()) IliadMissions.pushMission(mission);
+									IliadMission mission = (IliadMission)IliadMissions.dequeueMission(robotID);
+									if (mission.repeatMission()) IliadMissions.enqueueMission(mission);
 									Pose startPose = tec.getRobotReport(robotID).getPose();
 									mission.setFromPose(startPose);
 									if (mission.getToLocation().startsWith("marshalling_lane_")) {

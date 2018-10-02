@@ -106,7 +106,7 @@ public class IliadMissions extends Missions {
 				}				
 			}
 			for (IliadMission mission : missions) {
-				Missions.putMission(mission);
+				Missions.enqueueMission(mission);
 				metaCSPLogger.info("Loaded mission " + mission);
 			}
 		}

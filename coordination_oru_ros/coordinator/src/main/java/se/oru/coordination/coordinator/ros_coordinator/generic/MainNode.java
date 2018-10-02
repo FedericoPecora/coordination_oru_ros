@@ -226,7 +226,7 @@ public class MainNode extends AbstractNodeMain {
 			    	for (int robotID : robotIDs) {
 			    		if (Missions.hasMissions(robotID) && !Missions.getMissions(robotID).isEmpty() && initialLocations.containsKey(robotID) && !computing.get(robotID) && tec.isFree(robotID)) {
 			    			if (activeRobots.get(robotID)) {
-				    			Mission m = Missions.popMission(robotID);
+				    			Mission m = Missions.dequeueMission(robotID);
 				    			//missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
 				    			if (m.getFromLocation() == null) {
 				    				m.setFromLocation("currentLocation");
@@ -237,7 +237,7 @@ public class MainNode extends AbstractNodeMain {
 				    			if (repeatMissions) {
 				    				m.setFromLocation(null);
 				    				m.setFromPose(null);
-				    				Missions.pushMission(m);
+				    				Missions.enqueueMission(m);
 				    				System.out.println(">>>>>>>>>>>>>>>>>>> RE-ENQUEUED MISSION " + m);
 				    			}
 			    			}
@@ -298,7 +298,7 @@ public class MainNode extends AbstractNodeMain {
 					int robotID = Integer.parseInt(oneline[0]);
 					String goalLocation = oneline[1];
 					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
-					Missions.pushMission(m);
+					Missions.enqueueMission(m);
 					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
 				}
 			}
