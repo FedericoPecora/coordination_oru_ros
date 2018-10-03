@@ -186,7 +186,7 @@ public class MainNode extends AbstractNodeMain {
 					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, TEMPORAL_RESOLUTION));
 					
 					//Get all initial locations of robots (this is done once)
-					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
+					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotReport message) {
@@ -277,7 +277,6 @@ public class MainNode extends AbstractNodeMain {
 			if (locationsFile.equals("NULL")) locationsFile = null;
 			if (goalSequenceFile.equals("NULL")) goalSequenceFile = null;
 			repeatMissions = params.getBoolean("/" + node.getName() + "/repeat_missions", false);
-			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> REPEAT MISSIONS IS " + repeatMissions);
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
 
