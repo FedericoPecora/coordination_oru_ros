@@ -28,6 +28,11 @@ buildscript {
 
 apply plugin: 'catkin'
 
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 allprojects {
     group 'se.oru.coordination'
     version = project.catkin.pkg.version
