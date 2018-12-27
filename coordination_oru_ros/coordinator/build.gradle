@@ -60,7 +60,7 @@ dependencies {
   ///////////////////////////////////////////////
   
   //current stable and tested:
-  compile 'com.github.FedericoPecora:coordination_oru:0.4.0'
+  compile 'com.github.FedericoPecora:coordination_oru:0.4.1'
 
   //current local snapshot:
   //compile 'se.oru.coordination:coordination_oru:0.0.0-SNAPSHOT'
