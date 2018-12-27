@@ -4,7 +4,7 @@ This package provides an online coordination method for multiple robots for use 
 ## Pre-requisites
 This package requires ROS Kinetic or Indigo on Ubuntu 16.04 or 14.04 (see <a href="http://wiki.ros.org/kinetic/Installation/Ubuntu">here</a> for instructions), the ```navigation_oru``` package (see <a href="https://github.com/OrebroUniversity/navigation_oru-release">here</a> for instructions), and ROSJava (please follow the instructions for your ROS distribution <a href="http://wiki.ros.org/rosjava">here</a>).
 
-This package also requires the ```coordination_oru``` library, however this is included automatically via <a href="https://jitpack.io/">Jitpack</a>, so no special steps are necessary to install it.
+This package also requires the ```coordination_oru``` library (see <a href="https://github.com/FedericoPecora/coordination_oru">here</a>), however this is included automatically via <a href="https://jitpack.io/">Jitpack</a>, so no special steps are necessary to install it.
 
 ## Installation
 After installing ROS, ROSJava, and the ```navigation_oru``` package as instructed above, clone this repository into your Catkin workspace and compile the source code with ```catkin_make``` (which in turn runs a gradle build, redistributable included):
