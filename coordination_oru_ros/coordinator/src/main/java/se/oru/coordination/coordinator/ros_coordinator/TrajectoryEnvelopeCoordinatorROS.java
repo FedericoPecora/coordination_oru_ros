@@ -75,7 +75,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	}
 
 	//Override necessary in next release... 
-	@Override
+	//@Override
 	protected PoseSteering[] doReplanning(Pose fromPose, Pose toPose, Geometry... obstaclesToConsider) {
 		// TODO Auto-generated method stub
 		return null;
