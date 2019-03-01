@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-
+  
   <include file="$(find cititruck_gazebo)/launch/cititrucks_basement.launch"/>
   <include file="$(find gazebo_worlds_oru)/launch/basement_map_server.launch"/>
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
@@ -9,6 +9,7 @@
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
     <rosparam param="robot_ids">[1,2]</rosparam>
+    <rosparam param="active_robot_ids">[1,2]</rosparam>
     <param name="footprint_rear_left_x" value="-0.2" />
     <param name="footprint_rear_left_y" value="0.3" />
     <param name="footprint_rear_right_x" value="-0.2" />
@@ -19,10 +20,17 @@
     <param name="footprint_front_right_y" value="-0.3" />
     <param name="control_period" value="1000" />
     <param name="temporal_resolution" value="1000.0" />
-    <param name="forward_model_max_accel" value="0.1" />
-    <param name="forward_model_max_vel" value="0.3" />
-    <param name="locations_file" value="$(find coordination_oru_ros)/missions/aass_basement_locations.txt" />
-    <param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/aass_basement_goal_sequence.txt" />
+    <param name="forward_model_max_accel" value="0.08" />
+    <param name="forward_model_max_vel" value="0.28" />
+
+    <!-- FOR ILIAD -->
+    <!--param name="report_topic" value="control/report"/-->
+
+    <!-- FOR STANDALONE -->
+    <param name="report_topic" value="report"/>
+    
+    <!--param name="locations_file" value="$(find coordination_oru_ros)/missions/aass_basement_locations.txt" /-->
+    <!--param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/aass_basement_goal_sequence.txt" /-->
   </node>
 
   <!-- ALL ROBOT SPECIFIC TASKS -->
@@ -30,10 +38,24 @@
     <param name="tf_prefix" value="robot1" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="1" />
+      <param name="robot_id" value="1" />
+      <remap from="/robot1/cmd_vel" to ="/robot1/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
-   
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot1/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot1/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot1/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot1/control/"/>
+    </include>
 
     <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
       <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
@@ -111,10 +133,24 @@
     <param name="tf_prefix" value="robot2" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="2" />
+      <param name="robot_id" value="2" />
+      <remap from="/robot2/cmd_vel" to ="/robot2/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
 
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot2/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot2/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot2/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot2/control/"/>
+    </include>
 
     <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
       <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
@@ -187,7 +223,6 @@
     </node>
     
   </group>
-
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2.rviz"/>
 
