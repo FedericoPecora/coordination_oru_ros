@@ -16,12 +16,13 @@ import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
+import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
 
 	protected ConnectedNode node = null;
 	protected HashMap<Integer,Task> currentTasks = new HashMap<Integer,Task>();
-	public static enum VEHICLE_STATE {WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 
 	private void setupAbortService() {
 		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
@@ -73,12 +74,11 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, this, cb, this.node, getCurrentTask(te.getRobotID()));
 		return tet;
 	}
-
-	//Override necessary in next release... 
-	@Override
-	protected PoseSteering[] doReplanning(Pose fromPose, Pose toPose, Geometry... obstaclesToConsider) {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public VEHICLE_STATE getVehicleState(int robotID) {
+		if (!(trackers.get(robotID) instanceof TrajectoryEnvelopeTrackerROS)) return VEHICLE_STATE._IGNORE_;
+		return ((TrajectoryEnvelopeTrackerROS)trackers.get(robotID)).getVehicleState();
 	}
+
 
 }

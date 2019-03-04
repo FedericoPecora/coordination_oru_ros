@@ -87,7 +87,7 @@ public class TestTECWithoutMPSineNet {
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getTrajectoryEnvelope().getRobotID()-o1.getTrajectoryEnvelopeTracker().getTrajectoryEnvelope().getRobotID());
+				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
 			}
 		});
 

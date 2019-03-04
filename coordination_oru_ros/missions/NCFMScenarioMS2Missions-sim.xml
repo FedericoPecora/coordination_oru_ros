@@ -1,0 +1,134 @@
+<Missions>
+<!-- left room -->
+<Mission type="LOAD_PALLET">
+   <robotID>4</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>-2.508469581604004</x>
+      <y>1.3743712902069094</y>
+      <theta>2.300242430367364</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>3.7121729850769043</x>
+      <y>-1.92707359790802</y>
+      <theta>-3.102619026538391</theta>
+   </Pose>
+</Mission>
+
+<Mission type="NO_OPERATION">
+   <robotID>4</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>3.7121729850769043</x>
+      <y>-1.92707359790802</y>
+      <theta>-3.1026190265383913</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-3.1706488132476807</x>
+      <y>2.171022653579712</y>
+      <theta>-0.8271470945808458</theta>
+   </Pose>
+</Mission>
+
+<!-- right room -->
+<Mission type="NO_OPERATION">
+   <robotID>4</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>-3.1706488132476807</x>
+      <y>2.171022653579712</y>
+      <theta>-0.8271470945808458</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-21.254798889160156</x>
+      <y>-1.2171013355255127</y>
+      <theta>0.5392367890941897</theta>
+   </Pose>
+</Mission>
+
+<Mission type="UNLOAD_PALLET">
+   <robotID>4</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>2.003501860539531</x>
+      <y>3.9781464242270723</y>
+      <theta>-1.5595557316554043</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-17.448204040527344</x>
+      <y>2.3190431594848633</y>
+      <theta>-2.242675876939687</theta>
+   </Pose>
+</Mission>
+
+<!-- left room -->
+<Mission type="LOAD_PALLET">
+   <robotID>5</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>-2.508469581604004</x>
+      <y>1.3743712902069094</y>
+      <theta>2.300242430367364</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>3.7121729850769043</x>
+      <y>-1.92707359790802</y>
+      <theta>-3.102619026538391</theta>
+   </Pose>
+</Mission>
+
+<Mission type="NO_OPERATION">
+   <robotID>5</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>3.7121729850769043</x>
+      <y>-1.92707359790802</y>
+      <theta>-3.1026190265383913</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-3.1706488132476807</x>
+      <y>2.171022653579712</y>
+      <theta>-0.8271470945808458</theta>
+   </Pose>
+</Mission>
+
+
+<!-- right room -->
+<Mission type="NO_OPERATION">
+   <robotID>5</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>-3.1706488132476807</x>
+      <y>2.171022653579712</y>
+      <theta>-0.8271470945808458</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-21.254798889160156</x>
+      <y>-1.2171013355255127</y>
+      <theta>0.5392367890941897</theta>
+   </Pose>
+</Mission>
+
+<Mission type="UNLOAD_PALLET">
+   <robotID>5</robotID>
+   <fromLocation>A</fromLocation>
+   <toLocation>B</toLocation>
+   <Pose name="startPose">
+      <x>2.003501860539531</x>
+      <y>3.9781464242270723</y>
+      <theta>-1.5595557316554043</theta>
+   </Pose>
+   <Pose name="toPose">
+      <x>-17.448204040527344</x>
+      <y>2.3190431594848633</y>
+      <theta>-2.242675876939687</theta>
+   </Pose>
+</Mission>
+</Missions>

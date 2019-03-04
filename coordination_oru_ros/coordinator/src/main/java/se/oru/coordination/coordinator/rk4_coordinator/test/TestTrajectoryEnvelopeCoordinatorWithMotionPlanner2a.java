@@ -44,7 +44,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getTrajectoryEnvelope().getRobotID()-o1.getTrajectoryEnvelopeTracker().getTrajectoryEnvelope().getRobotID());
+				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
 			}
 		});
 
@@ -80,19 +80,19 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 			System.out.println("Placed Robot" + robotID + " in " + startLocName);
 			
 			if (robotID%2 == 0) {
-				Mission m = new Mission(robotID, Missions.loadKnownPath(startLocName, "G4a2"), startLocName, "G4a2", Missions.getLocation(startLocName), Missions.getLocation("G4a2"));
+				Mission m = new Mission(robotID, Missions.getShortestPath(startLocName, "G4a2"), startLocName, "G4a2", Missions.getLocation(startLocName), Missions.getLocation("G4a2"));
 				Missions.putMission(m);
-				Mission m1 = new Mission(robotID, Missions.loadKnownPath("G4a2","G1"), "G4a2", "G1", Missions.getLocation("G4a2"), Missions.getLocation("G1"));
+				Mission m1 = new Mission(robotID, Missions.getShortestPath("G4a2","G1"), "G4a2", "G1", Missions.getLocation("G4a2"), Missions.getLocation("G1"));
 				Missions.putMission(m1);
-				Mission m2 = new Mission(robotID, Missions.loadKnownPath("G1","G4a2"), "G1", "G4a2", Missions.getLocation("G1"), Missions.getLocation("G4a2"));
+				Mission m2 = new Mission(robotID, Missions.getShortestPath("G1","G4a2"), "G1", "G4a2", Missions.getLocation("G1"), Missions.getLocation("G4a2"));
 				Missions.putMission(m2);
 			}
 			else {
-				Mission m = new Mission(robotID, Missions.loadKnownPath(startLocName, "G4b"), startLocName, "G4b", Missions.getLocation(startLocName), Missions.getLocation("G4b"));
+				Mission m = new Mission(robotID, Missions.getShortestPath(startLocName, "G4b"), startLocName, "G4b", Missions.getLocation(startLocName), Missions.getLocation("G4b"));
 				Missions.putMission(m);
-				Mission m1 = new Mission(robotID, Missions.loadKnownPath("G4b","G1"), "G4b", "G1", Missions.getLocation("G4b"), Missions.getLocation("G1"));
+				Mission m1 = new Mission(robotID, Missions.getShortestPath("G4b","G1"), "G4b", "G1", Missions.getLocation("G4b"), Missions.getLocation("G1"));
 				Missions.putMission(m1);
-				Mission m2 = new Mission(robotID, Missions.loadKnownPath("G1","G4b"), "G1", "G4b", Missions.getLocation("G1"), Missions.getLocation("G4b"));
+				Mission m2 = new Mission(robotID, Missions.getShortestPath("G1","G4b"), "G1", "G4b", Missions.getLocation("G1"), Missions.getLocation("G4b"));
 				Missions.putMission(m2);
 			}
 		}

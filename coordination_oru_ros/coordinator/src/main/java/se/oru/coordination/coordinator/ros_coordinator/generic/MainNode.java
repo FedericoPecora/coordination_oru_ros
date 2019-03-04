@@ -1,78 +1,34 @@
-/*
- * Copyright (C) 2014 Federico Pecora.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
 package se.oru.coordination.coordinator.ros_coordinator.generic;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
-import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
-import org.ros.exception.RemoteException;
-import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceException;
-import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
-import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
-import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.util.AffineTransformation;
 
-import cern.colt.Arrays;
-import geometry_msgs.Point;
-import orunav_msgs.ComputeTask;
-import orunav_msgs.ComputeTaskRequest;
-import orunav_msgs.ComputeTaskResponse;
-import orunav_msgs.CoordinatorTime;
-import orunav_msgs.CoordinatorTimeVec;
-import orunav_msgs.DeltaTVec;
-import orunav_msgs.ExecuteTask;
-import orunav_msgs.ExecuteTaskRequest;
-import orunav_msgs.ExecuteTaskResponse;
-import orunav_msgs.Operation;
-import orunav_msgs.RobotTarget;
-import orunav_msgs.Shape;
-import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
 import se.oru.coordination.coordination_oru.CriticalSection;
-import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.Mission;
 import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
 import se.oru.coordination.coordination_oru.RobotReport;
-import se.oru.coordination.coordination_oru.util.JTSDrawingPanelVisualization;
+import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
+import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 
 public class MainNode extends AbstractNodeMain {
@@ -81,7 +37,6 @@ public class MainNode extends AbstractNodeMain {
 	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
 	private ConnectedNode node = null;
-	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
 	private Coordinate[] footprintCoords = null;
 	private int CONTROL_PERIOD = 1000;
@@ -91,10 +46,9 @@ public class MainNode extends AbstractNodeMain {
 	private String locationsFile = null;
 	private String goalSequenceFile = null;
 	private boolean repeatMissions = false;
-	private HashMap<Integer,Boolean> computing = new HashMap<Integer,Boolean>();
-	//private HashMap<Integer,Integer> missionNumber = new HashMap<Integer,Integer>();
 	private String reportTopic = "report";
 	private String mapFrameID = "map";
+	private HashMap<Integer,Boolean> isPlanning = new HashMap<Integer,Boolean>();
     
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -154,7 +108,7 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
-				tec.setYieldIfParking(false);
+				tec.setYieldIfParking(true);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
@@ -164,7 +118,7 @@ public class MainNode extends AbstractNodeMain {
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
 				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
-				if (goalSequenceFile != null) readGoalSequenceFile();
+				//if (goalSequenceFile != null) readGoalSequenceFile();
 				
 				//Sleep to allow loading of motion prims
 				try {
@@ -176,10 +130,13 @@ public class MainNode extends AbstractNodeMain {
 				
 				setupActivateServices();
 				
+				
 				for (final int robotID : robotIDs) {
 					
-					computing.put(robotID, false);
-					//missionNumber.put(robotID, 0);
+					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
+					mp.setFootprint(footprintCoords);
+					tec.setMotionPlanner(robotID, mp);
+					isPlanning.put(robotID, false);
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
@@ -212,7 +169,10 @@ public class MainNode extends AbstractNodeMain {
 					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 						@Override
 						public void onNewMessage(geometry_msgs.PoseStamped message) {
-							callComputeTaskService(message, robotID);
+							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
+							Pose pose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(), quat.getTheta());
+							Mission m = new Mission(robotID,"currentPose", pose.toString(), null, pose);
+							Missions.enqueueMission(m);
 						}
 					});
 					
@@ -222,28 +182,33 @@ public class MainNode extends AbstractNodeMain {
 
 			@Override
 			protected void loop() throws InterruptedException {
-			    if (locationsFile != null && goalSequenceFile != null) {
-			    	for (int robotID : robotIDs) {
-			    		if (Missions.hasMissions(robotID) && !Missions.getMissions(robotID).isEmpty() && initialLocations.containsKey(robotID) && !computing.get(robotID) && tec.isFree(robotID)) {
-			    			if (activeRobots.get(robotID)) {
-				    			Mission m = Missions.dequeueMission(robotID);
-				    			//missionNumber.put(robotID, (missionNumber.get(robotID)+1)%Missions.getMissions(robotID).size());
-				    			if (m.getFromLocation() == null) {
-				    				m.setFromLocation("currentLocation");
-				    				m.setFromPose(tec.getRobotReport(robotID).getPose());
-				    			}
-			    				callComputeTaskService(m);
-			    				System.out.println("######################\n######################\n### SENDING MISSION:\n### " + m + "\n######################\n######################\n");
-				    			if (repeatMissions) {
-				    				m.setFromLocation(null);
-				    				m.setFromPose(null);
-				    				Missions.enqueueMission(m);
-				    				System.out.println(">>>>>>>>>>>>>>>>>>> RE-ENQUEUED MISSION " + m);
-				    			}
-			    			}
-			    		}
-			    	}			    	
-			    }
+				for (final int robotID : robotIDs) {
+					if (tec.isFree(robotID)) {
+						if (Missions.hasMissions(robotID) && !isPlanning.get(robotID)) {
+							final Mission m = Missions.dequeueMission(robotID);
+							final AbstractMotionPlanner mp = tec.getMotionPlanner(robotID);
+							mp.clearObstacles();
+							mp.setGoals(m.getToPose());
+							isPlanning.put(robotID, true);
+							Thread planningThread = new Thread("Planning for robot " + robotID) {
+								public void run() {
+									System.out.println(">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
+									if (mp.plan()) {
+										m.setPath(mp.getPath());
+										tec.addMissions(m);
+										tec.computeCriticalSectionsAndStartTrackingAddedMission();
+									}
+									System.out.println("<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
+									isPlanning.put(robotID, false);
+								}
+							};
+							planningThread.start();
+						}
+					}
+				}
+				
+				// TODO: Fix reading from locations file/goal sequence file
+				
 			    Thread.sleep(1000);
 			}
 		});
@@ -287,191 +252,24 @@ public class MainNode extends AbstractNodeMain {
 		}
 	}
 	
-	private void readGoalSequenceFile() {
-		try {
-			Scanner in = new Scanner(new FileReader(goalSequenceFile));
-			while (in.hasNextLine()) {
-				String line = in.nextLine().trim();
-				if (line.length() != 0 && !line.startsWith("#")) {
-					String[] oneline = line.split(" |\t");
-					int robotID = Integer.parseInt(oneline[0]);
-					String goalLocation = oneline[1];
-					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
-					Missions.enqueueMission(m);
-					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
-				}
-			}
-			in.close();
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-
-	}
+//	private void readGoalSequenceFile() {
+//		try {
+//			Scanner in = new Scanner(new FileReader(goalSequenceFile));
+//			while (in.hasNextLine()) {
+//				String line = in.nextLine().trim();
+//				if (line.length() != 0 && !line.startsWith("#")) {
+//					String[] oneline = line.split(" |\t");
+//					int robotID = Integer.parseInt(oneline[0]);
+//					String goalLocation = oneline[1];
+//					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
+//					Missions.enqueueMission(m);
+//					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
+//				}
+//			}
+//			in.close();
+//		}
+//		catch (FileNotFoundException e) { e.printStackTrace(); }
+//	}
 	
-	private void callComputeTaskService(geometry_msgs.PoseStamped goalPose, final int robotID) {
-		
-		computing.put(robotID, true);
-		
-		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + robotID + "/compute_task", ComputeTask._TYPE); }
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		
-		if (!robotIDstoGoalIDs.keySet().contains(robotID)) robotIDstoGoalIDs.put(robotID, 1);
-		else robotIDstoGoalIDs.put(robotID, robotIDstoGoalIDs.get(robotID)+1);
-		final int goalID = robotIDstoGoalIDs.get(robotID);
-		
-		final ComputeTaskRequest request = serviceClient.newMessage();
-		request.setStartFromCurrentState(true);
-		RobotTarget rt = node.getTopicMessageFactory().newFromType(RobotTarget._TYPE);
-		orunav_msgs.PoseSteering ps = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
-		geometry_msgs.Pose gpose = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
-		gpose.setPosition(goalPose.getPose().getPosition());
-		gpose.setOrientation(goalPose.getPose().getOrientation());
-		ps.setPose(gpose);
-		ps.setSteering(0.0);
-		rt.setGoal(ps);
-		rt.setRobotId(robotID);
-		rt.setTaskId(goalID);
-		rt.setGoalId(goalID);
-		request.setTarget(rt);
-		
-		serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
 
-			@Override
-			public void onFailure(RemoteException arg0) {
-				System.out.println("FAILED to call ComputeTask service for robot" + robotID + " (goalID: " + goalID + ")");				
-			}
-
-			@Override
-			public void onSuccess(ComputeTaskResponse arg0) {
-				System.out.println("Successfully called ComputeTask service for robot" + robotID + " (goalID: " + goalID + ")");
-				
-				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
-
-				ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
-				Pose fromPose = null;
-				Pose toPose = null;
-				for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
-					orunav_msgs.PoseSteering onePS = arg0.getTask().getPath().getPath().get(i);
-					Quaternion quat = new Quaternion(onePS.getPose().getOrientation().getX(), onePS.getPose().getOrientation().getY(), onePS.getPose().getOrientation().getZ(), onePS.getPose().getOrientation().getW());
-					PoseSteering ps = new PoseSteering(onePS.getPose().getPosition().getX(), onePS.getPose().getPosition().getY(), quat.getTheta(), onePS.getSteering());
-					path.add(ps);
-					if (i == 0) fromPose = ps.getPose();
-					if (i == arg0.getTask().getPath().getPath().size()-1) toPose = ps.getPose();
-				}
-				PoseSteering[] pathArray = path.toArray(new PoseSteering[path.size()]);
-				Mission m = new Mission(arg0.getTask().getTarget().getRobotId(), pathArray, "A", "B", fromPose, toPose);
-				tec.addMissions(m);
-				tec.computeCriticalSections();
-				tec.startTrackingAddedMissions();
-				computing.put(robotID, false);
-			}
-			
-		});
-	}
-	
-	private void callComputeTaskService(final Mission m) {
-		
-		final int robotID = m.getRobotID();
-		computing.put(robotID, true);
-		
-		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + robotID + "/compute_task", ComputeTask._TYPE); }
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		
-		if (!robotIDstoGoalIDs.keySet().contains(robotID)) robotIDstoGoalIDs.put(robotID, 1);
-		else robotIDstoGoalIDs.put(robotID, robotIDstoGoalIDs.get(robotID)+1);
-		final int goalID = robotIDstoGoalIDs.get(robotID);
-		
-		final ComputeTaskRequest request = serviceClient.newMessage();
-		request.setStartFromCurrentState(true);
-		RobotTarget rt = node.getTopicMessageFactory().newFromType(RobotTarget._TYPE);
-		orunav_msgs.PoseSteering ps = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
-		geometry_msgs.Pose gpose = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
-		gpose.getPosition().setX(m.getToPose().getX());
-		gpose.getPosition().setY(m.getToPose().getY());
-		Quaternion q = new Quaternion(m.getToPose().getTheta());
-		gpose.getOrientation().setW(q.getW());
-		gpose.getOrientation().setX(q.getX());
-		gpose.getOrientation().setY(q.getY());
-		gpose.getOrientation().setZ(q.getZ());
-		ps.setPose(gpose);
-		ps.setSteering(0.0);
-		rt.setGoal(ps);
-		rt.setRobotId(robotID);
-		rt.setTaskId(goalID);
-		rt.setGoalId(goalID);
-		request.setTarget(rt);
-		
-		//Add extra obstacles to request
-		// ... one obstacle per robot that is waiting for this robot,
-		// ... placed in the waiting robot's waiting pose
-		for (Dependency dep : tec.getCurrentDependencies()) {
-			int drivingID = dep.getDrivingRobotID();
-			int waitingID = dep.getWaitingRobotID();
-			int numObstacles = 1;
-			if (robotID  == drivingID) {
-				for (int i = 0; i < numObstacles; i++) {
-					Pose waitingPose  = dep.getWaitingTrajectoryEnvelope().getTrajectory().getPose()[dep.getWaitingPoint()+i];
-					Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
-					Coordinate[] coords_ = tec.getFootprint(waitingID);
-					Coordinate[] coords = new Coordinate[coords_.length+1];
-					for (int j = 0; j < coords_.length; j++) coords[j] = coords_[j];
-					coords[coords_.length] = coords_[0];
-					//Inflate
-					GeometryFactory gf = new GeometryFactory();
-					Geometry poly = gf.createPolygon(coords);
-					AffineTransformation at = new AffineTransformation();
-					//at.scale(1.05, 1.05);
-					at.rotate(waitingPose.getTheta());
-					at.translate(waitingPose.getX(), waitingPose.getY());
-					poly = at.transform(poly);
-					Coordinate[] transCoords = poly.getCoordinates();
-					for (Coordinate coord : transCoords) {
-						Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
-						pnt.setX(coord.x);
-						pnt.setY(coord.y);
-						shape.getPoints().add(pnt);
-					}
-					//Shape is a polygon (type = 1)
-					shape.setType(1);
-					request.getExtraObstacles().add(shape);
-					System.out.println("Added extra obstacle when planning for mission " + m + " to account for dependency " + dep);
-				}
-			}
-		}
-		
-		serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
-
-			@Override
-			public void onFailure(RemoteException arg0) {
-				System.out.println("FAILED to call ComputeTask service for robot" + robotID + " (goalID: " + goalID + ")");				
-			}
-
-			@Override
-			public void onSuccess(ComputeTaskResponse arg0) {
-				System.out.println("Successfully called ComputeTask service for robot" + robotID + " (goalID: " + goalID + ")");
-				
-				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
-
-				ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
-				Pose fromPose = null;
-				Pose toPose = null;
-				for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
-					orunav_msgs.PoseSteering onePS = arg0.getTask().getPath().getPath().get(i);
-					Quaternion quat = new Quaternion(onePS.getPose().getOrientation().getX(), onePS.getPose().getOrientation().getY(), onePS.getPose().getOrientation().getZ(), onePS.getPose().getOrientation().getW());
-					PoseSteering ps = new PoseSteering(onePS.getPose().getPosition().getX(), onePS.getPose().getPosition().getY(), quat.getTheta(), onePS.getSteering());
-					path.add(ps);
-					if (i == 0) fromPose = ps.getPose();
-					if (i == arg0.getTask().getPath().getPath().size()-1) toPose = ps.getPose();
-				}
-				PoseSteering[] pathArray = path.toArray(new PoseSteering[path.size()]);
-				m.setPath(pathArray);
-				tec.addMissions(m);
-				tec.computeCriticalSections();
-				tec.startTrackingAddedMissions();
-				computing.put(robotID, false);
-			}
-			
-		});
-	}
 }

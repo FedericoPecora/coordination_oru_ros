@@ -4,31 +4,17 @@ This package provides an online coordination method for multiple robots for use 
 ## Pre-requisites
 This package requires ROS Kinetic or Indigo on Ubuntu 16.04 or 14.04 (see <a href="http://wiki.ros.org/kinetic/Installation/Ubuntu">here</a> for instructions), the ```navigation_oru``` package (see <a href="https://github.com/OrebroUniversity/navigation_oru-release">here</a> for instructions), and ROSJava (please follow the instructions for your ROS distribution <a href="http://wiki.ros.org/rosjava">here</a>).
 
-This package also requires the ```coordination_oru``` library, however this is included as a submodule in this GIT repository, so no special steps are necessary to install it (see below).
+This package also requires the ```coordination_oru``` library (see <a href="https://github.com/FedericoPecora/coordination_oru">here</a>), however this is included automatically via <a href="https://jitpack.io/">Jitpack</a>, so no special steps are necessary to install it.
 
 ## Installation
 After installing ROS, ROSJava, and the ```navigation_oru``` package as instructed above, clone this repository into your Catkin workspace and compile the source code with ```catkin_make``` (which in turn runs a gradle build, redistributable included):
 
 ```
 $ cd catkin_ws/src
-$ git clone --recursive https://github.com/FedericoPecora/coordination_oru_ros.git
+$ git clone https://github.com/FedericoPecora/coordination_oru_ros.git
 $ cd ..
 $ catkin_make
 $ source devel/setup.bash
-```
-
-Please note: do not omit the ```--recursive``` flag in the clone command above, as this is responsible for including the ```coordination_oru``` library in the build.
-
-In order to automatically pull changes in ```coordination_oru``` whenever you pull ```coordination_oru_ros```, you can add the following alias:
-
-```
-$ git config alias.spull '!git pull && git submodule update --remote --merge'
-```
-
-This way, both repositories will be pulled whenever you issue the command
-
-```
-$ git spull
 ```
 
 ## Examples
@@ -74,7 +60,7 @@ The coordinator should be provided the following paramteres (see also example la
 ## License
 coordination_oru_ros - Online coordination for multiple robots with ROS
 
-Copyright (C) 2017 Federico Pecora, Henrik Andreasson
+Copyright &copy; 2017-2018 Federico Pecora, Henrik Andreasson
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
