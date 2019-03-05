@@ -60,10 +60,10 @@ dependencies {
   ///////////////////////////////////////////////
   
   //current stable and tested:
-  compile 'com.github.FedericoPecora:coordination_oru:0.4.2'
+  //compile 'com.github.FedericoPecora:coordination_oru:0.4.2'
 
   //Anna's UDP implementation
-  //compile 'com.github.FedericoPecora:coordination_oru:udp-V0.1'
+  compile 'com.github.FedericoPecora:coordination_oru:udp-V0.1'
 
   //current local snapshot:
   //compile 'se.oru.coordination:coordination_oru:0.0.0-SNAPSHOT'
