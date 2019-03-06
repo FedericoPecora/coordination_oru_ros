@@ -38,22 +38,22 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2 {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
 				CriticalSection cs = o1.getCriticalSection();
-				RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-				RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+				RobotReport robotReport1 = o1.getRobotReport();
+				RobotReport robotReport2 = o2.getRobotReport();
 				return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 			}
 		});
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
+				return (o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
 			}
 		});
 
 		//You probably also want to provide a non-trivial forward model
 		//(the default assumes that robots can always stop)
-		tec.setForwardModel(1, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
-		tec.setForwardModel(2, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
+		tec.setForwardModel(1, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getTrackingPeriod()));
+		tec.setForwardModel(2, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getTrackingPeriod()));
 
 		Coordinate footprint1 = new Coordinate(-1.0,0.5);
 		Coordinate footprint2 = new Coordinate(1.0,0.5);

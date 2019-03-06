@@ -36,15 +36,15 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
 				CriticalSection cs = o1.getCriticalSection();
-				RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-				RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+				RobotReport robotReport1 = o1.getRobotReport();
+				RobotReport robotReport2 = o2.getRobotReport();
 				return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 			}
 		});
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
+				return (o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
 			}
 		});
 
@@ -73,7 +73,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 		int[] robotIDs = new int[] {1,2,3,4,5,6};
 		//int[] robotIDs = new int[] {1,2};
 		for (int robotID : robotIDs) {
-			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getTrackingPeriod()));
 			String startLocName = "START_"+(robotID-1);
 			Pose startLoc = Missions.getLocation(startLocName);
 			tec.placeRobot(robotID, startLoc);

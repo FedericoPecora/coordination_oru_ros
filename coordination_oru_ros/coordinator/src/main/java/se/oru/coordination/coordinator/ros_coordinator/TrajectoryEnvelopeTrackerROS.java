@@ -245,7 +245,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		}
 		currentTask.getPath().setPath(newPath);
 		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
-		tec.setCriticalPoint(te.getRobotID(), -1);		
+		tec.setCriticalPoint(te.getRobotID(), -1, false);		
 	}
 
 

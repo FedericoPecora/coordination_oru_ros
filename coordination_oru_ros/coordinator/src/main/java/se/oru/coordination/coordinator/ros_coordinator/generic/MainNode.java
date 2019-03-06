@@ -43,6 +43,7 @@ public class MainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	private double MAX_ACCEL = 1.0;
 	private double MAX_VEL = 4.0;
+	private int ROBOT_REPORT_PERIOD = 1000;
 	private String locationsFile = null;
 	private String goalSequenceFile = null;
 	private boolean repeatMissions = false;
@@ -100,8 +101,8 @@ public class MainNode extends AbstractNodeMain {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
 						CriticalSection cs = o1.getCriticalSection();
-						RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-						RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+						RobotReport robotReport1 = o1.getRobotReport();
+						RobotReport robotReport2 = o2.getRobotReport();
 						return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 					}
 				});
@@ -140,7 +141,7 @@ public class MainNode extends AbstractNodeMain {
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
-					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, TEMPORAL_RESOLUTION));
+					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, TEMPORAL_RESOLUTION, ROBOT_REPORT_PERIOD));
 					
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
@@ -237,6 +238,7 @@ public class MainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
+			ROBOT_REPORT_PERIOD = params.getInteger("/" + node.getName() + "/report_period");
 			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
 			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
 			if (locationsFile.equals("NULL")) locationsFile = null;
