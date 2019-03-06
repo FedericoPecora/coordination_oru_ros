@@ -19,6 +19,9 @@
   <node pkg="orunav_coordinator_fake" type="coordinator_fake_node" name="coordinator_fake_node" output="screen">
     <param name="multiple_vehicles" value="true" />
     <param name="use_ct" value="false" />  
+    <param name="max_unsafety_probability" value="1e-4" /> 
+    <param name="max_transmission_delay" value="500" /> 
+    <param name="max_packet_loss_probability" value="0.0" /> 
   </node>
 
   

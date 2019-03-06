@@ -44,6 +44,9 @@ public class MainNode extends AbstractNodeMain {
 	private double MAX_ACCEL = 1.0;
 	private double MAX_VEL = 4.0;
 	private int ROBOT_REPORT_PERIOD = 1000;
+	private int MAX_TX_DELAY = 0;
+	private double MAX_PACKET_LOSS = 0;
+	private double MAX_UNSAFETY_PROB = 1e-2;
 	private String locationsFile = null;
 	private String goalSequenceFile = null;
 	private boolean repeatMissions = false;
@@ -106,6 +109,9 @@ public class MainNode extends AbstractNodeMain {
 						return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 					}
 				});
+				
+				//Set network configuration parameters
+				tec.setNetworkParameters(MAX_PACKET_LOSS, MAX_TX_DELAY, MAX_UNSAFETY_PROB);
 				
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
@@ -239,6 +245,9 @@ public class MainNode extends AbstractNodeMain {
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			ROBOT_REPORT_PERIOD = params.getInteger("/" + node.getName() + "/report_period");
+			MAX_PACKET_LOSS = params.getInteger("/" + node.getName() + "/max_packet_loss_probability");
+			MAX_TX_DELAY = params.getInteger("/" + node.getName() + "/max_transmission_delay");
+			MAX_UNSAFETY_PROB = params.getInteger("/" + node.getName() + "/max_unsafety_probability");
 			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
 			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
 			if (locationsFile.equals("NULL")) locationsFile = null;
