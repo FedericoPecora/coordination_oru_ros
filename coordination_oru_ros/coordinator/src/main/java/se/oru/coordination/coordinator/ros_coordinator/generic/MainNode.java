@@ -116,6 +116,8 @@ public class MainNode extends AbstractNodeMain {
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
+				tec.setBreakDeadlocksByReordering(false);
+				tec.setBreakDeadlocksByReplanning(true);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();

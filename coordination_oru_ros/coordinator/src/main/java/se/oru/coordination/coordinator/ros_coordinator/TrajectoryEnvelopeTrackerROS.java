@@ -105,7 +105,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  }
 	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
-	    	  
 	      }
 	    });
 	    
@@ -138,6 +137,9 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	public void setCriticalPoint(int arg0) {
 		callExecuteTaskService(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
+		if (!canStartTracking()) {
+			setCanStartTracking();
+		}
 	}
 	
 	@Override

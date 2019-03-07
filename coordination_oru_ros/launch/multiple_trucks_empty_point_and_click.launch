@@ -3,6 +3,7 @@
 
   <include file="$(find cititruck_gazebo)/launch/cititrucks_empty.launch"/>
   <include file="$(find gazebo_worlds_oru)/launch/empty_map_server.launch"/>
+  
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
   <rosparam command="load" file="$(find orunav_params)/config/citi2_simulation.cfg" />
@@ -10,6 +11,7 @@
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
     <rosparam param="robot_ids">[1,2,3]</rosparam>
+    <rosparam param="active_robot_ids">[1,2,3]</rosparam>
     <param name="footprint_rear_left_x" value="-0.2" />
     <param name="footprint_rear_left_y" value="0.3" />
     <param name="footprint_rear_right_x" value="-0.2" />
@@ -23,6 +25,9 @@
     <param name="temporal_resolution" value="1000.0" />
     <param name="forward_model_max_accel" value="0.1" />
     <param name="forward_model_max_vel" value="0.3" />
+    <param name="max_unsafety_probability" value="0.0001" /> 
+    <param name="max_transmission_delay" value="500" /> 
+    <param name="max_packet_loss_probability" value="0.0" /> 
   </node>
 
   <!-- ALL ROBOT SPECIFIC TASKS -->
@@ -30,14 +35,30 @@
     <param name="tf_prefix" value="robot1" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="1" />
+      <param name="robot_id" value="1" />
+      <remap from="/robot1/cmd_vel" to ="/robot1/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
-   
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
 
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_costmap.yml" command="load" ns="generate_path_iliad/iliad_smp_costmap/"/>
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_planner.yml" command="load" ns="generate_path_iliad/iliad_smp"/>
-    <node pkg="iliad_smp_global_planner" type="generate_path_iliad" name="generate_path_iliad" output="screen">   
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot1/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot1/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot1/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot1/control/"/>
+    </include>
+
+    <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
+      <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
+      <param name="model" value="CiTiTruck_Expanded10+20_16_1_4.0_0.2.reduced"/>
+      <param name="motion_primitives_directory" value="$(find orunav_motion_planner)/Primitives/" />
+      <param name="lookup_tables_directory" value="$(find orunav_motion_planner)/LookupTables/" /> 
       <param name="min_incr_path_dist" value="0.2" />
       <param name="visualize" value="true" />
     </node>
@@ -64,7 +85,6 @@
       <param name="use_xy_constraints" value="true" />
       <param name="phi_min" value="-1.2" />
       <param name="phi_max" value="1.2" />
-      <param name="do_nothing" value="false"/>
     </node>  
     
     <node pkg="orunav_trajectory_processor" type="deltatvec_service" name="deltatvec_service" output="screen">
@@ -110,14 +130,30 @@
     <param name="tf_prefix" value="robot2" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="2" />
+      <param name="robot_id" value="2" />
+      <remap from="/robot2/cmd_vel" to ="/robot2/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
 
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot2/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot2/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot2/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot2/control/"/>
+    </include>
 
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_costmap.yml" command="load" ns="generate_path_iliad/iliad_smp_costmap/"/>
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_planner.yml" command="load" ns="generate_path_iliad/iliad_smp"/>
-    <node pkg="iliad_smp_global_planner" type="generate_path_iliad" name="generate_path_iliad" output="screen">   
+    <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
+      <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
+      <param name="model" value="CiTiTruck_Expanded10+20_16_1_4.0_0.2.reduced"/>
+      <param name="motion_primitives_directory" value="$(find orunav_motion_planner)/Primitives/" />
+      <param name="lookup_tables_directory" value="$(find orunav_motion_planner)/LookupTables/" /> 
       <param name="min_incr_path_dist" value="0.2" />
       <param name="visualize" value="true" />
     </node>
@@ -144,7 +180,6 @@
       <param name="use_xy_constraints" value="true" />
       <param name="phi_min" value="-1.2" />
       <param name="phi_max" value="1.2" />
-      <param name="do_nothing" value="false"/>
     </node>  
     
     <node pkg="orunav_trajectory_processor" type="deltatvec_service" name="deltatvec_service" output="screen">
@@ -185,23 +220,39 @@
     </node>
     
   </group>
-  
+
   <group ns="robot3">
     <param name="tf_prefix" value="robot3" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="3" />
+      <param name="robot_id" value="3" />
+      <remap from="/robot3/cmd_vel" to ="/robot3/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
 
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot3/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot3/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot3/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot3/control/"/>
+    </include>
 
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_costmap.yml" command="load" ns="generate_path_iliad/iliad_smp_costmap/"/>
-    <rosparam file="$(find iliad_smp_global_planner)/cfg/iliad_smp_planner.yml" command="load" ns="generate_path_iliad/iliad_smp"/>
-    <node pkg="iliad_smp_global_planner" type="generate_path_iliad" name="generate_path_iliad" output="screen">   
+    <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
+      <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
+      <param name="model" value="CiTiTruck_Expanded10+20_16_1_4.0_0.2.reduced"/>
+      <param name="motion_primitives_directory" value="$(find orunav_motion_planner)/Primitives/" />
+      <param name="lookup_tables_directory" value="$(find orunav_motion_planner)/LookupTables/" /> 
       <param name="min_incr_path_dist" value="0.2" />
       <param name="visualize" value="true" />
     </node>
-        
+    
     <node pkg="orunav_constraint_extract" type="polygonconstraint_service" name="polygonconstraint_service" output="screen">
       <param name="load_type" value="1" />
       <param name="model_type" value="2" />
@@ -224,7 +275,6 @@
       <param name="use_xy_constraints" value="true" />
       <param name="phi_min" value="-1.2" />
       <param name="phi_max" value="1.2" />
-      <param name="do_nothing" value="false"/>
     </node>  
     
     <node pkg="orunav_trajectory_processor" type="deltatvec_service" name="deltatvec_service" output="screen">
@@ -265,9 +315,6 @@
     </node>
     
   </group>
-
-
-
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks3.rviz"/>
 
