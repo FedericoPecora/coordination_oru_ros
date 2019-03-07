@@ -190,26 +190,28 @@ public class MainNode extends AbstractNodeMain {
 			@Override
 			protected void loop() throws InterruptedException {
 				for (final int robotID : robotIDs) {
-					if (tec.isFree(robotID)) {
-						if (Missions.hasMissions(robotID) && !isPlanning.get(robotID)) {
-							final Mission m = Missions.dequeueMission(robotID);
-							final AbstractMotionPlanner mp = tec.getMotionPlanner(robotID);
-							mp.clearObstacles();
-							mp.setGoals(m.getToPose());
-							isPlanning.put(robotID, true);
-							Thread planningThread = new Thread("Planning for robot " + robotID) {
-								public void run() {
-									System.out.println(">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
-									if (mp.plan()) {
-										m.setPath(mp.getPath());
-										tec.addMissions(m);
-										tec.computeCriticalSectionsAndStartTrackingAddedMission();
+					synchronized(tec.getSolver()) {
+						if (tec.isFree(robotID)) {
+							if (Missions.hasMissions(robotID) && !isPlanning.get(robotID)) {
+								final Mission m = Missions.dequeueMission(robotID);
+								final AbstractMotionPlanner mp = tec.getMotionPlanner(robotID);
+								mp.clearObstacles();
+								mp.setGoals(m.getToPose());
+								isPlanning.put(robotID, true);
+								Thread planningThread = new Thread("Planning for robot " + robotID) {
+									public void run() {
+										System.out.println(">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
+										if (mp.plan()) {
+											m.setPath(mp.getPath());
+											tec.addMissions(m);
+											tec.computeCriticalSectionsAndStartTrackingAddedMission();
+										}
+										System.out.println("<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
+										isPlanning.put(robotID, false);
 									}
-									System.out.println("<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
-									isPlanning.put(robotID, false);
-								}
-							};
-							planningThread.start();
+								};
+								planningThread.start();
+							}
 						}
 					}
 				}
@@ -245,9 +247,9 @@ public class MainNode extends AbstractNodeMain {
 			MAX_ACCEL = params.getDouble("/" + node.getName() + "/forward_model_max_accel");
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			ROBOT_REPORT_PERIOD = params.getInteger("/" + node.getName() + "/report_period");
-			MAX_PACKET_LOSS = params.getInteger("/" + node.getName() + "/max_packet_loss_probability");
+			MAX_PACKET_LOSS = params.getDouble("/" + node.getName() + "/max_packet_loss_probability");
 			MAX_TX_DELAY = params.getInteger("/" + node.getName() + "/max_transmission_delay");
-			MAX_UNSAFETY_PROB = params.getInteger("/" + node.getName() + "/max_unsafety_probability");
+			MAX_UNSAFETY_PROB = params.getDouble("/" + node.getName() + "/max_unsafety_probability");
 			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
 			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
 			if (locationsFile.equals("NULL")) locationsFile = null;
