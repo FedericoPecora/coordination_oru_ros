@@ -20,6 +20,7 @@ import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -36,8 +37,6 @@ import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
-import std_msgs.Empty;
-import std_msgs.Int32;
 
 public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTracker {
 
@@ -45,10 +44,12 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected ConnectedNode node = null;
 	protected RobotReport currentRR = null;
 	protected Subscriber<orunav_msgs.RobotReport> subscriber = null;
+	protected Publisher<orunav_msgs.Task> publisher = null;
 	protected Task currentTask = null;
 	protected VEHICLE_STATE currentVehicleState = null;
 	boolean waitingForGoalOperation = false;
 	boolean calledExecuteFirstTime = false;
+	boolean useCPService = true;
 	private double prevDistance = 0.0;
 	private long lastUpdateTime = -1;
 
@@ -71,6 +72,15 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 			System.out.println("== Parameter not found ==");
 			e.printStackTrace();
 		}
+		try {
+			useCPService = params.getBoolean("/" + node.getName() + "/use_execute_task_service", true);
+		}
+		catch (org.ros.exception.ParameterNotFoundException e) {
+			System.out.println("== Parameter not found ==");
+			e.printStackTrace();
+		}
+		if (!useCPService) 
+			this.publisher = node.newPublisher("/robot" + te.getRobotID() + "/unreliable_execute_task", Task._TYPE);
 		///
 		
 		
@@ -142,7 +152,10 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	@Override
 	public void setCriticalPoint(int arg0) {
-		callExecuteTaskService(arg0, calledExecuteFirstTime);
+		if (useCPService)
+			callExecuteTaskService(arg0, calledExecuteFirstTime);
+		else
+			sendTaskMsg(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
 		if (!canStartTracking()) {
 			setCanStartTracking();
@@ -201,6 +214,26 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		
 	}
 	
+	private void sendTaskMsg(int cp, boolean update) {
+		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
+		currentTask.setCts(cts);
+		
+		//Operations used by the current execution service
+		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		startOp.setOperation(Operation.NO_OPERATION);
+		currentTask.getTarget().setStartOp(startOp);
+		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		goalOp.setOperation(Operation.NO_OPERATION);
+		currentTask.getTarget().setGoalOp(goalOp);
+		
+		currentTask.setUpdate(update);
+		currentTask.setCriticalPoint(cp);
+		currentTask.setSeq(externalCPCounter);
+		
+		for (int i = 0; i < tec.getNumberOfReplicas(); i++)
+			publisher.publish(currentTask);
+	}
+	
 	private CoordinatorTimeVec computeCTsFromDTs(DeltaTVec dts) {
 		CoordinatorTimeVec cts = node.getTopicMessageFactory().newFromType(CoordinatorTimeVec._TYPE);
 		cts.setGoalId(dts.getGoalId());
@@ -256,6 +289,5 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
 		tec.setCriticalPoint(te.getRobotID(), -1, false);		
 	}
-
 
 }
