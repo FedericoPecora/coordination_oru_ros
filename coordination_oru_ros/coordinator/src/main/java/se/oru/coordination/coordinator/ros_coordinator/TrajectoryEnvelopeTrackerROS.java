@@ -94,7 +94,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  //check message ordering
 	    	  if ((message.getSeq() < reportCounter && message.getSeq()-reportCounter > Integer.MAX_VALUE/2.0) ||
 	  				(reportCounter > message.getSeq() && reportCounter-message.getSeq() < Integer.MAX_VALUE/2.0)) {
-	  			metaCSPLogger.info("Ignored robot report related to counter " + message.getSeq() + " because counter is already at " + reportCounter + ".");
+	  			metaCSPLogger.finest("Ignored robot report related to counter " + message.getSeq() + " because counter is already at " + reportCounter + ".");
 	    		return;
 	    	  }
 	    	  reportCounter = message.getSeq();
@@ -152,14 +152,14 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	@Override
 	public void setCriticalPoint(int arg0) {
+		if (!canStartTracking()) {
+			setCanStartTracking();
+		}
 		if (useCPService)
 			callExecuteTaskService(arg0, calledExecuteFirstTime);
 		else
 			sendTaskMsg(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
-		if (!canStartTracking()) {
-			setCanStartTracking();
-		}
 	}
 	
 	@Override
@@ -176,6 +176,22 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		subscriber.shutdown();
 	}
 	
+	private void prepareTask(int cp, boolean update) {
+		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
+		currentTask.setCts(cts);
+		currentTask.setRobotId(te.getRobotID());
+		
+		//Operations used by the current execution service
+		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		startOp.setOperation(Operation.NO_OPERATION);
+		currentTask.getTarget().setStartOp(startOp);
+		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		goalOp.setOperation(Operation.NO_OPERATION);
+		currentTask.getTarget().setGoalOp(goalOp);
+		currentTask.setUpdate(update);
+		currentTask.setCriticalPoint(cp);
+	}
+	
 	private void callExecuteTaskService(int cp, boolean update) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
@@ -186,19 +202,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		}
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
-		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
-		currentTask.setCts(cts);
-		
-		//Operations used by the current execution service
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setStartOp(startOp);
-		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setGoalOp(goalOp);
-		
-		currentTask.setUpdate(update);
-		currentTask.setCriticalPoint(cp);
+		prepareTask(cp, update);
 		request.setTask(currentTask);
 
 		serviceClient.call(request, new ServiceResponseListener<ExecuteTaskResponse>() {
@@ -215,23 +219,25 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	}
 	
 	private void sendTaskMsg(int cp, boolean update) {
-		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
-		currentTask.setCts(cts);
+		final Task msg = publisher.newMessage();
+		prepareTask(cp, update);
 		
-		//Operations used by the current execution service
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setStartOp(startOp);
-		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setGoalOp(goalOp);
-		
-		currentTask.setUpdate(update);
-		currentTask.setCriticalPoint(cp);
-		currentTask.setSeq(externalCPCounter);
+		//copy the content
+		msg.setAbort(currentTask.getAbort());
+		msg.setConstraints(currentTask.getConstraints());
+		msg.setCriticalPoint(currentTask.getCriticalPoint());
+		msg.setCriticalRobotID(currentTask.getCriticalRobotID());
+		msg.setCts(currentTask.getCts());
+		msg.setDts(currentTask.getDts());
+		msg.setPath(currentTask.getPath());
+		msg.setReleasingPoint(currentTask.getReleasingPoint());
+		msg.setRobotId(currentTask.getRobotId());
+		msg.setTarget(currentTask.getTarget());
+		msg.setUpdate(currentTask.getUpdate());
+		msg.setSeq(externalCPCounter);
 		
 		for (int i = 0; i < tec.getNumberOfReplicas(); i++)
-			publisher.publish(currentTask);
+			publisher.publish(msg);
 	}
 	
 	private CoordinatorTimeVec computeCTsFromDTs(DeltaTVec dts) {

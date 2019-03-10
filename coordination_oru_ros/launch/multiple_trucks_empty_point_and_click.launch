@@ -28,7 +28,11 @@
     <param name="max_unsafety_probability" value="0.0001" /> 
     <param name="max_transmission_delay" value="500" /> 
     <param name="max_packet_loss_probability" value="0.0" /> 
+    <param name="use_execute_task_service" value="false" /> 
+    <param name="report_topic" value="report_delayed" /> 
   </node>
+  
+  <include file="$(find orunav_channel)/launch/test.launch"/>
 
   <!-- ALL ROBOT SPECIFIC TASKS -->
   <group ns="robot1">
@@ -122,6 +126,7 @@
       <param name="max_steering_range_smoothed_path" value="1.5" />
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
+      <!--param name="heartbeat_report_period_sec" value="0.03"/-->
     </node>
     
   </group>
@@ -217,6 +222,7 @@
       <param name="max_steering_range_smoothed_path" value="1.5" />
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
+      <!--param name="heartbeat_report_period_sec" value="0.03"/-->
     </node>
     
   </group>
@@ -312,6 +318,7 @@
       <param name="max_steering_range_smoothed_path" value="1.5" />
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
+      <!--param name="heartbeat_report_period_sec" value="0.03"/-->
     </node>
     
   </group>
