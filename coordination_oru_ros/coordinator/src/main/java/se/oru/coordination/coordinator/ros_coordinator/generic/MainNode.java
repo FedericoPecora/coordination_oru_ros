@@ -250,7 +250,7 @@ public class MainNode extends AbstractNodeMain {
 			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 			ROBOT_REPORT_PERIOD = params.getInteger("/" + node.getName() + "/report_period");
 			MAX_PACKET_LOSS = params.getDouble("/" + node.getName() + "/max_packet_loss_probability");
-			MAX_TX_DELAY = params.getInteger("/" + node.getName() + "/max_transmission_delay");
+			MAX_TX_DELAY = params.getInteger("/" + node.getName() + "/max_tx_delay_millis");
 			MAX_UNSAFETY_PROB = params.getDouble("/" + node.getName() + "/max_unsafety_probability");
 			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
 			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
