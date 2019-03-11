@@ -87,12 +87,13 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  TrajectoryEnvelope thisTE = thisTracker.getTrajectoryEnvelope();
 	    	  if (lastUpdateTime == -1) lastUpdateTime = getCurrentTimeInMillis();
 	    	  //check message ordering
+	    	  int reportCounter = getReportCounter();
 	    	  if ((message.getSeq() < reportCounter && message.getSeq()-reportCounter > Integer.MAX_VALUE/2.0) ||
 	  				(reportCounter > message.getSeq() && reportCounter-message.getSeq() < Integer.MAX_VALUE/2.0)) {
 	  			metaCSPLogger.finest("Ignored robot report related to counter " + message.getSeq() + " because counter is already at " + reportCounter + ".");
 	    		return;
 	    	  }
-	    	  reportCounter = message.getSeq();
+	    	  setReportCounter(message.getSeq());
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
