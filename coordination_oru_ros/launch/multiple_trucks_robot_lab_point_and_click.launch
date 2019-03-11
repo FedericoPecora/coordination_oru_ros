@@ -6,14 +6,14 @@
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
   <rosparam command="load" file="$(find orunav_params)/config/citi2_simulation.cfg" />
-  
-  <arg name="robot_ids" default="[1,2]" />
-  <arg name="active_robot_ids" default="[1,2]" />
+
+  <arg name="robot_ids" default="[1,2,3]" />
+  <arg name="active_robot_ids" default="[1,2,3]" />
   <arg name="max_unsafety_probability" default="0.0001" /> 
   <arg name="max_packet_loss_probability" default="0.0" /> 
   <arg name="max_tx_delay_millis" default="0" />
-  <arg name="min_tx_delay_millis" default="0" />
   <arg name="heartbeat_report_period_sec" default="1.0" />
+  <arg name="use_update_task_service" default="false" />
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
     <rosparam param="robot_ids" subst_value="true">$(arg robot_ids)</rosparam>
@@ -42,7 +42,7 @@
       <arg name="robot_ids" value="$(arg active_robot_ids)" />
       <arg name="max_unsafety_probability" value="$(arg max_unsafety_probability)" />
       <arg name="max_packet_loss_probability" value="$(arg max_packet_loss_probability)" />
-      <arg name="min_tx_delay_millis" value="$(arg min_tx_delay_millis)" />
+      <arg name="min_tx_delay_millis" value="0" />
       <arg name="max_tx_delay_millis" value="$(arg max_tx_delay_millis)"/>
       <arg name="tf_prefix" value="/robot" />
       <arg name="report_topic" value="report" />
@@ -143,6 +143,7 @@
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
       <param name="heartbeat_report_period_sec" value="$(arg heartbeat_report_period_sec)" />
+      <param name="use_update_task_service" value="$(arg use_update_task_service)" />
     </node>
     
   </group>
@@ -239,10 +240,11 @@
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
       <param name="heartbeat_report_period_sec" value="$(arg heartbeat_report_period_sec)" />
+      <param name="use_update_task_service" value="$(arg use_update_task_service)" />
     </node>
     
   </group>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks3.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks2.rviz"/>
 
 </launch>
