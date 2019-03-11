@@ -52,6 +52,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	boolean useCPService = true;
 	private double prevDistance = 0.0;
 	private long lastUpdateTime = -1;
+	private double MAX_VEL = 4.0;
 
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 		
@@ -63,25 +64,19 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		final TrajectoryEnvelopeTrackerROS thisTracker = this;
 
 		String reportTopic = "report";
-		///
 		ParameterTree params = node.getParameterTree();
 		try {
 			reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
-		}
-		catch (org.ros.exception.ParameterNotFoundException e) {
-			System.out.println("== Parameter not found ==");
-			e.printStackTrace();
-		}
-		try {
 			useCPService = params.getBoolean("/" + node.getName() + "/use_execute_task_service", true);
+			MAX_VEL = params.getDouble("/" + node.getName() + "/forward_model_max_vel");
 		}
 		catch (org.ros.exception.ParameterNotFoundException e) {
 			System.out.println("== Parameter not found ==");
 			e.printStackTrace();
 		}
+
 		if (!useCPService) 
 			this.publisher = node.newPublisher("/robot" + te.getRobotID() + "/unreliable_execute_task", Task._TYPE);
-		///
 		
 		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
@@ -113,8 +108,8 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
 	    		  }
 	    		  long currentTime = getCurrentTimeInMillis(); 
-	    		  long deltaT = currentTime-lastUpdateTime;
-	    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
+	    		  long deltaT = Math.max(getTrackingPeriodInMillis(), currentTime-lastUpdateTime-TrajectoryEnvelopeCoordinator.MAX_TX_DELAY-getTrackingPeriodInMillis()); //overestimating due to transmission delay --> (currentTime-lastUpdateTime)
+	    		  double vel = Math.min(MAX_VEL,(newDistance-prevDistance)/(deltaT/1000.0));
 	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
 	    		  
 	    		  lastUpdateTime = currentTime;
