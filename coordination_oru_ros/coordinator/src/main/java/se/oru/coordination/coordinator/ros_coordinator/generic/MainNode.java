@@ -3,11 +3,13 @@ package se.oru.coordination.coordinator.ros_coordinator.generic;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
@@ -21,7 +23,6 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.topic.Subscriber;
-
 import com.vividsolutions.jts.geom.Coordinate;
 
 import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
@@ -133,7 +134,7 @@ public class MainNode extends AbstractNodeMain {
 				//Set the footprint of the robots
 				tec.setDefaultFootprint(footprintCoords);
 				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
-				//if (goalSequenceFile != null) readGoalSequenceFile();
+				if (goalSequenceFile != null) readGoalSequenceFile();
 				
 				//Sleep to allow loading of motion prims
 				try {
@@ -180,19 +181,18 @@ public class MainNode extends AbstractNodeMain {
 					});
 					
 					
-					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
-					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
-						@Override
-						public void onNewMessage(geometry_msgs.PoseStamped message) {
-							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
-							Pose pose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(), quat.getTheta());
-							Mission m = new Mission(robotID,"currentPose", pose.toString(), null, pose);
-							Missions.enqueueMission(m);
-						}
-					});
+//					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
+//					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
+//						@Override
+//						public void onNewMessage(geometry_msgs.PoseStamped message) {
+//							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
+//							Pose pose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(), quat.getTheta());
+//							Mission m = new Mission(robotID,"currentPose", pose.toString(), null, pose);
+//							Missions.enqueueMission(m);
+//						}
+//					});
 					
-					/*
-					 
+			 
 					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
 					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 						@Override
@@ -210,12 +210,10 @@ public class MainNode extends AbstractNodeMain {
 					            writer.close();
 							}
 							catch (FileNotFoundException e) { e.printStackTrace(); } 
-							Missions.enqueueMission(mission);
+							//Missions.enqueueMission(mission);
 							//callComputeTaskService(mission);
 						}
 					});
-					 
-					 */
 					
 				}
 				
@@ -299,24 +297,24 @@ public class MainNode extends AbstractNodeMain {
 		}
 	}
 	
-//	private void readGoalSequenceFile() {
-//		try {
-//			Scanner in = new Scanner(new FileReader(goalSequenceFile));
-//			while (in.hasNextLine()) {
-//				String line = in.nextLine().trim();
-//				if (line.length() != 0 && !line.startsWith("#")) {
-//					String[] oneline = line.split(" |\t");
-//					int robotID = Integer.parseInt(oneline[0]);
-//					String goalLocation = oneline[1];
-//					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
-//					Missions.enqueueMission(m);
-//					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
-//				}
-//			}
-//			in.close();
-//		}
-//		catch (FileNotFoundException e) { e.printStackTrace(); }
-//	}
+	private void readGoalSequenceFile() {
+		try {
+			Scanner in = new Scanner(new FileReader(goalSequenceFile));
+			while (in.hasNextLine()) {
+				String line = in.nextLine().trim();
+				if (line.length() != 0 && !line.startsWith("#")) {
+					String[] oneline = line.split(" |\t");
+					int robotID = Integer.parseInt(oneline[0]);
+					String goalLocation = oneline[1];
+					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
+					Missions.enqueueMission(m);
+					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
+				}
+			}
+			in.close();
+		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+	}
 	
 
 }

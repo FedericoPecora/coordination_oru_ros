@@ -36,6 +36,8 @@
     <param name="max_tx_delay_millis" value="$(eval 2*arg(max_tx_delay_millis))" /> 
     <param name="use_execute_task_service" value="false" /> 
     <param name="report_topic" value="report_delayed" /> 
+    <param name="locations_file" value="$(find coordination_oru_ros)/missions/robot_lab_locations_udp.txt" />
+    <param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/robot_lab_goal_sequence_udp.txt" />
   </node>
 
   <include file="$(find orunav_channel)/launch/channel_model.launch" >
