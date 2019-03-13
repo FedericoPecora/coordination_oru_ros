@@ -11,8 +11,8 @@
   <arg name="active_robot_ids" default="[1,2]" />
   <arg name="max_unsafety_probability" default="0.0001" /> 
   <arg name="max_packet_loss_probability" default="0.0" /> 
-  <arg name="min_tx_delay_millis" default="100" />
-  <arg name="max_tx_delay_millis" default="500" />
+  <arg name="min_tx_delay_millis" default="10" />
+  <arg name="max_tx_delay_millis" default="400" />
   <arg name="heartbeat_report_period_sec" default="1.0" />
  
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
@@ -33,9 +33,10 @@
     <param name="forward_model_max_vel" value="0.3" />
     <param name="max_unsafety_probability" value="$(arg max_unsafety_probability)" />
     <param name="max_packet_loss_probability" value="$(arg max_packet_loss_probability)" />
-    <param name="max_tx_delay_millis" value="$(eval 2*arg(max_tx_delay_millis))" /> 
+    <!--param name="max_tx_delay_millis" value="$(eval 2*arg(max_tx_delay_millis))" /-->
+    <param name="max_tx_delay_millis" value="500" /> 
     <param name="use_execute_task_service" value="false" /> 
-    <param name="report_topic" value="report_delayed" /> 
+    <param name="report_topic" value="report_delayed" />
     <param name="locations_file" value="$(find coordination_oru_ros)/missions/robot_lab_locations_udp.txt" />
     <param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/robot_lab_goal_sequence_udp.txt" />
   </node>
@@ -44,7 +45,7 @@
       <arg name="robot_ids" value="$(arg active_robot_ids)" />
       <arg name="max_unsafety_probability" value="$(arg max_unsafety_probability)" />
       <arg name="max_packet_loss_probability" value="$(arg max_packet_loss_probability)" />
-      <arg name="min_tx_delay_millis" value="$(arg min_tx_delay_millis)"" />
+      <arg name="min_tx_delay_millis" value="$(arg min_tx_delay_millis)" />
       <arg name="max_tx_delay_millis" value="$(arg max_tx_delay_millis)"/>
       <arg name="tf_prefix" value="/robot" />
       <arg name="report_topic" value="report" />
