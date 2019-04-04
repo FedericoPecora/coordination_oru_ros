@@ -22,11 +22,7 @@
     <param name="forward_model_max_accel" value="0.1" />
     <param name="forward_model_max_vel" value="0.3" />
     
-    <!-- FOR ILIAD -->
-    <!--param name="report_topic" value="control/report"/-->
-
-    <!-- FOR STANDALONE -->
-    <param name="report_topic" value="report"/>
+    <param name="report_topic" value="control/report"/>
     
     <!--param name="locations_file" value="$(find coordination_oru_ros)/missions/aass_basement_locations.txt" /-->
     <!--param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/aass_basement_goal_sequence.txt" /-->
