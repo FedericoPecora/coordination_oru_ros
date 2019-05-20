@@ -6,9 +6,24 @@
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
   <rosparam command="load" file="$(find orunav_params)/config/citi2_simulation.cfg" />
+  
+  <!-- These lines are required by the upd branch -->
+  <arg name="robot_ids" default="[1,2]" />
+  <arg name="active_robot_ids" default="[1,2]" />
+  
+   <!-- CHANGE THESE VALUES ACCORDING TO A CONSERVATIVE MODEL OF COMMUNICATION CHANNEL -->
+  <arg name="max_unsafety_probability" default="0.0001" /> 
+    <!-- the maximum desired probability of having a constraint violation. The higher this value, the higher the number of equal messages 
+    sent by the coordinator to enforce the communication with respect to packet loss. Be carefull not to induce congestion of the network -->
+  
+  <arg name="max_packet_loss_probability" default="0.0" /> <!-- upperbound of the packet loss probability -->
+  <arg name="max_tx_delay_millis" default="0" /> <!-- upperbound of the tx delay (standard < 500 ms) -->
+  <arg name="heartbeat_report_period_sec" default="1.0" /> <!-- robot control period in second -->
+  <arg name="use_update_task_service" default="false" />
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
-    <rosparam param="robot_ids">[1,2]</rosparam>
+    <rosparam param="robot_ids" subst_value="true">$(arg robot_ids)</rosparam>
+    <rosparam param="active_robot_ids" subst_value="true">$(arg active_robot_ids)</rosparam>
     <param name="footprint_rear_left_x" value="-0.2" />
     <param name="footprint_rear_left_y" value="0.3" />
     <param name="footprint_rear_right_x" value="-0.2" />
@@ -19,23 +34,43 @@
     <param name="footprint_front_right_y" value="-0.3" />
     <param name="control_period" value="200" />
     <param name="temporal_resolution" value="1000.0" />
-    <param name="report_period" value="1000" />
     <param name="forward_model_max_accel" value="0.08" />
-    <param name="forward_model_max_vel" value="0.28" />
+  <param name="forward_model_max_vel" value="0.28" />-->
     <!--param name="locations_file" value="$(find coordination_oru_ros)/missions/arena_locations.txt" /-->
     <!--param name="goal_sequence_file" value="$(find coordination_oru_ros)/missions/arena_goal_sequence.txt" /-->
-  </node>
-
+    
+    <!-- These lines are required by the upd branch -->
+    <param name="report_period" value="$(eval int(1000 * arg('heartbeat_report_period_sec')))" />
+    <param name="max_unsafety_probability" value="$(arg max_unsafety_probability)" />
+    <param name="max_packet_loss_probability" value="$(arg max_packet_loss_probability)" />
+    <param name="max_tx_delay_millis" value="$(arg max_tx_delay_millis)" /> 
+    <param name="use_execute_task_service" value="false" /> 
+    <param name="report_topic" value="report" /> 
+    </node>
+    
   <!-- ALL ROBOT SPECIFIC TASKS -->
   <group ns="robot1">
     <param name="tf_prefix" value="robot1" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="1" />
-	<remap from="/robot1/cmd_vel" to ="/robot1/controller/cmd_vel"/>
+      <param name="robot_id" value="1" />
+      <remap from="/robot1/cmd_vel" to ="/robot1/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
-   
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot1/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot1/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot1/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot1/control/"/>
+    </include>
 
     <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
       <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
@@ -105,6 +140,8 @@
       <param name="max_steering_range_smoothed_path" value="1.5" />
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
+      <param name="heartbeat_report_period_sec" value="$(arg heartbeat_report_period_sec)" />
+      <param name="use_update_task_service" value="$(arg use_update_task_service)" />
     </node>
     
   </group>
@@ -113,11 +150,24 @@
     <param name="tf_prefix" value="robot2" />
 
     <node pkg="orunav_mpc" type="controller_node" name="controller" output="screen">
-        <param name="robot_id" value="2" />
-      	<remap from="/robot2/cmd_vel" to ="/robot2/controller/cmd_vel"/>
+      <param name="robot_id" value="2" />
+      <remap from="/robot2/cmd_vel" to ="/robot2/controller/cmd_vel"/>
+      <!-- FOR ILIAD -->
+      <!--
+      <remap from="controller/commands" to="control/controller/commands"/>   
+      <remap from="controller/reports" to ="control/controller/reports"/>
+      <remap from="controller/trajectories" to ="control/controller/trajectories"/>
+      -->
     </node>
 
-    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch" />
+    <include file="$(find orunav_fork_control)/launch/fork_control_sim.launch">
+      <!-- FOR ILIAD -->
+      <!--arg name="cmd_fork_topic" value="/robot2/control/controller/cmd_fork" /-->
+      <!--arg name="topic_prefix"   value="/robot2/"/-->
+      <!-- FOR STANDALONE -->
+      <arg name="cmd_fork_topic" value="/robot2/controller/cmd_fork" /> 
+      <arg name="topic_prefix"   value="/robot2/control/"/>
+    </include>
 
     <node pkg="orunav_motion_planner" type="get_path_service" name="get_path_service" output="screen">
       <!--param name="model" value="CiTiTruck_16_1_4.0_0.2.reduced"/-->
@@ -187,6 +237,8 @@
       <param name="max_steering_range_smoothed_path" value="1.5" />
       <param name="min_docking_distance" value="0.1" />
       <param name="use_ct" value="false"/>
+      <param name="heartbeat_report_period_sec" value="$(arg heartbeat_report_period_sec)" />
+      <param name="use_update_task_service" value="$(arg use_update_task_service)" />
     </node>
     
   </group>
