@@ -38,7 +38,7 @@ public class MainNode extends AbstractNodeMain {
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
 	private ConnectedNode node = null;
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
-	private Coordinate[] footprintCoords = null;
+	private HashMap<Integer, Coordinate[]> footprintCoords = null;
 	private int CONTROL_PERIOD = 1000;
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	private double MAX_ACCEL = 1.0;
@@ -115,8 +115,10 @@ public class MainNode extends AbstractNodeMain {
 				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
 				tec.setVisualization(viz);
 				
-				//Set the footprint of the robots
-				tec.setDefaultFootprint(footprintCoords);
+				// Set the footprint of the robots
+				// tec.setDefaultFootprint(footprintCoords);
+				// FOOTPRINT IS SET IN LOOP BELOW!
+				
 				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
 				//if (goalSequenceFile != null) readGoalSequenceFile();
 				
@@ -132,11 +134,12 @@ public class MainNode extends AbstractNodeMain {
 				
 				
 				for (final int robotID : robotIDs) {
-					
+					tec.setFootprint(robotID, footprintCoords.get(robotID));
 					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
-					mp.setFootprint(footprintCoords);
+					mp.setFootprint(footprintCoords.get(robotID));
 					tec.setMotionPlanner(robotID, mp);
 					isPlanning.put(robotID, false);
+					
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
@@ -217,14 +220,21 @@ public class MainNode extends AbstractNodeMain {
 	@SuppressWarnings("unchecked")
 	private void readParams() {
 		ParameterTree params = node.getParameterTree();
-		footprintCoords = new Coordinate[4];
-		try {
-			footprintCoords[0] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_rear_left_x"),params.getDouble("/" + node.getName() + "/footprint_rear_left_y"));
-			footprintCoords[1] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_rear_right_x"),params.getDouble("/" + node.getName() + "/footprint_rear_right_y"));
-			footprintCoords[2] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_right_x"),params.getDouble("/" + node.getName() + "/footprint_front_right_y"));
-			footprintCoords[3] = new Coordinate(params.getDouble("/" + node.getName() + "/footprint_front_left_x"),params.getDouble("/" + node.getName() + "/footprint_front_left_y"));
+		footprintCoords = new HashMap<Integer, Coordinate[]>();
+		
+		try {	
 			robotIDs = (List<Integer>) params.getList("/" + node.getName() + "/robot_ids");
-			for (Integer robotID : robotIDs) activeRobots.put(robotID, false);
+			
+			for (Integer robotID : robotIDs) {
+				Coordinate[] thisFootprintCoords = new Coordinate[4];
+				activeRobots.put(robotID, false);
+				thisFootprintCoords[0] = new Coordinate(params.getDouble("/robot" + robotID + "/footprint/rear_left_x"),params.getDouble("/robot" + robotID + "/footprint/rear_left_y"));
+				thisFootprintCoords[1] = new Coordinate(params.getDouble("/robot" + robotID + "/footprint/rear_right_x"),params.getDouble("/robot" + robotID + "/footprint/rear_right_y"));
+				thisFootprintCoords[2] = new Coordinate(params.getDouble("/robot" + robotID + "/footprint/front_right_x"),params.getDouble("/robot" + robotID + "/footprint/front_right_y"));
+				thisFootprintCoords[3] = new Coordinate(params.getDouble("/robot" + robotID + "/footprint/front_left_x"),params.getDouble("/robot" + robotID + "/footprint/front_left_y"));
+				footprintCoords.put(robotID, thisFootprintCoords);				
+			}
+			
 			ArrayList<Integer> defaultList = new ArrayList<Integer>();
 			defaultList.add(-1);
 			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
