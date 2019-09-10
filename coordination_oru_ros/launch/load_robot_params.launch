@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<launch>
+  <!--
+      This file takes in the Robot ID and type as arguments and loads the
+      appropriate parameters for coordinator to use. 
+  -->
+  <arg name="robot_id" default="1" />
+  <arg name="robot_type" default="cititruck"/>
+
+  <group if="$(eval arg('robot_type') == 'cititruck')">
+    <param name="/robot$(arg robot_id)/footprint/rear_left_x" value="-0.2" />
+    <param name="/robot$(arg robot_id)/footprint/rear_left_y" value="0.3" />
+    <param name="/robot$(arg robot_id)/footprint/rear_right_x" value="-0.2" />
+    <param name="/robot$(arg robot_id)/footprint/rear_right_y" value="-0.3" />
+    <param name="/robot$(arg robot_id)/footprint/front_left_x" value="1.9" />
+    <param name="/robot$(arg robot_id)/footprint/front_left_y" value="0.3" />
+    <param name="/robot$(arg robot_id)/footprint/front_right_x" value="1.9" />
+    <param name="/robot$(arg robot_id)/footprint/front_right_y" value="-0.3" />
+  </group>
+
+  <group if="$(eval arg('robot_type') == 'bt')">
+    <param name="/robot$(arg robot_id)/footprint/rear_left_x" value="-0.38" />
+    <param name="/robot$(arg robot_id)/footprint/rear_left_y" value="0.45" />
+    <param name="/robot$(arg robot_id)/footprint/rear_right_x" value="-0.38" />
+    <param name="/robot$(arg robot_id)/footprint/rear_right_y" value="-0.45" />
+    <param name="/robot$(arg robot_id)/footprint/front_left_x" value="2.07" />
+    <param name="/robot$(arg robot_id)/footprint/front_left_y" value="0.45" />
+    <param name="/robot$(arg robot_id)/footprint/front_right_x" value="2.07" />
+    <param name="/robot$(arg robot_id)/footprint/front_right_y" value="-0.45" />
+  </group>
+  
+</launch>
