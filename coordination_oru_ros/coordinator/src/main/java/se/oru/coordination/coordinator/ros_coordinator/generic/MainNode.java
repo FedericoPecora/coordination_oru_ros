@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.ServiceException;
@@ -74,7 +75,35 @@ public class MainNode extends AbstractNodeMain {
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> DEACTIVATING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
-				activeRobots.put(arg0.getRobotID(),false);			}
+				activeRobots.put(arg0.getRobotID(),false);
+			}
+		});
+		node.newServiceServer("coordinator/update_mission", orunav_msgs.UpdateMission._TYPE, new ServiceResponseBuilder<orunav_msgs.UpdateMissionRequest, orunav_msgs.UpdateMissionResponse>() {
+			@Override
+			public void build(orunav_msgs.UpdateMissionRequest arg0, orunav_msgs.UpdateMissionResponse arg1) throws ServiceException {
+				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating mission for Robot" + arg0.getRobotID());
+				System.out.println(ANSI_RESET);
+				
+				//Get old path
+				PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(arg0.getRobotID()).getTrajectory().getPoseSteering();
+				
+				//Get the new path from the message
+				List<orunav_msgs.PoseSteering> newPath = arg0.getNewPath().getPath();
+				PoseSteering[] newP = new PoseSteering[oldP.length + newPath.size()];
+				
+				//Concatenate the new path to the old path...
+				for (int i = 0; i < oldP.length; i++) {
+					newP[i] = oldP[i];
+				}
+				for (int i = 0; i < newPath.size(); i++) {
+					orunav_msgs.PoseSteering ps = newPath.get(i);
+					Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+					newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+				}
+				
+				//... and tell the coordinator to replace the path
+				tec.replacePath(arg0.getRobotID(), newP);
+			}
 		});
 	}
 
