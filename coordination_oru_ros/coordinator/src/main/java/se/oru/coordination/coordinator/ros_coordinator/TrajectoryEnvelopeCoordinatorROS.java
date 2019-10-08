@@ -24,6 +24,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	protected ConnectedNode node = null;
 	protected HashMap<Integer,Task> currentTasks = new HashMap<Integer,Task>();
 
+	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
+		return (TrajectoryEnvelopeTrackerROS)this.trackers.get(robotID);
+	}
+	
 	private void setupAbortService() {
 		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override

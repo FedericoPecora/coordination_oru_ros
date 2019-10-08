@@ -78,17 +78,25 @@ public class MainNode extends AbstractNodeMain {
 				activeRobots.put(arg0.getRobotID(),false);
 			}
 		});
-		node.newServiceServer("coordinator/update_mission", orunav_msgs.UpdateMission._TYPE, new ServiceResponseBuilder<orunav_msgs.UpdateMissionRequest, orunav_msgs.UpdateMissionResponse>() {
+		node.newServiceServer("coordinator/update_task", orunav_msgs.UpdateTask._TYPE, new ServiceResponseBuilder<orunav_msgs.UpdateTaskRequest, orunav_msgs.UpdateTaskResponse>() {
 			@Override
-			public void build(orunav_msgs.UpdateMissionRequest arg0, orunav_msgs.UpdateMissionResponse arg1) throws ServiceException {
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating mission for Robot" + arg0.getRobotID());
+			public void build(orunav_msgs.UpdateTaskRequest arg0, orunav_msgs.UpdateTaskResponse arg1) throws ServiceException {
+				
+				int rid = arg0.getTask().getTarget().getRobotId();
+				if (!robotIDs.contains(rid)) {
+					System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Ignoring task update request as there is no robot with ID = " + rid);
+					System.out.println(ANSI_RESET);
+					return;
+				}
+				
+				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating task for Robot" + rid);
 				System.out.println(ANSI_RESET);
 				
 				//Get old path
-				PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(arg0.getRobotID()).getTrajectory().getPoseSteering();
+				PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
 				
 				//Get the new path from the message
-				List<orunav_msgs.PoseSteering> newPath = arg0.getNewPath().getPath();
+				List<orunav_msgs.PoseSteering> newPath = arg0.getTask().getPath().getPath();
 				PoseSteering[] newP = new PoseSteering[oldP.length + newPath.size()];
 				
 				//Concatenate the new path to the old path...
@@ -101,8 +109,12 @@ public class MainNode extends AbstractNodeMain {
 					newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
 				}
 				
+				//Update operations too...
+				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
+				
 				//... and tell the coordinator to replace the path
-				tec.replacePath(arg0.getRobotID(), newP);
+				tec.replacePath(rid, newP);
+				
 			}
 		});
 	}

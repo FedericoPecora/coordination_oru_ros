@@ -1,5 +1,6 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -154,6 +155,29 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		subscriber.shutdown();
 	}
 	
+	public void setOperations(String startOperation, String goalOperation) throws IllegalArgumentException, IllegalAccessException {
+		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+		Class<Operation> c = Operation.class;
+		int sop = Operation.NO_OPERATION;
+		int gop = Operation.NO_OPERATION;
+		
+		for (Field f : c.getDeclaredFields()) {
+			if (startOperation != null && f.getName().equals(startOperation)) sop = f.getInt(null);
+			if (goalOperation != null && f.getName().equals(goalOperation)) gop = f.getInt(null);
+		}
+		
+		startOp.setOperation(sop);
+		currentTask.getTarget().setStartOp(startOp);
+		goalOp.setOperation(gop);
+		currentTask.getTarget().setGoalOp(goalOp);
+	}
+	
+	public void setOperations(Operation startOp, Operation goalOp) {
+		currentTask.getTarget().setStartOp(startOp);
+		currentTask.getTarget().setGoalOp(goalOp);
+	}
+	
 	private void callExecuteTaskService(int cp, boolean update) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
@@ -168,12 +192,14 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		currentTask.setCts(cts);
 		
 		//Operations used by the current execution service
-		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		startOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setStartOp(startOp);
-		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-		goalOp.setOperation(Operation.NO_OPERATION);
-		currentTask.getTarget().setGoalOp(goalOp);
+		if (!update) {
+			Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+			startOp.setOperation(Operation.NO_OPERATION);
+			currentTask.getTarget().setStartOp(startOp);
+			Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+			goalOp.setOperation(Operation.NO_OPERATION);
+			currentTask.getTarget().setGoalOp(goalOp);
+		}
 		
 		currentTask.setUpdate(update);
 		currentTask.setCriticalPoint(cp);
