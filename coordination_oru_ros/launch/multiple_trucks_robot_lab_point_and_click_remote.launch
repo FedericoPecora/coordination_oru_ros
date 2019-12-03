@@ -19,6 +19,7 @@
 
   <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.generic.MainNode" output="screen">
     <rosparam param="robot_ids">[1,2]</rosparam>
+    <rosparam param="active_robot_ids">[1,2]</rosparam>
     <param name="control_period" value="1000" />
     <param name="temporal_resolution" value="1000.0" />
     <param name="report_topic" value="control/report"/>    
