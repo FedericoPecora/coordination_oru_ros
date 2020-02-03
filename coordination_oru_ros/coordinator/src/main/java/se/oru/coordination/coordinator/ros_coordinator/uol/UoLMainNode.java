@@ -487,7 +487,16 @@ public class UoLMainNode extends AbstractNodeMain {
 
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
-			
+
+									
+			CONTROL_PERIOD = 250;
+			TEMPORAL_RESOLUTION = 500;
+			System.out.println();
+			System.out.println(ANSI_RED + "=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=");
+			System.out.println(ANSI_RED + "=xxxx= FORCING CONTROL PERIOD ("+CONTROL_PERIOD+") AND TEMPORAL RESOLUTION ("+TEMPORAL_RESOLUTION+") =xxxx=");
+			System.out.println(ANSI_RED + "=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=");
+			System.out.println();
+
 			robotsAlive = new HashMap<Integer,Boolean>();
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
