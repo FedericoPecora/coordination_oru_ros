@@ -7,7 +7,9 @@ import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
+import orunav_msgs.Task;
 
+import org.apache.commons.lang.ObjectUtils.Null;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
@@ -82,7 +84,9 @@ public class UoLMainNode extends AbstractNodeMain {
 	private String reportTopic = "report";
 	private String mapFrameID = "map_laser2d";
 	private ConnectedNode node = null;
-	
+	Subscriber<orunav_msgs.RobotReport> subscriberInit;
+	Subscriber<geometry_msgs.PoseStamped> subscriberGoal;
+
 	public static final String ANSI_BG_WHITE = "\u001B[47m";
 	// Nice visualization
 	public static final String ANSI_BLUE = "\u001B[34m" + ANSI_BG_WHITE;
@@ -115,39 +119,9 @@ public class UoLMainNode extends AbstractNodeMain {
 		node.newServiceServer("coordinator/update_task", orunav_msgs.UpdateTask._TYPE, new ServiceResponseBuilder<orunav_msgs.UpdateTaskRequest, orunav_msgs.UpdateTaskResponse>() {
 			@Override
 			public void build(orunav_msgs.UpdateTaskRequest arg0, orunav_msgs.UpdateTaskResponse arg1) throws ServiceException {
-				
-				int rid = arg0.getTask().getTarget().getRobotId();
-				if (!robotIDs.contains(rid)) {
-					System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Ignoring task update request as there is no robot with ID = " + rid);
-					System.out.println(ANSI_RESET);
-					return;
-				}
-				
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating task for Robot" + rid);
-				System.out.println(ANSI_RESET);
-				
-				//Get old path
-				PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
-				
-				//Get the new path from the message
-				List<orunav_msgs.PoseSteering> newPath = arg0.getTask().getPath().getPath();
-				PoseSteering[] newP = new PoseSteering[oldP.length + newPath.size()];
-				
-				//Concatenate the new path to the old path...
-				for (int i = 0; i < oldP.length; i++) {
-					newP[i] = oldP[i];
-				}
-				for (int i = 0; i < newPath.size(); i++) {
-					orunav_msgs.PoseSteering ps = newPath.get(i);
-					Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
-					newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
-				}
-				
-				//Update operations too...
-				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
-				
-				//... and tell the coordinator to replace the path
-				tec.replacePath(rid, newP);
+				int result = callUpdateTaskSrv(arg0.getTask());
+				// people appreciate some feedback...
+				arg1.setResult(result);
 				
 			}
 		});
@@ -155,7 +129,13 @@ public class UoLMainNode extends AbstractNodeMain {
 		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
 			@Override
 			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
-				
+
+				System.out.print(ANSI_RED + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				System.out.print(ANSI_RED + ">>>>>>>>>>>>>> THIS DOES NOT WORK PROPERLY ... ");
+				System.out.print(ANSI_RED + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				System.out.println(ANSI_RESET);
+
+
 				int rid = arg0.getRobotID();
 				if (!robotIDs.contains(rid)) {
 					System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Ignoring replan request as there is no robot with ID = " + rid);
@@ -166,36 +146,19 @@ public class UoLMainNode extends AbstractNodeMain {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Replanning for Robot" + rid);
 				System.out.println(ANSI_RESET);
 				
-				// get original goal
-				orunav_msgs.RobotTarget goal = tec.getCurrentTask(rid).getTarget();
-				double  x = goal.getGoal().getPose().getPosition().getX();
-				double  y = goal.getGoal().getPose().getPosition().getY();
-				double rx = goal.getGoal().getPose().getOrientation().getX();
-				double ry = goal.getGoal().getPose().getOrientation().getY();
-				double rz = goal.getGoal().getPose().getOrientation().getZ();
-				double rw = goal.getGoal().getPose().getOrientation().getW();
+				// get original info
+				orunav_msgs.RobotTarget target = tec.getCurrentTask(rid).getTarget();
 
-				Quaternion quat = new Quaternion(rx,ry,rz,rw);
-				Pose goalPose = new Pose(x,y,quat.getTheta());
-				
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Cancelling current mission for Robot:" + rid);
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Goal (" + x + ", " + y + ", " + quat.getTheta() + ")" );
-				System.out.println(ANSI_RESET);
-				
-				// cancel mission.
- 				tec.truncateEnvelope(rid);
+				// call compute task ... but from current position ...
+				Task t = callComputeTaskSrv(target, true);
+				try { 
+					t.setUpdate(true);
+					callUpdateTaskSrv(t);	
+				} catch (java.lang.NullPointerException e) { 
+					System.out.print(ANSI_RED + ">>>>>>>>>>>>>> Could not find an alternative route!!!!");
+					System.out.println(ANSI_RESET);	
+				}
 
-				// trigger a new one to same goal
-
-				// 1.- build mission from current position to retrieved goal			
-				Pose startPose = tec.getRobotReport(rid).getPose();
-				IliadMission mission = new IliadMission(rid, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
-
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> New mission starting from (" + startPose.getX() + ", " + startPose.getY() + ", " + startPose.getTheta() + ")" );
-				System.out.println(ANSI_RESET);							
-
-				// 2. call compute task ...
-				callComputeTaskService(mission);
 				
 				
 			}
@@ -206,8 +169,6 @@ public class UoLMainNode extends AbstractNodeMain {
 	
 	
 	}
-
-
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
@@ -224,7 +185,7 @@ public class UoLMainNode extends AbstractNodeMain {
 
 		//read parameters from launch file
 		readParams();
-
+		setup();
 		System.out.print(ANSI_BLUE + "ALL PARAMETERS REQUIRED FOR THE COORDINATOR WERE READ SUCCESSFULLY!");
 		System.out.println(ANSI_RESET);
 
@@ -233,106 +194,6 @@ public class UoLMainNode extends AbstractNodeMain {
 
 			@Override
 			protected void setup() {
-
-				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
-				//Instantiate a trajectory envelope coordinator (with ROS support)
-				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
-				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
-					@Override
-					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-						CriticalSection cs = o1.getCriticalSection();
-						RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-						RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
-						return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
-					}
-				});
-
-				//Need to setup infrastructure that maintains the representation
-				tec.setupSolver(origin, origin+100000000L);
-				tec.setYieldIfParking(true);
-
-				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
-				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
-				tec.setVisualization(viz);
-
-				// Set the footprint of the robots
-				// tec.setDefaultFootprint(footprintCoords);
-				// FOOTPRINT IS SET IN LOOP BELOW!
-
-				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
-				//if (goalSequenceFile != null) readGoalSequenceFile();
-
-				//Sleep to allow loading of motion prims
-				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				setupActivateServices();
-
-
-				for (final int robotID : robotIDs) {
-					tec.setFootprint(robotID, footprintCoords.get(robotID));
-					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
-					mp.setFootprint(footprintCoords.get(robotID));
-					tec.setMotionPlanner(robotID, mp);
-					isPlanning.put(robotID, false);
-
-
-					//Set the forward dynamic model for the robot so the coordinator
-					//can estimate whether the robot can stop
-					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), CONTROL_PERIOD, TEMPORAL_RESOLUTION));
-
-					//Get all initial locations of robots (this is done once)
-					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
-					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
-						@Override
-						public void onNewMessage(orunav_msgs.RobotReport message) {
-							if (!message.getStamp().isZero() && !initialLocations.containsKey(robotID)) {
-								Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
-								Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
-								try {
-									Thread.sleep(4000);
-								} catch (InterruptedException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-								initialLocations.put(robotID, pose);
-								//Place all robots in current positions
-								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
-								System.out.print(ANSI_BLUE + "PLACED ROBOT " + robotID + " in " + pose);
-								System.out.println(ANSI_RESET);
-								robotsAlive.put(robotID,true);
-							}
-						}
-					});
-
-
-					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
-					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
-						@Override
-						public void onNewMessage(geometry_msgs.PoseStamped message) {
-							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
-							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
-							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
-							System.out.println("POSTED MISSION:\n" + mission.toXML());
-							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
-							PrintWriter writer;
-							try {
-								writer = new PrintWriter(new FileOutputStream(new File(postedGoalLog), true));
-								writer.println(mission.toXML());
-					            writer.close();
-							}
-							catch (FileNotFoundException e) { e.printStackTrace(); } 
-							callComputeTaskService(mission);
-						}
-					});
-
-				}
 			}
 
 			@Override
@@ -397,6 +258,120 @@ public class UoLMainNode extends AbstractNodeMain {
 		System.out.println(ANSI_RESET);
 	}
 
+	protected void setup() {
+
+		long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
+		//Instantiate a trajectory envelope coordinator (with ROS support)
+		tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
+		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
+			@Override
+			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
+				CriticalSection cs = o1.getCriticalSection();
+				RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
+				RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+				return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
+			}
+		});
+
+		//Need to setup infrastructure that maintains the representation
+		tec.setupSolver(origin, origin+100000000L);
+		tec.setYieldIfParking(true);
+
+		//Setup a simple GUI (null means empty map, otherwise provide yaml file)
+		//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
+		final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
+		tec.setVisualization(viz);
+
+		// Set the footprint of the robots
+		// tec.setDefaultFootprint(footprintCoords);
+		// FOOTPRINT IS SET IN LOOP BELOW!
+
+		if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
+		//if (goalSequenceFile != null) readGoalSequenceFile();
+
+		//Sleep to allow loading of motion prims
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		setupActivateServices();
+
+
+		for (final int robotID : robotIDs) {
+			tec.setFootprint(robotID, footprintCoords.get(robotID));
+			ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
+			mp.setFootprint(footprintCoords.get(robotID));
+			tec.setMotionPlanner(robotID, mp);
+			isPlanning.put(robotID, false);
+
+
+			//Set the forward dynamic model for the robot so the coordinator
+			//can estimate whether the robot can stop
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), CONTROL_PERIOD, TEMPORAL_RESOLUTION));
+
+			//Get all initial locations of robots (this is done once)
+			subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
+			subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
+				@Override
+				public void onNewMessage(orunav_msgs.RobotReport message) {
+					if (!message.getStamp().isZero() && !initialLocations.containsKey(robotID)) {
+						Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
+						Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
+						try {
+							Thread.sleep(4000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						initialLocations.put(robotID, pose);
+						//Place all robots in current positions
+						tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
+						System.out.print(ANSI_BLUE + "PLACED ROBOT " + robotID + " in " + pose);
+						System.out.println(ANSI_RESET);
+						robotsAlive.put(robotID,true);
+					}
+				}
+			});
+
+
+			subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
+			subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
+				@Override
+				public void onNewMessage(geometry_msgs.PoseStamped message) {
+					Pose startPose;
+					RobotReport rr = tec.getRobotReport(robotID);
+					if (rr == null ){ 
+						System.out.print(ANSI_RED + "No report received for robot ID ( "+robotID+" ) Ignoring goal!");
+						System.out.println(ANSI_RESET);
+						return;
+					} else {
+						startPose = rr.getPose();
+					}
+
+
+
+					Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
+					Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
+					IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+					System.out.println("POSTED MISSION:\n" + mission.toXML());
+					String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
+					PrintWriter writer;
+					try {
+						writer = new PrintWriter(new FileOutputStream(new File(postedGoalLog), true));
+						writer.println(mission.toXML());
+						writer.close();
+					}
+					catch (FileNotFoundException e) { e.printStackTrace(); } 
+					callComputeTaskService(mission);
+				}
+			});
+
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void readParams() {
 		ParameterTree params = node.getParameterTree();
@@ -487,16 +462,7 @@ public class UoLMainNode extends AbstractNodeMain {
 
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
-
-									
-			CONTROL_PERIOD = 250;
-			TEMPORAL_RESOLUTION = 500;
-			System.out.println();
-			System.out.println(ANSI_RED + "=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=");
-			System.out.println(ANSI_RED + "=xxxx= FORCING CONTROL PERIOD ("+CONTROL_PERIOD+") AND TEMPORAL RESOLUTION ("+TEMPORAL_RESOLUTION+") =xxxx=");
-			System.out.println(ANSI_RED + "=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=");
-			System.out.println();
-
+			
 			robotsAlive = new HashMap<Integer,Boolean>();
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
@@ -514,7 +480,95 @@ public class UoLMainNode extends AbstractNodeMain {
 		}
 	}
 
-private void callComputeTaskService(final IliadMission iliadMission) {
+	private int callUpdateTaskSrv(Task t){
+
+		int rid = t.getTarget().getRobotId();
+		if (!robotIDs.contains(rid)) {
+			System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Ignoring task update request as there is no robot with ID = " + rid);
+			System.out.println(ANSI_RESET);
+			return 7;
+		}
+		
+		System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating task for Robot UoL Style" + rid);
+		System.out.println(ANSI_RESET);
+		
+		//Get old path
+		PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
+		
+		//Get the new path from the message
+		List<orunav_msgs.PoseSteering> newPath = t.getPath().getPath();
+		PoseSteering[] newP;
+		boolean isUpdate = t.getUpdate();
+
+		if (!isUpdate){
+			System.out.print(ANSI_BLUE + " APPENDING TRAJECTORY xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ");
+			System.out.println(ANSI_RESET);
+
+			newP = new PoseSteering[oldP.length + newPath.size()];
+			//Concatenate the new path to the old path...
+			for (int i = 0; i < oldP.length; i++) {
+				newP[i] = oldP[i];
+			}
+			for (int i = 0; i < newPath.size(); i++) {
+				orunav_msgs.PoseSteering ps = newPath.get(i);
+				Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+				newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+			}
+		} 
+		else
+		{
+			System.out.print(ANSI_RED + " REPLACING TRAJECTORY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");
+			System.out.println(ANSI_RESET);
+
+			newP = new PoseSteering[newPath.size()];
+			for (int i = 0; i < newPath.size(); i++) {
+				orunav_msgs.PoseSteering ps = newPath.get(i);
+				Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+				newP[i] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+			}
+		}
+
+		//Update operations too...
+		tec.getCurrentTracker(rid).setOperations(t.getTarget().getStartOp(), t.getTarget().getGoalOp());
+		
+		//... and tell the coordinator to replace the path
+		tec.replacePath(rid, newP);
+
+		return 0;
+	}
+
+	private Task callComputeTaskSrv(RobotTarget rt, boolean start_from_current_state){
+	
+		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
+		int robotID = rt.getRobotId();
+
+		try { 
+			serviceClient = node.newServiceClient("/robot" + robotID + "/compute_task", ComputeTask._TYPE); 
+		} catch (ServiceNotFoundException e) { 
+			throw new RosRuntimeException(e); 
+		}
+
+		final ComputeTaskRequest request = serviceClient.newMessage();
+		request.setTarget(rt);
+		request.setStartFromCurrentState(start_from_current_state);
+
+		MFCServiceResponseListener<ComputeTaskResponse> lalala = new MFCServiceResponseListener<ComputeTaskResponse>(robotID,rt.getTaskId());
+		serviceClient.call(request, lalala );	
+
+		ComputeTaskResponse tr = lalala.getResponse();
+
+		Task ans = null;
+		try { 
+			ans = tr.getTask();
+		} catch (java.lang.NullPointerException e) { 
+			// this means it could not find a path
+		}
+
+		return ans;
+
+}
+
+    private void callComputeTaskService(final IliadMission iliadMission) {
 		
 		isTaskComputing.put(iliadMission.getRobotID(), true);
 		ServiceClient<ComputeTaskRequest, ComputeTaskResponse> serviceClient;
@@ -614,3 +668,47 @@ private void callComputeTaskService(final IliadMission iliadMission) {
 
 
 }
+
+
+class MFCServiceResponseListener<T> implements ServiceResponseListener<T>{
+
+	int robotID;
+	int goalID;
+	T resp;
+	boolean isOk=false;
+	boolean isSuccess=false;
+	
+	public MFCServiceResponseListener(int rid, int gid){
+		robotID = rid;
+		goalID = gid;
+	}
+
+	@Override
+	public void onFailure(RemoteException arg0) {
+		System.out.println("FAILED to call MFCServiceResponseListener service for robot" + robotID + " (goalID: " + goalID + ")");				
+		isOk=true;
+	}
+
+	@Override
+	public void onSuccess(T arg0) {
+		System.out.println("Successfully called MFCServiceResponseListener service for robot" + robotID + " (goalID: " + goalID + ")");
+		resp = arg0;
+		isOk=true;
+		isSuccess=true;
+	}
+
+	public T getResponse(){
+		while (!isOk){
+			//Sleep to allow loading of motion prims
+			try {
+				Thread.sleep(500);
+				System.out.println(".");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
+		}
+		return resp;
+	}
+}	
+

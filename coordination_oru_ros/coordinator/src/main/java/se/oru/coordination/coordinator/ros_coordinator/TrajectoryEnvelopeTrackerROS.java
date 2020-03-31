@@ -22,6 +22,7 @@ import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
+import org.ros.node.topic.Publisher;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
@@ -55,6 +56,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 		
+	Publisher<orunav_msgs.Task> task_pub_;
 	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
 		super(te, temporalResolution, tec, 30, cb);
 		this.node = connectedNode;
@@ -73,6 +75,10 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 			e.printStackTrace();
 		}
 		///
+
+		// mfc: exposed to 
+		task_pub_ = node.newPublisher("robot"+te.getRobotID()+"/control/task", orunav_msgs.Task._TYPE);
+		task_pub_.setLatchMode(true);
 		
 		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
@@ -183,6 +189,10 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
 		try {
 			System.out.println("-------> Going to call service: /robot" + currentTask.getTarget().getRobotId() + "/execute_task");
+			if (update)
+			{
+				System.out.println("-------> UPDATING TASK");
+			}
 			System.out.println("----------> and my TE is " + te);
 			serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE);
 		}
@@ -209,6 +219,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 			@Override
 			public void onSuccess(ExecuteTaskResponse response) {
 					System.out.println("Started execution of goal " + currentTask.getTarget().getGoalId() + " for robot " + currentTask.getTarget().getRobotId());
+					task_pub_.publish(currentTask);
 			}
 			@Override
 			public void onFailure(RemoteException arg0) {
