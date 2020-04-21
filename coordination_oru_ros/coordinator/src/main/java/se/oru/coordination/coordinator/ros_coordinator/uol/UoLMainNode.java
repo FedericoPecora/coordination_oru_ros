@@ -492,47 +492,56 @@ public class UoLMainNode extends AbstractNodeMain {
 		System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating task for Robot UoL Style" + rid);
 		System.out.println(ANSI_RESET);
 		
-		//Get old path
-		PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
-		
-		//Get the new path from the message
-		List<orunav_msgs.PoseSteering> newPath = t.getPath().getPath();
-		PoseSteering[] newP;
-		boolean isUpdate = t.getUpdate();
+		boolean isAbort = t.getAbort();
 
-		if (!isUpdate){
-			System.out.print(ANSI_BLUE + " APPENDING TRAJECTORY xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ");
+		if (!isAbort){
+			//Get old path
+			PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
+			
+			//Get the new path from the message
+			List<orunav_msgs.PoseSteering> newPath = t.getPath().getPath();
+			PoseSteering[] newP;
+			boolean isUpdate = t.getUpdate();
+
+			if (!isUpdate){
+				System.out.print(ANSI_BLUE + " APPENDING TRAJECTORY xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ");
+				System.out.println(ANSI_RESET);
+
+				newP = new PoseSteering[oldP.length + newPath.size()];
+				//Concatenate the new path to the old path...
+				for (int i = 0; i < oldP.length; i++) {
+					newP[i] = oldP[i];
+				}
+				for (int i = 0; i < newPath.size(); i++) {
+					orunav_msgs.PoseSteering ps = newPath.get(i);
+					Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+					newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+				}
+			} 
+			else
+			{
+				System.out.print(ANSI_RED + " REPLACING TRAJECTORY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");
+				System.out.println(ANSI_RESET);
+
+				newP = new PoseSteering[newPath.size()];
+				for (int i = 0; i < newPath.size(); i++) {
+					orunav_msgs.PoseSteering ps = newPath.get(i);
+					Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+					newP[i] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+				}
+			}
+
+			//Update operations too...
+			tec.getCurrentTracker(rid).setOperations(t.getTarget().getStartOp(), t.getTarget().getGoalOp());
+			
+			//... and tell the coordinator to replace the path
+			tec.replacePath(rid, newP);
+		}	else {
+			System.out.print(ANSI_RED + " ABORTING TRAJECTORY is not yet implemented! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");			
 			System.out.println(ANSI_RESET);
-
-			newP = new PoseSteering[oldP.length + newPath.size()];
-			//Concatenate the new path to the old path...
-			for (int i = 0; i < oldP.length; i++) {
-				newP[i] = oldP[i];
-			}
-			for (int i = 0; i < newPath.size(); i++) {
-				orunav_msgs.PoseSteering ps = newPath.get(i);
-				Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
-				newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
-			}
-		} 
-		else
-		{
-			System.out.print(ANSI_RED + " REPLACING TRAJECTORY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");
-			System.out.println(ANSI_RESET);
-
-			newP = new PoseSteering[newPath.size()];
-			for (int i = 0; i < newPath.size(); i++) {
-				orunav_msgs.PoseSteering ps = newPath.get(i);
-				Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
-				newP[i] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
-			}
+			// mfc here!
+			
 		}
-
-		//Update operations too...
-		tec.getCurrentTracker(rid).setOperations(t.getTarget().getStartOp(), t.getTarget().getGoalOp());
-		
-		//... and tell the coordinator to replace the path
-		tec.replacePath(rid, newP);
 
 		return 0;
 	}
