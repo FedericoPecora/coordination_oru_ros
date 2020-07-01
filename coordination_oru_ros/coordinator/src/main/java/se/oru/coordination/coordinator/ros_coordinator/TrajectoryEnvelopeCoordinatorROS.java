@@ -10,6 +10,9 @@ import org.ros.exception.ServiceException;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceResponseBuilder;
 
+import std_msgs.Int32;
+import org.ros.node.topic.Publisher;
+
 import com.vividsolutions.jts.geom.Geometry;
 
 import orunav_msgs.Task;
@@ -27,17 +30,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
 		return (TrajectoryEnvelopeTrackerROS)this.trackers.get(robotID);
 	}
-	
-	private void setupAbortService() {
-		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
-			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
-				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
-				truncateEnvelope(arg0.getRobotID());
-			}
-		});
-	}
-	
+		
 	private void setupReverseService() {
 		node.newServiceServer("coordinator/reverse", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
@@ -50,8 +43,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
-		this.node = connectedNode;
-		setupAbortService();
+		this.node = connectedNode;		
 		setupReverseService();
 	}
 
