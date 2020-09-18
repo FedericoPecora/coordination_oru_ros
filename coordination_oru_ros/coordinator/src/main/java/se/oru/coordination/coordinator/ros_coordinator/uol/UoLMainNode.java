@@ -2,6 +2,8 @@ package se.oru.coordination.coordinator.ros_coordinator.uol;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
+import std_msgs.Int32;
+
 import orunav_msgs.ComputeTask;
 import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
@@ -27,6 +29,8 @@ import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
+import org.ros.node.topic.Publisher;
+
 import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordination_oru.util.Missions;
@@ -47,6 +51,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.lang.Integer;
+
 
 public class UoLMainNode extends AbstractNodeMain {
 	/**
@@ -84,9 +90,11 @@ public class UoLMainNode extends AbstractNodeMain {
 	private String reportTopic = "report";
 	private String mapFrameID = "map_laser2d";
 	private ConnectedNode node = null;
-	Subscriber<orunav_msgs.RobotReport> subscriberInit;
-	Subscriber<geometry_msgs.PoseStamped> subscriberGoal;
-
+	// we keep one per active robot
+	private HashMap<Integer, Subscriber<orunav_msgs.RobotReport>> subscriberInit_map_;
+	private HashMap<Integer, Subscriber<geometry_msgs.PoseStamped>> subscriberGoal_map_;
+	private HashMap<Integer, Publisher<std_msgs.Int32>> abort_pub_map_;		
+	
 	public static final String ANSI_BG_WHITE = "\u001B[47m";
 	// Nice visualization
 	public static final String ANSI_BLUE = "\u001B[34m" + ANSI_BG_WHITE;
@@ -121,10 +129,16 @@ public class UoLMainNode extends AbstractNodeMain {
 			public void build(orunav_msgs.UpdateTaskRequest arg0, orunav_msgs.UpdateTaskResponse arg1) throws ServiceException {
 				int result = callUpdateTaskSrv(arg0.getTask());
 				// people appreciate some feedback...
-				arg1.setResult(result);
-				
+				arg1.setResult(result);				
 			}
 		});
+		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				callAbortSrv(arg0.getRobotID());
+				// this task has no response ...				
+			}
+		});		
 	
 		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
 			@Override
@@ -183,6 +197,10 @@ public class UoLMainNode extends AbstractNodeMain {
 			catch(NullPointerException e) { }
 		}
 
+		subscriberInit_map_ = new HashMap<Integer, Subscriber<orunav_msgs.RobotReport>>() ;
+		subscriberGoal_map_ = new HashMap<Integer, Subscriber<geometry_msgs.PoseStamped>>() ;
+		abort_pub_map_ = new HashMap<Integer, Publisher<std_msgs.Int32>> ();		
+
 		//read parameters from launch file
 		readParams();
 		setup();
@@ -200,7 +218,7 @@ public class UoLMainNode extends AbstractNodeMain {
 			protected void loop() throws InterruptedException {
 				boolean allRobotsAlive = true;
 				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
-				
+
 				if (allRobotsAlive) {
 					
 					//This is done once
@@ -313,7 +331,15 @@ public class UoLMainNode extends AbstractNodeMain {
 			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), CONTROL_PERIOD, TEMPORAL_RESOLUTION));
 
 			//Get all initial locations of robots (this is done once)
+			Subscriber<orunav_msgs.RobotReport> subscriberInit;
 			subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
+			subscriberInit_map_.put(robotID,subscriberInit);
+
+			Publisher<std_msgs.Int32> abort_pub_;		
+			abort_pub_ = node.newPublisher("robot"+robotID+"/abort", std_msgs.Int32._TYPE);
+			abort_pub_map_.put(robotID,abort_pub_);
+	
+
 			subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 				@Override
 				public void onNewMessage(orunav_msgs.RobotReport message) {
@@ -337,11 +363,16 @@ public class UoLMainNode extends AbstractNodeMain {
 			});
 
 
+			Subscriber<geometry_msgs.PoseStamped> subscriberGoal;
 			subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
+
 			subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 				@Override
 				public void onNewMessage(geometry_msgs.PoseStamped message) {
 					Pose startPose;
+					System.out.print(ANSI_BLUE + "Goal requested for robot ( "+robotID+" )");
+					System.out.println(ANSI_RESET);
+
 					RobotReport rr = tec.getRobotReport(robotID);
 					if (rr == null ){ 
 						System.out.print(ANSI_RED + "No report received for robot ID ( "+robotID+" ) Ignoring goal!");
@@ -349,9 +380,9 @@ public class UoLMainNode extends AbstractNodeMain {
 						return;
 					} else {
 						startPose = rr.getPose();
+						System.out.print(ANSI_GREEN + "Goal accepted");
+						System.out.println(ANSI_RESET);
 					}
-
-
 
 					Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 					Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
@@ -368,6 +399,8 @@ public class UoLMainNode extends AbstractNodeMain {
 					callComputeTaskService(mission);
 				}
 			});
+
+			//subscriberGoal_map_.put(new Integer(robotID),subscriberGoal);
 
 		}
 	}
@@ -537,14 +570,56 @@ public class UoLMainNode extends AbstractNodeMain {
 			//... and tell the coordinator to replace the path
 			tec.replacePath(rid, newP);
 		}	else {
-			System.out.print(ANSI_RED + " ABORTING TRAJECTORY is not yet implemented! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");			
+			System.out.print(ANSI_BLUE + " Calling Abort service to do the trick .... ");			
 			System.out.println(ANSI_RESET);
-			// mfc here!
+			callAbortSrv(rid);
 			
 		}
 
 		return 0;
 	}
+
+	private int callAbortSrv(int rid){
+
+		if (!robotIDs.contains(rid)) {
+			System.out.print(ANSI_BLUE + " Ignoring ABORT request as there is no robot with ID = " + rid);
+			System.out.println(ANSI_RESET);
+			return 7;
+		}
+		
+		System.out.print(ANSI_BLUE + " Proceeding with Abort service call for robot " + rid + ", UoL Style");
+		System.out.println(ANSI_RESET);
+
+		// tell ven to abort
+		std_msgs.Int32 abort_cmd = node.getTopicMessageFactory().newFromType(std_msgs.Int32._TYPE);
+
+		Publisher<std_msgs.Int32> abort_pub_ = abort_pub_map_.get(rid);
+	
+		System.out.print(ANSI_BLUE + " Published into robot abort topic at VEN level");
+		System.out.println(ANSI_RESET);
+
+		abort_cmd.setData(0);
+		abort_pub_.publish(abort_cmd);
+
+		//remove operations too...		
+		System.out.print(ANSI_BLUE + " Removing operation in coordinator.");
+		System.out.println(ANSI_RESET);
+
+		try { 
+			tec.getCurrentTracker(rid).setOperations("NO_OPERATION","NO_OPERATION" );
+		} catch (Exception e) { 
+			throw new RosRuntimeException(e); 
+		}
+
+		System.out.print(ANSI_BLUE + "Abort done.");
+		System.out.println(ANSI_RESET);
+
+
+
+
+		return 0;
+	}
+
 
 	private Task callComputeTaskSrv(RobotTarget rt, boolean start_from_current_state){
 	

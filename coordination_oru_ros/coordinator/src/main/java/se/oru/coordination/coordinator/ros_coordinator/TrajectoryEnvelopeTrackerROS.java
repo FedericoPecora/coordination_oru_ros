@@ -151,7 +151,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	public void startTracking() { }
 	
 	@Override
-	protected void finishTracking() {
+	public void finishTracking() {
 		waitingForGoalOperation = true;
 		while (currentVehicleState != null && (!currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK))) {
 			try { Thread.sleep(100); }
