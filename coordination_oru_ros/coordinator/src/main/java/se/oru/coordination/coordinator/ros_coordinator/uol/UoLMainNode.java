@@ -218,7 +218,7 @@ public class UoLMainNode extends AbstractNodeMain {
 			protected void loop() throws InterruptedException {
 				boolean allRobotsAlive = true;
 				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
-				
+
 				if (allRobotsAlive) {
 					
 					//This is done once
@@ -365,12 +365,14 @@ public class UoLMainNode extends AbstractNodeMain {
 
 			Subscriber<geometry_msgs.PoseStamped> subscriberGoal;
 			subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
- 			subscriberGoal_map_.put(new Integer(robotID),subscriberGoal);
 
 			subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 				@Override
 				public void onNewMessage(geometry_msgs.PoseStamped message) {
 					Pose startPose;
+					System.out.print(ANSI_BLUE + "Goal requested for robot ( "+robotID+" )");
+					System.out.println(ANSI_RESET);
+
 					RobotReport rr = tec.getRobotReport(robotID);
 					if (rr == null ){ 
 						System.out.print(ANSI_RED + "No report received for robot ID ( "+robotID+" ) Ignoring goal!");
@@ -378,9 +380,9 @@ public class UoLMainNode extends AbstractNodeMain {
 						return;
 					} else {
 						startPose = rr.getPose();
+						System.out.print(ANSI_GREEN + "Goal accepted");
+						System.out.println(ANSI_RESET);
 					}
-
-
 
 					Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 					Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
@@ -397,6 +399,8 @@ public class UoLMainNode extends AbstractNodeMain {
 					callComputeTaskService(mission);
 				}
 			});
+
+			//subscriberGoal_map_.put(new Integer(robotID),subscriberGoal);
 
 		}
 	}
