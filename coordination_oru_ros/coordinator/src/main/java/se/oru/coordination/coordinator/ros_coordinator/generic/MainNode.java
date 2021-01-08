@@ -151,12 +151,17 @@ public class MainNode extends AbstractNodeMain {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
 						CriticalSection cs = o1.getCriticalSection();
-						RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-						RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
+						RobotReport robotReport1 = o1.getRobotReport();
+						RobotReport robotReport2 = o2.getRobotReport();
 						return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
 					}
-				});
-
+					});
+					tec.addComparator(new Comparator<RobotAtCriticalSection> () {
+						@Override
+						public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
+							return(o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
+						}
+					});
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
@@ -194,8 +199,8 @@ public class MainNode extends AbstractNodeMain {
 
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
-					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), CONTROL_PERIOD, TEMPORAL_RESOLUTION));
-
+					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
+					
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {

@@ -60,7 +60,10 @@ dependencies {
   ///////////////////////////////////////////////
   
   //current stable and tested:
-  compile 'com.github.FedericoPecora:coordination_oru:0.4.2'
+  //compile 'com.github.FedericoPecora:coordination_oru:0.4.2'
+
+  //current stable (to be tested on robots):
+  compile 'com.github.FedericoPecora:coordination_oru:0.6.3'
 
   //Anna's UDP implementation
   //compile 'com.github.FedericoPecora:coordination_oru:udp-V0.1'

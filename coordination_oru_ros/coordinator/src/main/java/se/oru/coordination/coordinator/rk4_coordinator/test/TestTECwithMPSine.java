@@ -45,18 +45,18 @@ public class TestTECwithMPSine {
 		//You still need to add one or more comparators to determine robot orderings thru critical sections (comparators are evaluated in the order in which they are added)
 		final TrajectoryEnvelopeCoordinatorSimulation tec = new TrajectoryEnvelopeCoordinatorSimulation(MAX_VEL,MAX_ACCEL);
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
-			@Override
-			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				CriticalSection cs = o1.getCriticalSection();
-				RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-				RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
-				return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
-			}
+		@Override
+		public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
+			CriticalSection cs = o1.getCriticalSection();
+			RobotReport robotReport1 = o1.getRobotReport();
+			RobotReport robotReport2 = o2.getRobotReport();
+			return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
+		}
 		});
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
+				return(o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
 			}
 		});
 
@@ -77,16 +77,13 @@ public class TestTECwithMPSine {
 		tec.setVisualization(viz);
 		tec.setUseInternalCriticalPoints(false);
 		tec.setYieldIfParking(false);
-		tec.setBreakDeadlocks(true);
+		tec.setBreakDeadlocks(false, true, true);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
 		//Instantiate a simple motion planner
 		ReedsSheppCarPlanner rsp = new ReedsSheppCarPlanner();
-//		String mapFile = "../maps"+File.separator+Missions.getProperty("image", yamlFile);
-//		rsp.setMapFilename(mapFile);
-//		double res = Double.parseDouble(Missions.getProperty("resolution", yamlFile));
-//		rsp.setMapResolution(res);
+//		rsp.setMap(yamlFile);
 		rsp.setRadius(0.2);
 		rsp.setFootprint(footprint1, footprint2, footprint3, footprint4);
 		rsp.setTurningRadius(1.0);
@@ -127,6 +124,9 @@ public class TestTECwithMPSine {
 				else posesRobot.add(new Pose(Math.floor(mapWidht/numOfSineP*x),mapHeight-(4*robotID),0.0));
 			}
 			tec.placeRobot(robotID, posesRobot.get(0));
+			
+			//Path planner to use for re-planning if needed
+			tec.setMotionPlanner(robotID, rsp);
 			
 			rsp.setStart(posesRobot.get(0));
 			rsp.setGoals(posesRobot.subList(1, posesRobot.size()).toArray(new Pose[posesRobot.size()-1]));
