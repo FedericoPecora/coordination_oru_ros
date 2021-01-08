@@ -50,18 +50,18 @@ public class Experiment1Test1 {
 		//final TrajectoryEnvelopeCoordinatorSimulation tec = new TrajectoryEnvelopeCoordinatorSimulation(MAX_VEL,MAX_ACCEL);
 		final TrajectoryEnvelopeCoordinatorSimulationICAPS tec = new TrajectoryEnvelopeCoordinatorSimulationICAPS(0, 1000.0, MAX_VEL, MAX_ACCEL, logFile, logHeading, robotsInUse);
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
-			@Override
-			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				CriticalSection cs = o1.getCriticalSection();
-				RobotReport robotReport1 = o1.getTrajectoryEnvelopeTracker().getRobotReport();
-				RobotReport robotReport2 = o2.getTrajectoryEnvelopeTracker().getRobotReport();
-				return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
-			}
+		@Override
+		public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
+			CriticalSection cs = o1.getCriticalSection();
+			RobotReport robotReport1 = o1.getRobotReport();
+			RobotReport robotReport2 = o2.getRobotReport();
+			return ((cs.getTe1Start()-robotReport1.getPathIndex())-(cs.getTe2Start()-robotReport2.getPathIndex()));
+		}
 		});
 		tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 			@Override
 			public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
-				return (o2.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID()-o1.getTrajectoryEnvelopeTracker().getRobotReport().getRobotID());
+				return(o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
 			}
 		});
 		
@@ -77,7 +77,7 @@ public class Experiment1Test1 {
 		tec.setupSolver(0, 100000000);
 		tec.setUseInternalCriticalPoints(false);
 		tec.setYieldIfParking(false);
-		tec.setBreakDeadlocks(false);
+		tec.setBreakDeadlocks(false, false, false);
 
 		//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 //		String yamlFile = "../maps/map-empty.yaml";
@@ -92,10 +92,7 @@ public class Experiment1Test1 {
 
 		//Instantiate a simple motion planner
 		ReedsSheppCarPlanner rsp = new ReedsSheppCarPlanner();
-//		String mapFile = "../maps"+File.separator+Missions.getProperty("image", yamlFile);
-//		rsp.setMapFilename(mapFile);
-//		double res = Double.parseDouble(Missions.getProperty("resolution", yamlFile));
-//		rsp.setMapResolution(res);
+//		rsp.setMap(yamlFile);
 		rsp.setRadius(0.2);
 		rsp.setFootprint(footprint1, footprint2, footprint3, footprint4);
 		rsp.setTurningRadius(4.0);
@@ -126,7 +123,7 @@ public class Experiment1Test1 {
 			int robotID = robotIDs[index];
 			//You probably also want to provide a non-trivial forward model
 			//(the default assumes that robots can always stop)
-			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
 			ArrayList<Pose> posesRobot = new ArrayList<Pose>();
 			//if (index%2==0) {
 			posesRobot.add(new Pose(Math.floor(mapWidht*0.3),mapHeight-(2*robotID),0.0));
