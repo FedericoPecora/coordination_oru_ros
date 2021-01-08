@@ -127,7 +127,7 @@ public class TestTECWithoutMPSineNet {
 			double period = 18;
 			double mag = deltaY;
 
-			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTrackingPeriod(), tec.getTemporalResolution()));
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
 			Pose from = new Pose(0.0,index*deltaY,0.0);
 			Pose to = new Pose(5*period,index*deltaY,0.0);
 			tec.placeRobot(robotID, from);
