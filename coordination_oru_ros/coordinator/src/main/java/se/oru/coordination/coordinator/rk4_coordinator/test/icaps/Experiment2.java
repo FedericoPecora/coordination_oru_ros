@@ -106,7 +106,7 @@ public class Experiment2 {
 
 		tec.setUseInternalCriticalPoints(true);
 		tec.setYieldIfParking(false);
-		tec.setBreakDeadlocks(true);
+		tec.setBreakDeadlocks(false, true, true);
 		
 		Missions.loadLocationAndPathData("../missions/icaps_locations_and_paths_1.txt");
 
@@ -114,9 +114,7 @@ public class Experiment2 {
 
 		//Instantiate a simple motion planner
 		ReedsSheppCarPlanner rsp = new ReedsSheppCarPlanner();
-		rsp.setMapFilename("../maps"+File.separator+Missions.getProperty("image", yamlFile));
-		double res = Double.parseDouble(Missions.getProperty("resolution", yamlFile));
-		rsp.setMapResolution(res);
+		rsp.setMap(yamlFile);
 		rsp.setRadius(0.1);
 		rsp.setFootprint(tec.getDefaultFootprint());
 		rsp.setTurningRadius(4.0);
@@ -133,7 +131,7 @@ public class Experiment2 {
 		int locationCounter = 0;
 		//int[] robotIDs = new int[] {1,2};
 		for (int robotID : robotIDs) {
-			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, CONTROL_PERIOD, tec.getTemporalResolution(), 3));
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
 			String startLocName = "L_"+locationCounter;
 			Pose startLoc = Missions.getLocation(startLocName);
 			String endLocName = "R_"+locationCounter;
@@ -142,6 +140,9 @@ public class Experiment2 {
 			
 			tec.placeRobot(robotID, startLoc);
 			System.out.println("Placed Robot" + robotID + " in " + startLocName);
+			
+			//Path planner to use for re-planning if needed
+			tec.setMotionPlanner(robotID, rsp);
 
 			//If path exists, load it!
 			String pathFilename = outputDir+File.separator+startLocName+"-"+endLocName+".path";
