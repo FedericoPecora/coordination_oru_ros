@@ -196,6 +196,9 @@ public class OrklaDemoMS3MainNode extends AbstractNodeMain {
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
+				
+				//Start the thread that revises precedences at every period
+				tec.startInference();
 
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
@@ -541,8 +544,8 @@ private void callComputeTaskService(final IliadMission iliadMission) {
 
 				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
 				tec.addMissions(iliadMission);
-				tec.computeCriticalSections();
-				tec.startTrackingAddedMissions();
+				//tec.computeCriticalSections();
+				//tec.startTrackingAddedMissions();
 				isTaskComputing.put(arg0.getTask().getTarget().getRobotId(), false);
 			}
 			

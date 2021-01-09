@@ -96,14 +96,15 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 		}
 
 		System.out.println("Added missions " + Missions.getMissions());
+		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
 
 		//Dispatch first missions (popping them, so they will disappear from the queue)
 		for (int robotID : robotIDs) {
 			Mission m = Missions.popMission(robotID);
 			//addMission returns true iff the robot was free to accept a new mission
 			tec.addMissions(m);
-			tec.computeCriticalSections();
-			tec.startTrackingAddedMissions();
 		}
 
 		//Start a mission dispatching thread for each robot, which will run forever
@@ -127,8 +128,6 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 								startTime = Calendar.getInstance().getTimeInMillis();
 								Mission m = Missions.getMission(robotID,sequenceNumber);
 								tec.addMissions(m);
-								tec.computeCriticalSections();
-								tec.startTrackingAddedMissions();
 								sequenceNumber = (sequenceNumber+1)%Missions.getMissions(robotID).size();
 								lastDestination = m.getToLocation();
 							}

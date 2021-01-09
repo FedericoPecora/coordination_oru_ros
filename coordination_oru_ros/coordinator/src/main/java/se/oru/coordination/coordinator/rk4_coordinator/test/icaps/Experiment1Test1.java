@@ -160,6 +160,9 @@ public class Experiment1Test1 {
 		};
 		robotCounter.start();
 		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
+		
 		//Start a mission dispatching thread for each robot, which will run forever
 		for (final int robotID : robotIDs) {
 			//For each robot, create a thread that dispatches the "next" mission when the robot is free 
@@ -175,8 +178,6 @@ public class Experiment1Test1 {
 							synchronized(tec) {
 								//addMission returns true iff the robot was free to accept a new mission
 								if (tec.addMissions(m)) {
-									tec.computeCriticalSections();
-									tec.startTrackingAddedMissions();
 									//tec.writeSetupLog("progress", "Robot "+robotID+" has completed " +iteration+" missions.");
 									iteration++;
 								}

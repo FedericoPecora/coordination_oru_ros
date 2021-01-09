@@ -165,6 +165,9 @@ public class MainNode extends AbstractNodeMain {
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
+				
+				//Start the thread that revises precedences at every period
+				tec.startInference();
 
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
@@ -256,7 +259,7 @@ public class MainNode extends AbstractNodeMain {
 									if (mp.plan()) {
 										m.setPath(mp.getPath());
 										tec.addMissions(m);
-										tec.computeCriticalSectionsAndStartTrackingAddedMission();
+										//tec.computeCriticalSectionsAndStartTrackingAddedMission();
 									}
 									System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
 									System.out.println(ANSI_RESET);

@@ -158,6 +158,9 @@ public class TestTECwithMPSine {
 		};
 		robotCounter.start();
 		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
+		
 		//Start a mission dispatching thread for each robot, which will run forever
 		for (final int robotID : robotIDs) {
 			//For each robot, create a thread that dispatches the "next" mission when the robot is free 
@@ -173,8 +176,6 @@ public class TestTECwithMPSine {
 							synchronized(tec) {
 								//addMission returns true iff the robot was free to accept a new mission
 								if (tec.addMissions(m)) {
-									tec.computeCriticalSections();
-									tec.startTrackingAddedMissions();
 									//tec.writeSetupLog("progress", "Robot "+robotID+" has completed " +iteration+" missions.");
 									iteration++;
 								}
@@ -189,23 +190,6 @@ public class TestTECwithMPSine {
 			//Start the thread!
 			t.start();
 		}
-		
-//		//starting all missions at the same time:
-//		while (true) {
-//			ArrayList<Mission> missionsToAdd = new ArrayList<Mission>();
-//			for (int robotID : robotIDs) {
-//				if (tec.isFree(robotID)) {
-//					Mission m = Missions.popMission(robotID);
-//					missionsToAdd.add(m);
-//					Missions.putMission(m);				
-//				}
-//			}
-//			tec.addMissions(missionsToAdd.toArray(new Mission[missionsToAdd.size()]));
-//			tec.computeCriticalSections();
-//			tec.startTrackingAddedMissions();
-//			Thread.sleep(1000);
-//		}
-
 	}
 
 }

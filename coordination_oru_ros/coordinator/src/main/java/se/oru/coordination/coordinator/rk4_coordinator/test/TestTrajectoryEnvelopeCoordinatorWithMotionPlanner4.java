@@ -144,41 +144,13 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner4 {
 		}
 
 		System.out.println("Added missions " + Missions.getMissions());
+		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
 
-		final Random rand = new Random(Calendar.getInstance().getTimeInMillis());
-		//Start a mission dispatching thread for each robot, which will run forever
-		for (final int robotID : robotIDs) {
-			//For each robot, create a thread that dispatches the "next" mission when the robot is free 
-			Thread t = new Thread() {
-				int iteration = 0;
-				@Override
-				public void run() {
-					while (true) {
-						//Mission to dispatch alternates between (rip -> desti) and (desti -> rip)
-						Mission m = Missions.getMission(robotID, iteration%2);
-						synchronized(tec) {
-							//addMission returns true iff the robot was free to accept a new mission
-							if (tec.addMissions(m)) {
-								tec.computeCriticalSections();
-								if (MAX_DELAY-MIN_DELAY > 0) {
-									long delay = MIN_DELAY+rand.nextInt(MAX_DELAY-MIN_DELAY);
-									//Sleep for a random delay in [minDelay,maxDelay]
-									try { Thread.sleep(delay); }
-									catch (InterruptedException e) { e.printStackTrace(); }
-								}
-								tec.startTrackingAddedMissions();
-								iteration++;
-							}
-						}
-						//Sleep for a little (2 sec)
-						try { Thread.sleep(2000); }
-						catch (InterruptedException e) { e.printStackTrace(); }
-					}
-				}
-			};
-			//Start the thread!
-			t.start();
-		}
+		//Start dispatching threads for each robot, each of which
+		//dispatches the next mission as soon as the robot is idle
+		Missions.startMissionDispatchers(tec, robotIDs);
 
 	}
 

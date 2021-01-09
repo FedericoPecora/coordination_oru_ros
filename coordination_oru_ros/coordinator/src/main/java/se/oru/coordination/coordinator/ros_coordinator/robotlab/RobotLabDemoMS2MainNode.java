@@ -156,6 +156,9 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				
+				//Start the thread that revises precedences at every period
+				tec.startInference();
+				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				final RVizVisualization viz = new RVizVisualization(node);
@@ -443,8 +446,8 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 
 				tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask());
 				tec.addMissions(iliadMission);
-				tec.computeCriticalSections();
-				tec.startTrackingAddedMissions();
+				//tec.computeCriticalSections();
+				//tec.startTrackingAddedMissions();
 				isTaskComputing.put(arg0.getTask().getTarget().getRobotId(), false);
 			}
 			

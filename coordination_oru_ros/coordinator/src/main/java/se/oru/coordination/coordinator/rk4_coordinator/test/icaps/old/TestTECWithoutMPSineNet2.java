@@ -152,6 +152,9 @@ public class TestTECWithoutMPSineNet2 {
 
 		System.out.println("Added missions " + Missions.getMissions());
 		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
+		
 //		//Start a mission dispatching thread for each robot, which will run forever
 //		for (final int robotID : robotIDs) {
 //			//For each robot, create a thread that dispatches the "next" mission when the robot is free 
@@ -192,9 +195,6 @@ public class TestTECWithoutMPSineNet2 {
 			}
 		}
 		tec.addMissions(missionsToAdd.toArray(new Mission[missionsToAdd.size()]));
-		tec.computeCriticalSections();
-		//tec.updateDependencies();
-		tec.startTrackingAddedMissions();
 
 	}
 

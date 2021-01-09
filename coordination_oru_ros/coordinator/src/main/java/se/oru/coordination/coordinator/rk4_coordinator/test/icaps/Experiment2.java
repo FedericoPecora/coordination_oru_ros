@@ -180,6 +180,9 @@ public class Experiment2 {
 		//Sleep a little so we can start Rviz and perhaps screencapture ;)
 		Thread.sleep(5000);
 		
+		//Start the thread that revises precedences at every period
+		tec.startInference();
+		
 		//Start a mission dispatching thread for each robot, which will run forever
 		for (int i = 0; i < robotIDs.length; i++) {
 			final int robotID = robotIDs[i];
@@ -209,8 +212,6 @@ public class Experiment2 {
 								firstTime = false;
 								Mission m = Missions.getMission(robotID,sequenceNumber);
 								tec.addMissions(m);
-								tec.computeCriticalSections();
-								tec.startTrackingAddedMissions();
 								sequenceNumber = (sequenceNumber+1)%Missions.getMissions(robotID).size();
 								lastDestination = m.getToLocation();
 								totalIterations--;
