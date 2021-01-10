@@ -77,9 +77,6 @@ public class TestTECwithMPHourglass {
 		//JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization(yamlFile);
 		RVizVisualization viz = new RVizVisualization();
 		tec.setVisualization(viz);
-		tec.setBreakDeadlocks(false);
-		tec.setUseInternalCriticalPoints(false);
-		tec.setYieldIfParking(false);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
