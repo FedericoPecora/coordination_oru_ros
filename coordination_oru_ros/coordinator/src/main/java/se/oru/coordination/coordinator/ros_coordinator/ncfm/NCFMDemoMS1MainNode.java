@@ -138,7 +138,7 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
-					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
+					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getRobotTrackingPeriodInMillis(robotID)));
 					
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);

@@ -72,7 +72,7 @@ public class TestTrajectoryEnvelopeCoordinatorWithMotionPlanner2a {
 		int[] robotIDs = new int[] {1,2,3,4,5,6};
 		//int[] robotIDs = new int[] {1,2};
 		for (int robotID : robotIDs) {
-			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getTrackingPeriod()));
+			tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(MAX_ACCEL, MAX_VEL, tec.getTemporalResolution(), tec.getControlPeriod(), tec.getRobotTrackingPeriodInMillis(robotID)));
 			String startLocName = "START_"+(robotID-1);
 			Pose startLoc = Missions.getLocation(startLocName);
 			tec.placeRobot(robotID, startLoc);

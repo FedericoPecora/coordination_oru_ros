@@ -58,7 +58,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		
 	Publisher<orunav_msgs.Task> task_pub_;
 	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
-		super(te, temporalResolution, tec, 30, cb);
+		super(te, temporalResolution, tec, tec.getRobotTrackingPeriodInMillis(te.getRobotID()), cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
 		

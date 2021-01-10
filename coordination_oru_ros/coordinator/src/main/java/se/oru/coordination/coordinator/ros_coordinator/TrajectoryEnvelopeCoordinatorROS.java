@@ -13,6 +13,7 @@ import org.ros.node.service.ServiceResponseBuilder;
 import com.vividsolutions.jts.geom.Geometry;
 
 import orunav_msgs.Task;
+//import orunav_msgs.IsFree; //FIXME: commit the new message
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
@@ -43,16 +44,27 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
-				//reverseEnvelope(arg0.getRobotID());
+				reverseEnvelope(arg0.getRobotID());
 			}
 		});
 	}
 
+	/*private void setupIsFreeService() {
+		node.newServiceServer("coordinator/is_free", orunav_msgs.IsFree._TYPE, new ServiceIsFreeBuilder<orunav_msgs.IsFreeRequest, orunav_msgs.IsFreeResponse>() {
+			@Override
+			public void build(orunav_msgs.IsFreeRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				arg1.success = this.isFree(arg0.getRobotID());
+				System.out.println(">>>>>>>>>>>>>> IS Robot" + arg0.getRobotID() + " FREE? " + arg1.success);
+			}
+		});
+	}*/
+	
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
 		this.node = connectedNode;
 		setupAbortService();
 		setupReverseService();
+		//setupIsFreeService();
 	}
 
 	public TrajectoryEnvelopeCoordinatorROS(final ConnectedNode connectedNode) {
