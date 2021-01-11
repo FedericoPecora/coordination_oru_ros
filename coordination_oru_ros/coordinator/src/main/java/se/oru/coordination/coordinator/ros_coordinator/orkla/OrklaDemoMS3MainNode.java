@@ -35,6 +35,8 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.util.IliadMissions;
+import java.util.HashSet;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -143,7 +145,7 @@ public class OrklaDemoMS3MainNode extends AbstractNodeMain {
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
 				//... and tell the coordinator to replace the path
-				tec.replacePath(rid, newP);
+				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid), false);
 				
 			}
 		});

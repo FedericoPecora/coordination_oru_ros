@@ -45,6 +45,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -544,7 +545,7 @@ public class UoLMainNode extends AbstractNodeMain {
 			tec.getCurrentTracker(rid).setOperations(t.getTarget().getStartOp(), t.getTarget().getGoalOp());
 			
 			//... and tell the coordinator to replace the path
-			tec.replacePath(rid, newP);
+			tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid), false);
 		}	else {
 			System.out.print(ANSI_RED + " ABORTING TRAJECTORY is not yet implemented! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");			
 			System.out.println(ANSI_RESET);

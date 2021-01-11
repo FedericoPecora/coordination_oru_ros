@@ -84,9 +84,6 @@ public class Experiment1Test1 {
 		JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 		//RVizVisualization viz = new RVizVisualization();
 		tec.setVisualization(viz);
-		tec.setBreakDeadlocks(false);
-		tec.setUseInternalCriticalPoints(false);
-		tec.setYieldIfParking(false);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 

@@ -79,7 +79,7 @@ public class TestTECwithMPSine {
 		tec.setVisualization(viz);
 		tec.setUseInternalCriticalPoints(false);
 		tec.setYieldIfParking(false);
-		tec.setBreakDeadlocks(true);
+		tec.setBreakDeadlocks(false, true, true);
 
 		//MetaCSPLogging.setLevel(tec.getClass().getSuperclass(), Level.FINEST);
 
@@ -129,6 +129,7 @@ public class TestTECwithMPSine {
 				else posesRobot.add(new Pose(Math.floor(mapWidht/numOfSineP*x),mapHeight-(4*robotID),0.0));
 			}
 			tec.placeRobot(robotID, posesRobot.get(0));
+			tec.setMotionPlanner(robotID, rsp);
 			
 			rsp.setStart(posesRobot.get(0));
 			rsp.setGoals(posesRobot.subList(1, posesRobot.size()).toArray(new Pose[posesRobot.size()-1]));
