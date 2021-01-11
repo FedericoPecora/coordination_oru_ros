@@ -87,18 +87,20 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 			rt.setGoalId(goalID);
 			request.setTarget(rt);
 			
-			for (Geometry obs : this.om.getObstacles()) {
-				Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
-				for (Coordinate coord : obs.getCoordinates()) {
-					Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
-					pnt.setX(coord.x);
-					pnt.setY(coord.y);
-					shape.getPoints().add(pnt);
+			if (this.om != null) {
+				for (Geometry obs : this.om.getObstacles()) {
+					Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
+					for (Coordinate coord : obs.getCoordinates()) {
+						Point pnt = node.getTopicMessageFactory().newFromType(Point._TYPE);
+						pnt.setX(coord.x);
+						pnt.setY(coord.y);
+						shape.getPoints().add(pnt);
+					}
+					//Shape is a polygon (type = 1)
+					shape.setType(1);
+					request.getExtraObstacles().add(shape);
+					System.out.println("Added extra obstacle when planning for Robot" + robotID);
 				}
-				//Shape is a polygon (type = 1)
-				shape.setType(1);
-				request.getExtraObstacles().add(shape);
-				System.out.println("Added extra obstacle when planning for Robot" + robotID);
 			}
 	
 			serviceClient.call(request, new ServiceResponseListener<ComputeTaskResponse>() {
