@@ -23,6 +23,8 @@ import orunav_msgs.ComputeTaskResponse;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Shape;
 import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
+import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
 public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
@@ -33,11 +35,18 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	private boolean computing = false;
 	private boolean outcome = false;
 	private int robotID = -1;
-
+	
 	public ComputeTaskServiceMotionPlanner(int robotID, ConnectedNode node, TrajectoryEnvelopeCoordinatorROS tec) {
 		this.node = node;
 		this.tec = tec;
 		this.robotID = robotID;
+	}
+	
+	@Override
+	public AbstractMotionPlanner getCopy(boolean copyObstacles) {
+		ComputeTaskServiceMotionPlanner ret = new ComputeTaskServiceMotionPlanner(this.robotID, this.node, this.tec);
+		if (this.om != null) ret.om = new OccupancyMap(this.om, copyObstacles);
+		return ret;
 	}
 	
 	private void callComputeTaskService(Pose goalPose, final int robotID) {
