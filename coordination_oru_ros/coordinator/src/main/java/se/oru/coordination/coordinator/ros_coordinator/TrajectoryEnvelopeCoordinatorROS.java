@@ -34,17 +34,23 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
-				truncateEnvelope(arg0.getRobotID());
+				int cp = truncateEnvelope(arg0.getRobotID());
+				if (cp != -2) {
+					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
+					//return success
+				}
+				//Return failure
 			}
 		});
 	}
 	
+	@Deprecated
 	private void setupReverseService() {
 		node.newServiceServer("coordinator/reverse", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
-				reverseEnvelope(arg0.getRobotID());
+				reverseEnvelope(arg0.getRobotID()); //FIXME the returned value
 			}
 		});
 	}

@@ -63,7 +63,7 @@ dependencies {
   //compile 'com.github.FedericoPecora:coordination_oru:0.4.2'
 
   //current stable (to be tested on robots):
-  compile 'com.github.FedericoPecora:coordination_oru:0.6.3'
+  //compile 'com.github.FedericoPecora:coordination_oru:0.6.3'
 
   //Anna's UDP implementation
   //compile 'com.github.FedericoPecora:coordination_oru:udp-V0.1'
@@ -72,7 +72,7 @@ dependencies {
   //compile 'se.oru.coordination:coordination_oru:0.0.0-SNAPSHOT'
 
   //current github snapshot:
-  //compile 'com.github.FedericoPecora:coordination_oru:master-SNAPSHOT'
+  compile 'com.github.FedericoPecora:coordination_oru:master-SNAPSHOT'
 
   //This is for Luigi:
   //compile fileTree(dir: 'lib', include: '**/*.jar')
