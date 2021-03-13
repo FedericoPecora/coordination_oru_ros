@@ -140,11 +140,12 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		}
 		return currentRR;
 	}
-
+	
 	@Override
 	public void setCriticalPoint(int arg0) {
 		callExecuteTaskService(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
+		setCanStartTracking();
 	}
 	
 	@Override
@@ -284,6 +285,4 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
 		tec.setCriticalPoint(te.getRobotID(), -1);		
 	}
-
-
 }
