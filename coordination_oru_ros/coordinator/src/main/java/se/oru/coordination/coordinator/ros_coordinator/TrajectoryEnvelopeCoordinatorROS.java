@@ -37,9 +37,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				int cp = truncateEnvelope(arg0.getRobotID());
 				if (cp != -2) {
 					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
-					//return success
+					arg1.setSuccess(true);
+					return;
 				}
-				//Return failure
+				arg1.setSuccess(false);
 			}
 		});
 	}
@@ -50,7 +51,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
-				reverseEnvelope(arg0.getRobotID()); //FIXME the returned value
+				int cp = reverseEnvelope(arg0.getRobotID());
+				if (cp != -2) {
+					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
+					arg1.setSuccess(true);
+					return;
+				}
+				arg1.setSuccess(false);
 			}
 		});
 	}
