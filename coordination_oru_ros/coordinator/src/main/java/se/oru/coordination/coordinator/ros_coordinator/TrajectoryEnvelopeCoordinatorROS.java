@@ -34,7 +34,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
-				int cp = truncateEnvelope(arg0.getRobotID());
+				int cp = truncateEnvelope(arg0.getRobotID(), !arg0.getForce());
 				if (cp != -2) {
 					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
 					arg1.setSuccess(true);
