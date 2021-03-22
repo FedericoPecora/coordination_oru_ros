@@ -34,7 +34,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
-				int cp = truncateEnvelope(arg0.getRobotID(), !arg0.getForce());
+				int cp = truncateEnvelope(arg0.getRobotID(), !arg0.getForce(), 3); //Threshold set according to https://github.com/OrebroUniversity/navigation_oru-release/blob/master/orunav_vehicle_execution/include/orunav_vehicle_execution/trajectory_generation.h
 				if (cp != -2) {
 					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
 					arg1.setSuccess(true);
@@ -51,7 +51,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(">>>>>>>>>>>>>> REVERSING Robot" + arg0.getRobotID());
-				int cp = reverseEnvelope(arg0.getRobotID());
+				int cp = reverseEnvelope(arg0.getRobotID(), 3); //Threshold set according to https://github.com/OrebroUniversity/navigation_oru-release/blob/master/orunav_vehicle_execution/include/orunav_vehicle_execution/trajectory_generation.h
 				if (cp != -2) {
 					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
 					arg1.setSuccess(true);
