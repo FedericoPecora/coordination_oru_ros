@@ -36,7 +36,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				int cp = truncateEnvelope(arg0.getRobotID(), !arg0.getForce(), 3); //Threshold set according to https://github.com/OrebroUniversity/navigation_oru-release/blob/master/orunav_vehicle_execution/include/orunav_vehicle_execution/trajectory_generation.h
 				if (cp != -2) {
-					//getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
+					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(cp);
 					arg1.setSuccess(true);
 					return;
 				}
@@ -46,7 +46,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		});
 	}
 	
-	@Deprecated
+	/*@Deprecated
 	private void setupReverseService() {
 		node.newServiceServer("coordinator/reverse", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
@@ -61,23 +61,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				arg1.setSuccess(false);
 			}
 		});
-	}
-
-	/*private void setupIsFreeService() {
-		node.newServiceServer("coordinator/is_free", orunav_msgs.IsFree._TYPE, new ServiceIsFreeBuilder<orunav_msgs.IsFreeRequest, orunav_msgs.IsFreeResponse>() {
-			@Override
-			public void build(orunav_msgs.IsFreeRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
-				arg1.success = this.isFree(arg0.getRobotID());
-				System.out.println(">>>>>>>>>>>>>> IS Robot" + arg0.getRobotID() + " FREE? " + arg1.success);
-			}
-		});
 	}*/
 	
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
 		this.node = connectedNode;
 		setupAbortService();
-		setupReverseService();
+		//setupReverseService();
 		//setupIsFreeService();
 	}
 
@@ -109,6 +99,5 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		if (!(trackers.get(robotID) instanceof TrajectoryEnvelopeTrackerROS)) return VEHICLE_STATE._IGNORE_;
 		return ((TrajectoryEnvelopeTrackerROS)trackers.get(robotID)).getVehicleState();
 	}
-
 
 }
