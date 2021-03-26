@@ -52,6 +52,7 @@ public class MainNode extends AbstractNodeMain {
 	private String reportTopic = "report";
 	private String mapFrameID = "map";
 	private ConcurrentHashMap<Integer,Boolean> isPlanning = new ConcurrentHashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> planningSucceed = new ConcurrentHashMap<Integer,Boolean>();
 
 	public static final String ANSI_BLUE = "\u001B[34m" + "\u001B[107m";
 	public static final String ANSI_GREEN = "\u001B[32m" + "\u001B[107m";
@@ -124,26 +125,37 @@ public class MainNode extends AbstractNodeMain {
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
-				if (tec.isFree(arg0.getRobotID())) {
-					if (Missions.hasMissions(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) 
-						Missions.dequeueMission(arg0.getRobotID());
+				if (tec.isFree(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) {
+					if (Missions.hasMissions(arg0.getRobotID())) Missions.dequeueMission(arg0.getRobotID());
 					arg1.setSuccess(true);
+					arg1.setMessage("Mission deleted before planning started.");
 					return;
 				} 
-				if (tec.isFree(arg0.getRobotID()) && isPlanning.get(arg0.getRobotID())) {
+				if (isPlanning.get(arg0.getRobotID())) {
 					do { 
 						try { Thread.sleep(200); } 
 						catch (InterruptedException e) {}
 					}
 					while (isPlanning.get(arg0.getRobotID()));
+					if (!planningSucceed.get(arg0.getRobotID())) {
+						arg1.setSuccess(true);
+						arg1.setMessage("Mission not assigned");
+						return;
+					}
+					do { 
+						try { Thread.sleep(200); } 
+						catch (InterruptedException e) {}
+					}
+					while (tec.isFree(arg0.getRobotID()));
 				}
 				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
 					tec.getCurrentTracker(arg0.getRobotID()).setCriticalPoint(-1);
 					arg1.setSuccess(true);
+					arg1.setMessage("Mission aborted after assignment.");
 					return;
 				}
 				arg1.setSuccess(false);
-				arg1.setMessage("Robot" + arg0.getRobotID() + " is planning. The mission cannot be aborted now.");
+				arg1.setMessage("Mission cannot be aborted now (robot" + arg0.getRobotID() + " is replanning).");
 			}
 		});
 	}
@@ -229,6 +241,7 @@ public class MainNode extends AbstractNodeMain {
 					mp.setFootprint(footprintCoords.get(robotID));
 					tec.setMotionPlanner(robotID, mp);
 					isPlanning.put(robotID, false);
+					planningSucceed.put(robotID, false);
 
 
 					//Set the forward dynamic model for the robot so the coordinator
@@ -288,14 +301,16 @@ public class MainNode extends AbstractNodeMain {
 							Thread planningThread = new Thread("Planning for robot " + robotID) {
 								public void run() {
 									System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
-									System.out.println(ANSI_RESET);									
-									if (mp.plan()) {
+									System.out.println(ANSI_RESET);	
+									boolean succeed = mp.plan();
+									if (succeed) {
 										m.setPath(mp.getPath());
 										tec.addMissions(m);
 										//tec.computeCriticalSectionsAndStartTrackingAddedMission();
 									}
 									System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
 									System.out.println(ANSI_RESET);
+									planningSucceed.put(robotID, succeed);
 									isPlanning.put(robotID, false);
 								}
 							};
