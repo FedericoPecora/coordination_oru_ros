@@ -28,27 +28,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
 		return (TrajectoryEnvelopeTrackerROS)this.trackers.get(robotID);
 	}
-	
-	private void setupAbortService() {
-		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
-			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
-				System.out.println(">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
-				if (truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
-					getCurrentTracker(arg0.getRobotID()).setCriticalPoint(-1);
-					arg1.setSuccess(true);
-					return;
-				}
-				arg1.setSuccess(false);
-				arg1.setMessage("Robot" + arg0.getRobotID() + " is planning. The mission cannot be aborted now.");
-			}
-		});
-	}
 		
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
 		this.node = connectedNode;
-		setupAbortService();
 	}
 
 	public TrajectoryEnvelopeCoordinatorROS(final ConnectedNode connectedNode) {

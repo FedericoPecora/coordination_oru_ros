@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
@@ -50,7 +51,7 @@ public class MainNode extends AbstractNodeMain {
 	private boolean repeatMissions = false;
 	private String reportTopic = "report";
 	private String mapFrameID = "map";
-	private HashMap<Integer,Boolean> isPlanning = new HashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> isPlanning = new ConcurrentHashMap<Integer,Boolean>();
 
 	public static final String ANSI_BLUE = "\u001B[34m" + "\u001B[107m";
 	public static final String ANSI_GREEN = "\u001B[32m" + "\u001B[107m";
@@ -116,6 +117,33 @@ public class MainNode extends AbstractNodeMain {
 				//... and tell the coordinator to replace the path
 				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid), false);
 				
+			}
+		});
+		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+			@Override
+			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
+				System.out.println(ANSI_RESET);
+				if (tec.isFree(arg0.getRobotID())) {
+					if (Missions.hasMissions(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) 
+						Missions.dequeueMission(arg0.getRobotID());
+					arg1.setSuccess(true);
+					return;
+				} 
+				if (tec.isFree(arg0.getRobotID()) && isPlanning.get(arg0.getRobotID())) {
+					do { 
+						try { Thread.sleep(200); } 
+						catch (InterruptedException e) {}
+					}
+					while (isPlanning.get(arg0.getRobotID()));
+				}
+				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
+					tec.getCurrentTracker(arg0.getRobotID()).setCriticalPoint(-1);
+					arg1.setSuccess(true);
+					return;
+				}
+				arg1.setSuccess(false);
+				arg1.setMessage("Robot" + arg0.getRobotID() + " is planning. The mission cannot be aborted now.");
 			}
 		});
 	}
@@ -235,6 +263,8 @@ public class MainNode extends AbstractNodeMain {
 					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 						@Override
 						public void onNewMessage(geometry_msgs.PoseStamped message) {
+							System.out.print(ANSI_BLUE + "RECEIVED A NEW GOAL Robot" + robotID);
+							System.out.println(ANSI_RESET);
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 							Pose pose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(), quat.getTheta());
 							Mission m = new Mission(robotID,"currentPose", pose.toString(), null, pose);
@@ -258,7 +288,7 @@ public class MainNode extends AbstractNodeMain {
 							Thread planningThread = new Thread("Planning for robot " + robotID) {
 								public void run() {
 									System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
-									System.out.println(ANSI_RESET);
+									System.out.println(ANSI_RESET);									
 									if (mp.plan()) {
 										m.setPath(mp.getPath());
 										tec.addMissions(m);
@@ -346,8 +376,10 @@ public class MainNode extends AbstractNodeMain {
 				thisFootprintCoords[3] = new Coordinate(params.getDouble(footprintParamNames[6]),params.getDouble(footprintParamNames[7]));
 				footprintCoords.put(robotID, thisFootprintCoords);		
 
-				max_accel.put(robotID, params.getDouble(maxAccelParamName));
-				max_vel.put(robotID, params.getDouble(maxVelParamName));
+				//We need a condervative kinodynamic model
+				double scale_factor = 1.1;
+				max_accel.put(robotID, scale_factor*params.getDouble(maxAccelParamName));
+				max_vel.put(robotID, scale_factor*params.getDouble(maxVelParamName));
 
 				System.out.print(ANSI_BLUE + "Got all robot-specific params ... ");
 				System.out.println(ANSI_RESET);				
