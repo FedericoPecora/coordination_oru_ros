@@ -146,12 +146,12 @@ public class MainNode extends AbstractNodeMain {
 						try { Thread.sleep(200); } 
 						catch (InterruptedException e) {}
 					}
-					while (tec.isFree(arg0.getRobotID()));
+					while (!tec.isDriving(arg0.getRobotID()));
 				}
 				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
 					tec.getCurrentTracker(arg0.getRobotID()).setCriticalPoint(-1);
 					arg1.setSuccess(true);
-					arg1.setMessage("Mission aborted after assignment.");
+					arg1.setMessage("Mission aborted after assignment."); //FIXME here
 					return;
 				}
 				arg1.setSuccess(false);
