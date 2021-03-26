@@ -53,6 +53,7 @@ public class MainNode extends AbstractNodeMain {
 	private String mapFrameID = "map";
 	private ConcurrentHashMap<Integer,Boolean> isPlanning = new ConcurrentHashMap<Integer,Boolean>();
 	private ConcurrentHashMap<Integer,Boolean> planningSucceed = new ConcurrentHashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> canDispatch = new ConcurrentHashMap<Integer,Boolean>();
 
 	public static final String ANSI_BLUE = "\u001B[34m" + "\u001B[107m";
 	public static final String ANSI_GREEN = "\u001B[32m" + "\u001B[107m";
@@ -133,6 +134,7 @@ public class MainNode extends AbstractNodeMain {
 				} 
 				if (isPlanning.get(arg0.getRobotID())) {
 					do { 
+						canDispatch.put(arg0.getRobotID(), false);
 						try { Thread.sleep(200); } 
 						catch (InterruptedException e) {}
 					}
@@ -297,20 +299,21 @@ public class MainNode extends AbstractNodeMain {
 							final AbstractMotionPlanner mp = tec.getMotionPlanner(robotID);
 							mp.clearObstacles();
 							mp.setGoals(m.getToPose());
+							canDispatch.put(robotID, true);
 							isPlanning.put(robotID, true);
 							Thread planningThread = new Thread("Planning for robot " + robotID) {
 								public void run() {
 									System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
 									System.out.println(ANSI_RESET);	
 									boolean succeed = mp.plan();
-									if (succeed) {
+									if (succeed && canDispatch.get(robotID)) {
 										m.setPath(mp.getPath());
 										tec.addMissions(m);
 										//tec.computeCriticalSectionsAndStartTrackingAddedMission();
 									}
 									System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
 									System.out.println(ANSI_RESET);
-									planningSucceed.put(robotID, succeed);
+									planningSucceed.put(robotID, succeed && canDispatch.get(robotID));
 									isPlanning.put(robotID, false);
 								}
 							};
