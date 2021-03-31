@@ -127,9 +127,12 @@ public class MainNode extends AbstractNodeMain {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				if (tec.isFree(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) {
-					if (Missions.hasMissions(arg0.getRobotID())) Missions.dequeueMission(arg0.getRobotID());
+					if (Missions.hasMissions(arg0.getRobotID())) {
+						Missions.dequeueMission(arg0.getRobotID());
+						arg1.setMessage("Mission deleted before planning started.");
+					}
 					arg1.setSuccess(true);
-					arg1.setMessage("Mission deleted before planning started.");
+					arg1.setMessage("No missions to delete.");
 					return;
 				} 
 				if (isPlanning.get(arg0.getRobotID())) {
