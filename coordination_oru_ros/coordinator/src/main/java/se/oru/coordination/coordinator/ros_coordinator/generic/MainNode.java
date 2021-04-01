@@ -117,7 +117,7 @@ public class MainNode extends AbstractNodeMain {
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
 				//... and tell the coordinator to replace the path
-				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid), false);
+				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
 				
 			}
 		});
@@ -154,7 +154,6 @@ public class MainNode extends AbstractNodeMain {
 					while (!tec.isDriving(arg0.getRobotID()));
 				}
 				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
-					tec.getCurrentTracker(arg0.getRobotID()).setCriticalPoint(-1);
 					arg1.setSuccess(true);
 					arg1.setMessage("Mission aborted after assignment.");
 					return;
@@ -162,6 +161,14 @@ public class MainNode extends AbstractNodeMain {
 				arg1.setSuccess(false);
 				arg1.setMessage("Mission cannot be aborted now (robot" + arg0.getRobotID() + " is replanning).");
 			}
+		});
+		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
+			@Override
+			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
+				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> REPLANNING Robot" + arg0.getRobotID());
+				System.out.println(ANSI_RESET);
+				arg1.setSuccess(tec.replanEnvelope(arg0.getRobotID()));
+			};
 		});
 	}
 
@@ -194,7 +201,7 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);	
-				tec.setNetworkParameters(0.0, 500, 0.0); //Set the upper bound of the transmission delay to 500 ms (necessary in practice to break via abort service)
+				tec.setNetworkParameters(0.0, 1000, 0.0); //Set the upper bound of the transmission delay to 500 ms (necessary in practice to break via abort service)
 				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
@@ -398,7 +405,7 @@ public class MainNode extends AbstractNodeMain {
 				footprintCoords.put(robotID, thisFootprintCoords);		
 
 				//We need a condervative kinodynamic model
-				double scale_factor = 1.1;
+				double scale_factor = 1.0;
 				max_accel.put(robotID, scale_factor*params.getDouble(maxAccelParamName));
 				max_vel.put(robotID, scale_factor*params.getDouble(maxVelParamName));
 

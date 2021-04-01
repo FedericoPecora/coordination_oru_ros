@@ -49,7 +49,7 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 		return ret;
 	}
 	
-	private void callComputeTaskService(Pose goalPose, final int robotID) {
+	private void callComputeTaskService(Pose goalPose, final int robotID, boolean startFromCurrentState) {
 
 		if (!computing) {
 			computing = true;
@@ -63,25 +63,44 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 			final int goalID = robotIDstoGoalIDs.get(robotID);
 	
 			final ComputeTaskRequest request = serviceClient.newMessage();
-			request.setStartFromCurrentState(true);
+			request.setStartFromCurrentState(startFromCurrentState);
 			RobotTarget rt = node.getTopicMessageFactory().newFromType(RobotTarget._TYPE);
-			orunav_msgs.PoseSteering ps = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
-			geometry_msgs.Pose gpose = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
-			geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
-			geometry_msgs.Quaternion quat = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
-			point.setX(goalPose.getX());
-			point.setY(goalPose.getY());
-			point.setZ(0.0);
-			Quaternion gQuat = new Quaternion(goalPose.getTheta());
-			quat.setW(gQuat.getW());
-			quat.setX(gQuat.getX());
-			quat.setY(gQuat.getY());
-			quat.setZ(gQuat.getZ());
-			gpose.setPosition(point);
-			gpose.setOrientation(quat);
-			ps.setPose(gpose);
-			ps.setSteering(0.0);
-			rt.setGoal(ps);
+			orunav_msgs.PoseSteering ps1 = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+			geometry_msgs.Pose gpose1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+			geometry_msgs.Point point1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+			geometry_msgs.Quaternion quat1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
+			point1.setX(goalPose.getX());
+			point1.setY(goalPose.getY());
+			point1.setZ(0.0);
+			Quaternion gQuat1 = new Quaternion(goalPose.getTheta());
+			quat1.setW(gQuat1.getW());
+			quat1.setX(gQuat1.getX());
+			quat1.setY(gQuat1.getY());
+			quat1.setZ(gQuat1.getZ());
+			gpose1.setPosition(point1);
+			gpose1.setOrientation(quat1);
+			ps1.setPose(gpose1);
+			ps1.setSteering(0.0);
+			rt.setGoal(ps1);
+			if (!startFromCurrentState) {
+				orunav_msgs.PoseSteering ps2 = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+				geometry_msgs.Pose gpose2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+				geometry_msgs.Point point2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+				geometry_msgs.Quaternion quat2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
+				point2.setX(start.getX());
+				point2.setY(start.getY());
+				point2.setZ(0.0);
+				Quaternion gQuat2 = new Quaternion(start.getTheta());
+				quat2.setW(gQuat2.getW());
+				quat2.setX(gQuat2.getX());
+				quat2.setY(gQuat2.getY());
+				quat2.setZ(gQuat2.getZ());
+				gpose2.setPosition(point2);
+				gpose2.setOrientation(quat2);
+				ps2.setPose(gpose2);
+				ps2.setSteering(0.0);
+				rt.setStart(ps2);
+			}
 			rt.setRobotId(robotID);
 			rt.setTaskId(goalID);
 			rt.setGoalId(goalID);
@@ -135,20 +154,16 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	
 	@Override
 	public boolean doPlanning() {
-		//TODO: refuse to do planning if the robot is not idle,
-		//		as compute_task service will use current pose of
-		//		robot as initial pose. 
-		if (!(
-				tec.getVehicleState(robotID).equals(VEHICLE_STATE.AT_CRITICAL_POINT) ||
-				tec.getVehicleState(robotID).equals(VEHICLE_STATE.WAITING_FOR_TASK) ||
+		//Start from the current position only if the robot is idle. 
+		boolean startFromCurrentState = true;
+		if (!(tec.getVehicleState(robotID).equals(VEHICLE_STATE.WAITING_FOR_TASK) ||
 				tec.getVehicleState(robotID).equals(VEHICLE_STATE._IGNORE_))) {
-			System.out.println("Not planning because Robot" + robotID + " is not idle (in state " + tec.getVehicleState(robotID) + ")");
-			return false;
+			//System.out.println("Not planning because Robot" + robotID + " is not idle (in state " + tec.getVehicleState(robotID) + ")");
+			startFromCurrentState = false;
 		}
 		
-		this.callComputeTaskService(this.goal[0], robotID);
+		this.callComputeTaskService(this.goal[0], robotID, startFromCurrentState);
 		while (computing) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 		return outcome;
 	}
-
 }

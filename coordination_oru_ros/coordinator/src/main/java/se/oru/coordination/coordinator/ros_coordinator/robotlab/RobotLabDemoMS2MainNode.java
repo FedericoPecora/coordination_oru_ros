@@ -357,7 +357,9 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 		//Add extra obstacles to request
 		// ... one obstacle per robot that is waiting for this robot,
 		// ... placed in the waiting robot's waiting pose
-		for (Dependency dep : tec.getCurrentDependencies()) {
+		HashMap< Integer, Dependency> currentDeps = tec.getCurrentDependencies();
+		for (int key : currentDeps.keySet()) {
+			Dependency dep = currentDeps.get(key);
 			int drivingID = dep.getDrivingRobotID();
 			int waitingID = dep.getWaitingRobotID();
 			int robotID = iliadMission.getRobotID();

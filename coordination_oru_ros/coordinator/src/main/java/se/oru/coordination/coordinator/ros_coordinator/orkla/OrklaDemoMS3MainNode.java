@@ -145,7 +145,7 @@ public class OrklaDemoMS3MainNode extends AbstractNodeMain {
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
 				//... and tell the coordinator to replace the path
-				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid), false);
+				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
 				
 			}
 		});
