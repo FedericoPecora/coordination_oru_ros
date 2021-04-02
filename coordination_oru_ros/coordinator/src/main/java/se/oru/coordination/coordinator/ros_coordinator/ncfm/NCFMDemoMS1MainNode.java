@@ -130,11 +130,11 @@ public class NCFMDemoMS1MainNode extends AbstractNodeMain {
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
 				tec.setVisualization(viz);
-				
-				//Set the footprint of the robots
-				tec.setDefaultFootprint(footprintCoords);
-				
+							
 				for (final int robotID : robotIDs) {
+					
+					//Set the footprint of the robots
+					tec.setFootprint(robotID, footprintCoords);
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop

@@ -164,12 +164,13 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 				final RVizVisualization viz = new RVizVisualization(node);
 				tec.setVisualization(viz);
 				
-				//Set the footprint of the robots
-				tec.setDefaultFootprint(footprintCoords);
 				//tec.setBreakDeadlocks(false, false, false);
 				//tec.setYieldIfParking(true);
 				
 				for (final int robotID : robotIDs) {
+					
+					//Set the footprint of the robot
+					tec.setFootprint(robotID, footprintCoords);
 					
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
