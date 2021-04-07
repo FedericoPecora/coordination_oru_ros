@@ -252,7 +252,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
+				final RVizVisualization viz = new RVizVisualization(node, mapFrameID);
 				tec.setVisualization(viz);
 
 				// Set the footprint of the robots
@@ -271,7 +271,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				}
 
 				setupServices();
-
 
 				for (final int robotID : robotIDs) {
 					tec.setFootprint(robotID, footprintCoords.get(robotID));
@@ -502,6 +501,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
 			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
+			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
+			if (locationsFile.equals("NULL")) locationsFile = null;
 
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
