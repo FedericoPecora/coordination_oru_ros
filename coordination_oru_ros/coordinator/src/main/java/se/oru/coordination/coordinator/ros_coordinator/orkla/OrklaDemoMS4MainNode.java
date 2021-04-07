@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 
-public class OrklaDemoMS4MainNode {
+public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 	// Coordination related variables
 	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
@@ -89,6 +89,7 @@ public class OrklaDemoMS4MainNode {
 	public static final String ANSI_RED = "\u001B[31m" + ANSI_BG_WHITE;
 	public static final String ANSI_RESET = "\u001B[0m";
 
+	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
 	}
@@ -200,6 +201,7 @@ public class OrklaDemoMS4MainNode {
 		});
 	}
 
+	@Override
 	public void onStart(ConnectedNode connectedNode) {
 
 		this.node = connectedNode;
@@ -227,6 +229,7 @@ public class OrklaDemoMS4MainNode {
 				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
+				tec.setNetworkParameters(0.0, 4000, 0.0); //Set the upper bound of the transmission delay to 4000 ms (necessary in practice to break via abort service)
 				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
