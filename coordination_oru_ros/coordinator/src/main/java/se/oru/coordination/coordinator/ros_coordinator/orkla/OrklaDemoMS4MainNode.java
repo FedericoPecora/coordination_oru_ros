@@ -1,71 +1,99 @@
-package se.oru.coordination.coordinator.ros_coordinator.generic;
+package se.oru.coordination.coordinator.ros_coordinator.orkla;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import orunav_msgs.ComputeTask;
+import orunav_msgs.ComputeTaskRequest;
+import orunav_msgs.ComputeTaskResponse;
+import orunav_msgs.Operation;
+import orunav_msgs.RobotTarget;
+import orunav_msgs.Abort;
+import orunav_msgs.RePlan;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
+import org.ros.exception.RemoteException;
+import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
+import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
+import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
-import se.oru.coordination.coordination_oru.ConstantAccelerationForwardModel;
-import se.oru.coordination.coordination_oru.CriticalSection;
-import se.oru.coordination.coordination_oru.Mission;
-import se.oru.coordination.coordination_oru.RobotAtCriticalSection;
-import se.oru.coordination.coordination_oru.RobotReport;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
-import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;
+import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
+import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordinator.util.IliadMissions;
+import java.util.HashSet;
 
-public class MainNode extends AbstractNodeMain {
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
-	private List<Integer> robotIDs = null;
+
+public class OrklaDemoMS4MainNode {
+	// Coordination related variables
 	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
-	private ConnectedNode node = null;
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
+	private int CONTROL_PERIOD = 1000;
+	private double TEMPORAL_RESOLUTION = 1000.0;
+	
+	// Mission related variables
+	private boolean loadedMissions = false;
+	private boolean ignorePickItems = false;
+	private boolean copyGoalOperationToStartoperation = false;
+	private String locationsFile = null;
+	private String missionsFile = null;
+	private HashMap<Integer,Integer> robotID2MissionNumber = null;
+	private HashMap<Integer,Boolean> robotsAlive;
+	
+	// Robot related variables
+	private List<Integer> robotIDs = null;
+	private HashMap<Integer,Boolean> isTaskComputing = new HashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> taskComputingSucceed = new ConcurrentHashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> canDispatchNewTask = new ConcurrentHashMap<Integer,Boolean>();
 	private HashMap<Integer, Coordinate[]> footprintCoords = null;
 	private HashMap<Integer, Double> max_accel = null;
 	private HashMap<Integer, Double> max_vel = null;
-	private int CONTROL_PERIOD = 1000;
-	private double TEMPORAL_RESOLUTION = 1000.0;
-	private String locationsFile = null;
-	private String goalSequenceFile = null;
-	private boolean repeatMissions = false;
+	
+	// ROS related
 	private String reportTopic = "report";
-	private String mapFrameID = "map";
-	private ConcurrentHashMap<Integer,Boolean> isPlanning = new ConcurrentHashMap<Integer,Boolean>();
-	private ConcurrentHashMap<Integer,Boolean> planningSucceed = new ConcurrentHashMap<Integer,Boolean>();
-	private ConcurrentHashMap<Integer,Boolean> canDispatch = new ConcurrentHashMap<Integer,Boolean>();
-
-	public static final String ANSI_BLUE = "\u001B[34m" + "\u001B[107m";
-	public static final String ANSI_GREEN = "\u001B[32m" + "\u001B[107m";
-	public static final String ANSI_RED = "\u001B[31m" + "\u001B[107m";
+	private String mapFrameID = "map_laser2d";
+	private ConnectedNode node = null;
+	
+	public static final String ANSI_BG_WHITE = "\u001B[47m";
+	// Nice visualization
+	public static final String ANSI_BLUE = "\u001B[34m" + ANSI_BG_WHITE;
+	public static final String ANSI_GREEN = "\u001B[32m" + ANSI_BG_WHITE;
+	public static final String ANSI_RED = "\u001B[31m" + ANSI_BG_WHITE;
 	public static final String ANSI_RESET = "\u001B[0m";
 
-	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
 	}
 
-	private void setupActivateServices() {
+	private void setupServices() {
 		node.newServiceServer("coordinator/activate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
@@ -126,7 +154,7 @@ public class MainNode extends AbstractNodeMain {
 			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
-				if (tec.isFree(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) {
+				if (tec.isFree(arg0.getRobotID()) && !isTaskComputing.get(arg0.getRobotID())) {
 					if (Missions.hasMissions(arg0.getRobotID())) {
 						Missions.dequeueMission(arg0.getRobotID());
 						arg1.setMessage("Mission deleted before planning started.");
@@ -135,14 +163,14 @@ public class MainNode extends AbstractNodeMain {
 					arg1.setMessage("No missions to delete.");
 					return;
 				} 
-				if (isPlanning.get(arg0.getRobotID())) {
+				if (isTaskComputing.get(arg0.getRobotID())) {
 					do { 
-						canDispatch.put(arg0.getRobotID(), false);
+						canDispatchNewTask.put(arg0.getRobotID(), false);
 						try { Thread.sleep(200); } 
 						catch (InterruptedException e) {}
 					}
-					while (isPlanning.get(arg0.getRobotID()));
-					if (!planningSucceed.get(arg0.getRobotID())) {
+					while (isTaskComputing.get(arg0.getRobotID()));
+					if (!taskComputingSucceed.get(arg0.getRobotID())) {
 						arg1.setSuccess(true);
 						arg1.setMessage("Mission not assigned");
 						return;
@@ -172,7 +200,6 @@ public class MainNode extends AbstractNodeMain {
 		});
 	}
 
-	@Override
 	public void onStart(ConnectedNode connectedNode) {
 
 		this.node = connectedNode;
@@ -198,10 +225,8 @@ public class MainNode extends AbstractNodeMain {
 			protected void setup() {
 
 				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
-				
 				//Instantiate a trajectory envelope coordinator (with ROS support)
-				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);	
-				tec.setNetworkParameters(0.0, 1000, 0.0); //Set the upper bound of the transmission delay to 500 ms (necessary in practice to break via abort service)
+				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
 				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
@@ -217,6 +242,7 @@ public class MainNode extends AbstractNodeMain {
 							return(o2.getRobotReport().getRobotID()-o1.getRobotReport().getRobotID());
 						}
 					});
+
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
@@ -244,22 +270,23 @@ public class MainNode extends AbstractNodeMain {
 					e.printStackTrace();
 				}
 
-				setupActivateServices();
+				setupServices();
 
 
 				for (final int robotID : robotIDs) {
 					tec.setFootprint(robotID, footprintCoords.get(robotID));
-					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
+					ComputeIliadTaskServiceMotionPlanner mp = new ComputeIliadTaskServiceMotionPlanner(robotID, node, tec);
 					mp.setFootprint(footprintCoords.get(robotID));
+					mp.setIgnorePickItems(ignorePickItems);
+					mp.setCopyGoalOperationToStartoperation(copyGoalOperationToStartoperation);
 					tec.setMotionPlanner(robotID, mp);
-					isPlanning.put(robotID, false);
-					planningSucceed.put(robotID, false);
+					isTaskComputing.put(robotID, false);
 
 
 					//Set the forward dynamic model for the robot so the coordinator
 					//can estimate whether the robot can stop
 					tec.setForwardModel(robotID, new ConstantAccelerationForwardModel(max_accel.get(robotID), max_vel.get(robotID), tec.getTemporalResolution(), tec.getControlPeriod(), tec.getRobotTrackingPeriodInMillis(robotID)));
-					
+
 					//Get all initial locations of robots (this is done once)
 					Subscriber<orunav_msgs.RobotReport> subscriberInit = node.newSubscriber("/robot"+robotID+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
 					subscriberInit.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
@@ -279,21 +306,30 @@ public class MainNode extends AbstractNodeMain {
 								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
 								System.out.print(ANSI_BLUE + "PLACED ROBOT " + robotID + " in " + pose);
 								System.out.println(ANSI_RESET);
+								robotsAlive.put(robotID,true);
 							}
 						}
 					});
 
-
+					//FIXME Change the message type and the operations
 					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
 					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
 						@Override
 						public void onNewMessage(geometry_msgs.PoseStamped message) {
-							System.out.print(ANSI_BLUE + "RECEIVED A NEW GOAL Robot" + robotID);
-							System.out.println(ANSI_RESET);
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
-							Pose pose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(), quat.getTheta());
-							Mission m = new Mission(robotID,"currentPose", pose.toString(), null, pose);
-							Missions.enqueueMission(m);
+							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
+							Pose startPose = tec.getRobotReport(robotID).getPose();
+							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+							IliadMissions.enqueueMission(mission);
+							System.out.println("POSTED MISSION:\n" + mission.toXML());
+							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
+							PrintWriter writer;
+							try {
+								writer = new PrintWriter(new FileOutputStream(new File(postedGoalLog), true));
+								writer.println(mission.toXML());
+					            writer.close();
+							}
+							catch (FileNotFoundException e) { e.printStackTrace(); } 
 						}
 					});
 
@@ -302,36 +338,81 @@ public class MainNode extends AbstractNodeMain {
 
 			@Override
 			protected void loop() throws InterruptedException {
-				for (final int robotID : robotIDs) {
-					if (tec.isFree(robotID)) {
-						if (Missions.hasMissions(robotID) && !isPlanning.get(robotID)) {
-							final Mission m = Missions.dequeueMission(robotID);
-							final AbstractMotionPlanner mp = tec.getMotionPlanner(robotID);
-							mp.clearObstacles();
-							mp.setGoals(m.getToPose());
-							canDispatch.put(robotID, true);
-							isPlanning.put(robotID, true);
-							Thread planningThread = new Thread("Planning for robot " + robotID) {
-								public void run() {
+				boolean allRobotsAlive = true;
+				for (int robotID : robotIDs) if (!robotsAlive.get(robotID)) allRobotsAlive = false;
+				
+				if (allRobotsAlive) {
+					
+					//This is done once
+					if (!loadedMissions) {
+						if (missionsFile != null) {
+							loadedMissions = true;
+							IliadMissions.loadIliadMissions(missionsFile);
+							System.out.print(ANSI_BLUE + "Loaded Missions File: " + missionsFile);
+							System.out.println(ANSI_RESET);
+							robotID2MissionNumber = new HashMap<Integer,Integer>();
+							isTaskComputing = new HashMap<Integer,Boolean>();
+							for (int robotID : robotIDs) {
+								robotID2MissionNumber.put(robotID, 0);
+								isTaskComputing.put(robotID, false);
+							}
+							//This is to ensure that the motion primitives have been loaded by the motion planner
+							Thread.sleep(10000);
+						}
+							
+						isTaskComputing = new HashMap<Integer,Boolean>();
+						for (int robotID : robotIDs) {
+							isTaskComputing.put(robotID, false);
+						}
+					}
+					
+					// Every cycle
+					for (final int robotID : robotIDs) {
+						if (tec.isFree(robotID)) {						
+							if (IliadMissions.hasMissions(robotID) && !isTaskComputing.get(robotID) && activeRobots.get(robotID)) {
+								//ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
+								/*if (missions != null) {
+									//TODO: Should check if robot is close to intended start pose instead
+									//of overwriting it with current pose from RobotReport...
+									int missionNumber = robotID2MissionNumber.get(robotID);
+									robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
+									IliadMission mission = (IliadMission)missions.get(missionNumber);
+									Pose startPose = tec.getRobotReport(robotID).getPose();
+									mission.setFromPose(startPose);
+									//Compute the path and add it
+									//(we know adding will work because we checked that the robot is free)
 									System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
-									System.out.println(ANSI_RESET);	
-									boolean succeed = mp.plan();
-									if (succeed && canDispatch.get(robotID)) {
-										m.setPath(mp.getPath());
-										tec.addMissions(m);
-									}
-									System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
 									System.out.println(ANSI_RESET);
-									planningSucceed.put(robotID, succeed && canDispatch.get(robotID));
-									isPlanning.put(robotID, false);
-								}
-							};
-							planningThread.start();
+
+								}*/
+								final IliadMission m = (IliadMission)IliadMissions.dequeueMission(robotID);
+								final ComputeIliadTaskServiceMotionPlanner mp = (ComputeIliadTaskServiceMotionPlanner)tec.getMotionPlanner(robotID);
+								mp.clearObstacles();
+								mp.setGoals(m.getToPose());
+								mp.setOperationType(m.getOperationType());
+								mp.setPickItems(m.getItems());
+								canDispatchNewTask.put(robotID, true);
+								isTaskComputing.put(robotID, true);
+								Thread planningThread = new Thread("Planning for robot " + robotID) {
+									public void run() {
+										System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
+										System.out.println(ANSI_RESET);	
+										boolean succeed = mp.plan();
+										if (succeed && canDispatchNewTask.get(robotID)) {
+											m.setPath(mp.getPath());
+											tec.addMissions(m);
+										}
+										System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
+										System.out.println(ANSI_RESET);
+										taskComputingSucceed.put(robotID, succeed && canDispatchNewTask.get(robotID));
+										isTaskComputing.put(robotID, false);
+									}
+								};
+								planningThread.start();
+							}
 						}
 					}
 				}
-
-				// TODO: Fix reading from locations file/goal sequence file
 
 				Thread.sleep(1000);
 			}
@@ -347,16 +428,32 @@ public class MainNode extends AbstractNodeMain {
 		max_vel = new HashMap<Integer, Double>();
 		max_accel = new HashMap<Integer, Double>();
 
+		// First we get the robot_id
 		String robotIDsParamName = "/" + node.getName() + "/robot_ids";
-
 		System.out.print(ANSI_BLUE + "Checking for robot_ids parameter.");
 		System.out.println(ANSI_RESET);
+		
 		while(!params.has(robotIDsParamName)) {
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}			
+		}
+		
+		System.out.print(ANSI_BLUE + "Checking for active_robot_ids parameter.");
+		System.out.println(ANSI_RESET);
+		
+		ArrayList<Integer> defaultList = new ArrayList<Integer>();
+		defaultList.add(-1);
+		List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
+		//If param was not specified, assume all robots are active
+		if (activeIDs.contains(-1)) {
+			System.out.print(ANSI_BLUE + "Assuming all robots are active since active_robot_ids parameter was not specified.");
+			System.out.println(ANSI_RESET);
+			
+			activeIDs = new ArrayList<Integer>();
+			for (int robotID : robotIDs) activeIDs.add(robotID);
 		}
 
 		try {	
@@ -403,10 +500,8 @@ public class MainNode extends AbstractNodeMain {
 				thisFootprintCoords[3] = new Coordinate(params.getDouble(footprintParamNames[6]),params.getDouble(footprintParamNames[7]));
 				footprintCoords.put(robotID, thisFootprintCoords);		
 
-				//We need a condervative kinodynamic model
-				double scale_factor = 1.0;
-				max_accel.put(robotID, scale_factor*params.getDouble(maxAccelParamName));
-				max_vel.put(robotID, scale_factor*params.getDouble(maxVelParamName));
+				max_accel.put(robotID, params.getDouble(maxAccelParamName));
+				max_vel.put(robotID, params.getDouble(maxVelParamName));
 
 				System.out.print(ANSI_BLUE + "Got all robot-specific params ... ");
 				System.out.println(ANSI_RESET);				
@@ -414,30 +509,15 @@ public class MainNode extends AbstractNodeMain {
 				activeRobots.put(robotID, false);
 			}
 
-			System.out.print(ANSI_BLUE + "Checking for active_robot_ids parameter.");
-			System.out.println(ANSI_RESET);
-	
-			ArrayList<Integer> defaultList = new ArrayList<Integer>();
-			defaultList.add(-1);
-			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
-			//If param was not specified, assume all robots are active
-			if (activeIDs.contains(-1)) {
-				System.out.print(ANSI_BLUE + "Assuming all robots are active since active_robot_ids parameter was not specified.");
-				System.out.println(ANSI_RESET);
-				activeIDs = new ArrayList<Integer>();
-				for (int robotID : robotIDs) {
-					activeIDs.add(robotID);
-					activeRobots.put(robotID, true);
-				}
-			}
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
+			
+			robotsAlive = new HashMap<Integer,Boolean>();
+			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
+			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
+			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
+			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
 
-			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
-			goalSequenceFile = params.getString("/" + node.getName() + "/goal_sequence_file", "NULL");
-			if (locationsFile.equals("NULL")) locationsFile = null;
-			if (goalSequenceFile.equals("NULL")) goalSequenceFile = null;
-			repeatMissions = params.getBoolean("/" + node.getName() + "/repeat_missions", false);
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
 
@@ -448,25 +528,5 @@ public class MainNode extends AbstractNodeMain {
 			e.printStackTrace();
 		}
 	}
-
-//	private void readGoalSequenceFile() {
-//		try {
-//			Scanner in = new Scanner(new FileReader(goalSequenceFile));
-//			while (in.hasNextLine()) {
-//				String line = in.nextLine().trim();
-//				if (line.length() != 0 && !line.startsWith("#")) {
-//					String[] oneline = line.split(" |\t");
-//					int robotID = Integer.parseInt(oneline[0]);
-//					String goalLocation = oneline[1];
-//					Mission m = new Mission(robotID, null, goalLocation, null, Missions.getLocation(goalLocation));
-//					Missions.enqueueMission(m);
-//					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> ADDED MISSION " + m);
-//				}
-//			}
-//			in.close();
-//		}
-//		catch (FileNotFoundException e) { e.printStackTrace(); }
-//	}
-
 
 }

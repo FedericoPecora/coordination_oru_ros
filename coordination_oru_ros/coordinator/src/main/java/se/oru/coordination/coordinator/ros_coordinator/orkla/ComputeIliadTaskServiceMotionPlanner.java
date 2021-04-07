@@ -1,4 +1,4 @@
-package se.oru.coordination.coordinator.ros_coordinator;
+package se.oru.coordination.coordinator.ros_coordinator.orkla;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,27 +16,35 @@ import org.ros.node.service.ServiceResponseListener;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 
+import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
+import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
+import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
+import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
+
 import geometry_msgs.Point;
+import orunav_msgs.Task;
 import orunav_msgs.ComputeTask;
 import orunav_msgs.ComputeTaskRequest;
 import orunav_msgs.ComputeTaskResponse;
-import orunav_msgs.RobotTarget;
+import orunav_msgs.Operation;
 import orunav_msgs.Shape;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
-import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
-import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
-import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
+import orunav_msgs.RobotTarget;
 
-public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
-	
+public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	private ConnectedNode node = null;
 	private HashMap<Integer,Integer> robotIDstoGoalIDs = new HashMap<Integer,Integer>();
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
 	private boolean computing = false;
 	private boolean outcome = false;
 	private int robotID = -1;
+	private OPERATION_TYPE operationType = null;
+	private IliadItem[] pickItems = null;
+	private boolean ignorePickItems = false;
+	private boolean copyGoalOperationToStartoperation = false;
 	
-	public ComputeTaskServiceMotionPlanner(int robotID, ConnectedNode node, TrajectoryEnvelopeCoordinatorROS tec) {
+	public ComputeIliadTaskServiceMotionPlanner(int robotID, ConnectedNode node, TrajectoryEnvelopeCoordinatorROS tec) {
 		this.node = node;
 		this.tec = tec;
 		this.robotID = robotID;
@@ -44,12 +52,30 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	
 	@Override
 	public AbstractMotionPlanner getCopy(boolean copyObstacles) {
-		ComputeTaskServiceMotionPlanner ret = new ComputeTaskServiceMotionPlanner(this.robotID, this.node, this.tec);
+		ComputeIliadTaskServiceMotionPlanner ret = new ComputeIliadTaskServiceMotionPlanner(this.robotID, this.node, this.tec);
 		if (this.om != null) ret.om = new OccupancyMap(this.om, copyObstacles);
+		ret.setOperationType(this.operationType);
+		ret.setPickItems(this.pickItems);
 		return ret;
 	}
 	
-	private void callComputeTaskService(Pose goalPose, final int robotID, boolean startFromCurrentState) {
+	public void setOperationType(OPERATION_TYPE operationType) {
+		this.operationType = operationType;
+	}
+	
+	public void setPickItems(IliadItem[] items) {
+		this.pickItems = items;
+	}
+	
+	public void setCopyGoalOperationToStartoperation(boolean copyGoalOperationToStartoperation) {
+		this.copyGoalOperationToStartoperation = copyGoalOperationToStartoperation;
+	}
+	
+	public void setIgnorePickItems(boolean ignorePickItems) {
+		this.ignorePickItems = ignorePickItems;
+	}
+	
+	private void callComputeTaskService(boolean startFromCurrentState) {
 
 		if (!computing) {
 			computing = true;
@@ -69,10 +95,10 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 			geometry_msgs.Pose gpose1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
 			geometry_msgs.Point point1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
 			geometry_msgs.Quaternion quat1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
-			point1.setX(goalPose.getX());
-			point1.setY(goalPose.getY());
+			point1.setX(this.goal[0].getX());
+			point1.setY(this.goal[0].getY());
 			point1.setZ(0.0);
-			Quaternion gQuat1 = new Quaternion(goalPose.getTheta());
+			Quaternion gQuat1 = new Quaternion(this.goal[0].getTheta());
 			quat1.setW(gQuat1.getW());
 			quat1.setX(gQuat1.getX());
 			quat1.setY(gQuat1.getY());
@@ -106,6 +132,7 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 			rt.setGoalId(goalID);
 			request.setTarget(rt);
 			
+			//Add extra obstacles
 			if (this.om != null) {
 				for (Geometry obs : this.om.getObstacles()) {
 					Shape shape = node.getTopicMessageFactory().newFromType(Shape._TYPE);
@@ -135,8 +162,6 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 				public void onSuccess(ComputeTaskResponse arg0) {
 					System.out.println("Successfully called ComputeTask service for Robot" + robotID + " (goalID: " + goalID + ")");
 					outcome = true;
-					
-					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical mistake.
 	
 					ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
 					for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
@@ -146,12 +171,46 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 						path.add(ps);
 					}
 					pathPS = path.toArray(new PoseSteering[path.size()]);
+					
+					//Operations used by the current execution service
+					Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+					goalOp.setOperation(operationType.ordinal());
+					//goalOp.setOperation(Operation.NO_OPERATION);
+					if (operationType.equals(OPERATION_TYPE.PICK_ITEMS)) {
+						if (ignorePickItems) {
+							System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
+							goalOp.setOperation(Operation.NO_OPERATION);
+						}
+						orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
+						ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+						for (IliadItem item : pickItems) {
+							orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+							iliadItemMsg.setName(item.getName());
+							geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+							point.setX(item.getX());
+							point.setY(item.getY());
+							point.setZ(item.getZ());
+							iliadItemMsg.setPosition(point);
+							iliadItemMsg.setRotationType(item.getRotationType().ordinal());
+							itemList.add(iliadItemMsg);
+						}
+						iliadItemArrayMsg.setItems(itemList);
+						goalOp.setItemlist(iliadItemArrayMsg);
+					}
+					arg0.getTask().getTarget().setGoalOp(goalOp);
+
+					Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+					startOp.setOperation(Operation.NO_OPERATION);
+					if (copyGoalOperationToStartoperation) arg0.getTask().getTarget().setStartOp(goalOp);
+					else arg0.getTask().getTarget().setStartOp(startOp);
+					
+					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical error
 					computing = false;
 				}
 			});
 		}
 	}
-	
+		
 	@Override
 	public boolean doPlanning() {
 		//Start from the current position only if the robot is idle. 
@@ -162,7 +221,7 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 			startFromCurrentState = false;
 		}
 		
-		this.callComputeTaskService(this.goal[0], robotID, startFromCurrentState);
+		this.callComputeTaskService(startFromCurrentState);
 		while (computing) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 		return outcome;
 	}
