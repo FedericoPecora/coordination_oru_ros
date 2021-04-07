@@ -250,9 +250,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				tec.setupSolver(origin, origin+100000000L);
 				tec.setYieldIfParking(true);
 				
-				//Start the thread that revises precedences at every period
-				tec.startInference();
-
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				final RVizVisualization viz = new RVizVisualization(node,mapFrameID);
@@ -349,45 +346,30 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					//This is done once
 					if (!loadedMissions) {
 						if (missionsFile != null) {
-							loadedMissions = true;
 							IliadMissions.loadIliadMissions(missionsFile);
 							System.out.print(ANSI_BLUE + "Loaded Missions File: " + missionsFile);
 							System.out.println(ANSI_RESET);
-							robotID2MissionNumber = new HashMap<Integer,Integer>();
-							isTaskComputing = new HashMap<Integer,Boolean>();
-							for (int robotID : robotIDs) {
-								robotID2MissionNumber.put(robotID, 0);
-								isTaskComputing.put(robotID, false);
-							}
+							
 							//This is to ensure that the motion primitives have been loaded by the motion planner
 							Thread.sleep(10000);
 						}
 							
+						loadedMissions = true;
+						robotID2MissionNumber = new HashMap<Integer,Integer>();
 						isTaskComputing = new HashMap<Integer,Boolean>();
 						for (int robotID : robotIDs) {
+							robotID2MissionNumber.put(robotID, 0);
 							isTaskComputing.put(robotID, false);
 						}
+												
+						//Start the thread that revises precedences at every period
+						tec.startInference();
 					}
 					
 					// Every cycle
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {						
 							if (IliadMissions.hasMissions(robotID) && !isTaskComputing.get(robotID) && activeRobots.get(robotID)) {
-								//ArrayList<Mission> missions = IliadMissions.getMissions(robotID);
-								/*if (missions != null) {
-									//TODO: Should check if robot is close to intended start pose instead
-									//of overwriting it with current pose from RobotReport...
-									int missionNumber = robotID2MissionNumber.get(robotID);
-									robotID2MissionNumber.put(robotID,(missionNumber+1)%IliadMissions.getMissions(robotID).size());
-									IliadMission mission = (IliadMission)missions.get(missionNumber);
-									Pose startPose = tec.getRobotReport(robotID).getPose();
-									mission.setFromPose(startPose);
-									//Compute the path and add it
-									//(we know adding will work because we checked that the robot is free)
-									System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>>>> STARTED MOTION PLANNING for robot " + robotID);
-									System.out.println(ANSI_RESET);
-
-								}*/
 								final IliadMission m = (IliadMission)IliadMissions.dequeueMission(robotID);
 								final ComputeIliadTaskServiceMotionPlanner mp = (ComputeIliadTaskServiceMotionPlanner)tec.getMotionPlanner(robotID);
 								mp.clearObstacles();
