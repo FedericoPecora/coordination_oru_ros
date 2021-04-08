@@ -156,8 +156,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				if (tec.isFree(arg0.getRobotID()) && !isTaskComputing.get(arg0.getRobotID())) {
-					if (Missions.hasMissions(arg0.getRobotID())) {
-						Missions.dequeueMission(arg0.getRobotID());
+					if (IliadMissions.hasMissions(arg0.getRobotID())) {
+						IliadMissions.dequeueMission(arg0.getRobotID());
 						arg1.setMessage("Mission deleted before planning started.");
 					}
 					arg1.setSuccess(true);
@@ -497,9 +497,9 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			
 			robotsAlive = new HashMap<Integer,Boolean>();
-			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items",true);
-			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation",false);
-			for (int robotID : robotIDs) robotsAlive.put(robotID,false);
+			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items", true);
+			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation", false);
+			for (int robotID : robotIDs) robotsAlive.put(robotID, false);
 			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
 			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
 			if (locationsFile.equals("NULL")) locationsFile = null;

@@ -113,10 +113,10 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 				geometry_msgs.Pose gpose2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
 				geometry_msgs.Point point2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
 				geometry_msgs.Quaternion quat2 = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
-				point2.setX(start.getX());
-				point2.setY(start.getY());
+				point2.setX(this.start.getX());
+				point2.setY(this.start.getY());
 				point2.setZ(0.0);
-				Quaternion gQuat2 = new Quaternion(start.getTheta());
+				Quaternion gQuat2 = new Quaternion(this.start.getTheta());
 				quat2.setW(gQuat2.getW());
 				quat2.setX(gQuat2.getX());
 				quat2.setY(gQuat2.getY());
