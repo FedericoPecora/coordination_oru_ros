@@ -32,6 +32,7 @@ import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
+import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
@@ -311,14 +312,21 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					});
 
 					//FIXME Change the message type and the operations
-					Subscriber<geometry_msgs.PoseStamped> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", geometry_msgs.PoseStamped._TYPE);
-					subscriberGoal.addMessageListener(new MessageListener<geometry_msgs.PoseStamped>() {
+					Subscriber<orunav_msgs.RobotTarget> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", orunav_msgs.RobotTarget._TYPE);
+					subscriberGoal.addMessageListener(new MessageListener<orunav_msgs.RobotTarget>() {
 						@Override
-						public void onNewMessage(geometry_msgs.PoseStamped message) {
-							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
-							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
+						public void onNewMessage(orunav_msgs.RobotTarget message) {
+							Quaternion quat = new Quaternion(message.getGoal().getPose().getOrientation().getX(), message.getGoal().getPose().getOrientation().getY(), message.getGoal().getPose().getOrientation().getZ(), message.getGoal().getPose().getOrientation().getW());
+							Pose goalPose = new Pose(message.getGoal().getPose().getPosition().getX(), message.getGoal().getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+							IliadMission mission = null;
+							if (message.getGoalOp().getOperation() == OPERATION_TYPE.PICK_ITEMS.ordinal()) {
+								ArrayList<IliadItem> items = new ArrayList<IliadItem>();
+								for (orunav_msgs.IliadItem item : message.getGoalOp().getItemlist().getItems()) items.add(new IliadItem(item.getName(), item.getPosition().getX(), item.getPosition().getY(), item.getPosition().getZ(), ROTATION_TYPE.values()[item.getRotationType()]));
+								IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
+								mission = new IliadMission(robotID, "A", "B", startPose, goalPose, false, itemsArray);
+							}
+							else mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getGoalOp().getOperation()]);//OPERATION_TYPE.NO_OPERATION);
 							IliadMissions.enqueueMission(mission);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
@@ -367,7 +375,10 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					
 					// Every cycle
 					for (final int robotID : robotIDs) {
-						if (tec.isFree(robotID)) {						
+						if (tec.isFree(robotID)) {		
+							System.out.println("Enqueued? " + IliadMissions.hasMissions(robotID));
+							System.out.println("is computing? " + isTaskComputing.get(robotID));
+							System.out.println("is active? " + activeRobots.get(robotID));
 							if (IliadMissions.hasMissions(robotID) && !isTaskComputing.get(robotID) && activeRobots.get(robotID)) {
 								final IliadMission m = (IliadMission)IliadMissions.dequeueMission(robotID);
 								final ComputeIliadTaskServiceMotionPlanner mp = (ComputeIliadTaskServiceMotionPlanner)tec.getMotionPlanner(robotID);
