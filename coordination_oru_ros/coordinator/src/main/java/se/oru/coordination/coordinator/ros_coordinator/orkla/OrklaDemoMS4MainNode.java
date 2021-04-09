@@ -1,5 +1,6 @@
 package se.oru.coordination.coordinator.ros_coordinator.orkla;
 
+import orunav_msgs.Task;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Abort;
@@ -144,8 +145,9 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
 				//... and tell the coordinator to update the current task and to replace the path
-				tec.setCurrentTask(arg0);
 				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
+				orunav_msgs.Task currentTask = tec.getCurrentTask(rid);
+				currentTask.setTarget(arg0.getTask().getTarget());
 				
 			}
 		});
