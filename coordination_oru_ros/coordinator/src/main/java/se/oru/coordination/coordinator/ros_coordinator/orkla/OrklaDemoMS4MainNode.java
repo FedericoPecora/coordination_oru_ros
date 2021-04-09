@@ -1,8 +1,5 @@
 package se.oru.coordination.coordinator.ros_coordinator.orkla;
 
-import orunav_msgs.ComputeTask;
-import orunav_msgs.ComputeTaskRequest;
-import orunav_msgs.ComputeTaskResponse;
 import orunav_msgs.Operation;
 import orunav_msgs.RobotTarget;
 import orunav_msgs.Abort;
@@ -146,7 +143,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				//Update operations too...
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
-				//... and tell the coordinator to replace the path
+				//... and tell the coordinator to update the current task and to replace the path
+				tec.setCurrentTask(arg0);
 				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
 				
 			}
@@ -311,7 +309,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 						}
 					});
 
-					//FIXME Change the message type and the operations
+					//FIXME Name of the locations ... etc.
 					Subscriber<orunav_msgs.RobotTarget> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", orunav_msgs.RobotTarget._TYPE);
 					subscriberGoal.addMessageListener(new MessageListener<orunav_msgs.RobotTarget>() {
 						@Override
@@ -326,7 +324,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 								IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
 								mission = new IliadMission(robotID, "A", "B", startPose, goalPose, false, itemsArray);
 							}
-							else mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getGoalOp().getOperation()]);//OPERATION_TYPE.NO_OPERATION);
+							else mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getGoalOp().getOperation()]);
 							IliadMissions.enqueueMission(mission);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
