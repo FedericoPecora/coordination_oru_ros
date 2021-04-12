@@ -161,7 +161,9 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 
 				//Need to setup infrastructure that maintains the representation
 				tec.setupSolver(origin, origin+100000000L);
-				tec.setYieldIfParking(true);
+				
+				//Path are planned in odom frame. No coordination is possible.
+				tec.setFakeCoordination(true);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
