@@ -59,12 +59,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	
 	// Mission related variables
-	private boolean loadedMissions = false;
 	private boolean ignorePickItems = false;
 	private boolean copyGoalOperationToStartoperation = false;
-	private String locationsFile = null;
-	private String missionsFile = null;
-	private HashMap<Integer,Integer> robotID2MissionNumber = null;
 	private HashMap<Integer,Boolean> robotsAlive;
 	
 	// Robot related variables
@@ -184,6 +180,10 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					while (!tec.isDriving(arg0.getRobotID()));
 				}
 				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
+					//Update operations too ... (ATTENTION)
+					tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+					tec.getCurrentTracker(arg0.getRobotID()).setOperations(tec.getCurrentTask(arg0.getRobotID()).getTarget().getStartOp(), tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp());
+
 					arg1.setSuccess(true);
 					arg1.setMessage("Mission aborted after assignment.");
 					return;
@@ -195,7 +195,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
 			@Override
 			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
-				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> REPLANNING Robot" + arg0.getRobotID());
+				System.out.println(ANSI_BLUE + ">>>>>>>>>>>>>> REPLANNING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				arg1.setSuccess(tec.replanEnvelope(arg0.getRobotID()));
 			};
@@ -255,13 +255,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				final RVizVisualization viz = new RVizVisualization(node, mapFrameID);
 				tec.setVisualization(viz);
-
-				// Set the footprint of the robots
-				// tec.setDefaultFootprint(footprintCoords);
-				// FOOTPRINT IS SET IN LOOP BELOW!
-
-				if (locationsFile != null) Missions.loadLocationAndPathData(locationsFile);
-				//if (goalSequenceFile != null) readGoalSequenceFile();
 
 				//Sleep to allow loading of motion prims
 				try {
@@ -339,7 +332,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 							catch (FileNotFoundException e) { e.printStackTrace(); } 
 						}
 					});
-
+					isTaskComputing.put(robotID, false);
 				}
 			}
 
@@ -350,35 +343,12 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				
 				if (allRobotsAlive) {
 					
-					//This is done once
-					if (!loadedMissions) {
-						if (missionsFile != null) {
-							IliadMissions.loadIliadMissions(missionsFile);
-							System.out.print(ANSI_BLUE + "Loaded Missions File: " + missionsFile);
-							System.out.println(ANSI_RESET);
-							
-							//This is to ensure that the motion primitives have been loaded by the motion planner
-							Thread.sleep(10000);
-						}
-							
-						loadedMissions = true;
-						robotID2MissionNumber = new HashMap<Integer,Integer>();
-						isTaskComputing = new HashMap<Integer,Boolean>();
-						for (int robotID : robotIDs) {
-							robotID2MissionNumber.put(robotID, 0);
-							isTaskComputing.put(robotID, false);
-						}
-												
-						//Start the thread that revises precedences at every period
-						tec.startInference();
-					}
+					//Start the thread that revises precedences at every period
+					if (!tec.isStartedInference()) tec.startInference();
 					
 					// Every cycle
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {		
-							System.out.println("Enqueued? " + IliadMissions.hasMissions(robotID));
-							System.out.println("is computing? " + isTaskComputing.get(robotID));
-							System.out.println("is active? " + activeRobots.get(robotID));
 							if (IliadMissions.hasMissions(robotID) && !isTaskComputing.get(robotID) && activeRobots.get(robotID)) {
 								final IliadMission m = (IliadMission)IliadMissions.dequeueMission(robotID);
 								final ComputeIliadTaskServiceMotionPlanner mp = (ComputeIliadTaskServiceMotionPlanner)tec.getMotionPlanner(robotID);
@@ -436,26 +406,23 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			}			
 		}
 		
-		System.out.print(ANSI_BLUE + "Checking for active_robot_ids parameter.");
-		System.out.println(ANSI_RESET);
-		
-		ArrayList<Integer> defaultList = new ArrayList<Integer>();
-		defaultList.add(-1);
-		List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
-		//If param was not specified, assume all robots are active
-		if (activeIDs.contains(-1)) {
-			System.out.print(ANSI_BLUE + "Assuming all robots are active since active_robot_ids parameter was not specified.");
-			System.out.println(ANSI_RESET);
-			
-			activeIDs = new ArrayList<Integer>();
-			for (int robotID : robotIDs) activeIDs.add(robotID);
-		}
-
 		try {	
 			robotIDs = (List<Integer>) params.getList(robotIDsParamName);
-
 			System.out.print(ANSI_BLUE + "Got RobotIDs ... ");
 			System.out.println(ANSI_RESET);
+			
+			System.out.print(ANSI_BLUE + "Checking for active_robot_ids parameter.");
+			System.out.println(ANSI_RESET);
+			ArrayList<Integer> defaultList = new ArrayList<Integer>();
+			defaultList.add(-1);
+			List<Integer> activeIDs = (List<Integer>) params.getList("/" + node.getName() + "/active_robot_ids", defaultList);
+			//If param was not specified, assume all robots are active
+			if (activeIDs.contains(-1)) {
+				System.out.print(ANSI_BLUE + "Assuming all robots are active since active_robot_ids parameter was not specified.");
+				System.out.println(ANSI_RESET);
+				for (int robotID : robotIDs) activeRobots.put(robotID, true);
+			}
+			else for (int robotID : activeIDs) if (robotIDs.contains(robotID)) activeRobots.put(robotID, true);
 
 			for (Integer robotID : robotIDs) {
 
@@ -500,8 +467,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 
 				System.out.print(ANSI_BLUE + "Got all robot-specific params ... ");
 				System.out.println(ANSI_RESET);				
-
-				activeRobots.put(robotID, false);
 			}
 
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
@@ -511,9 +476,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items", true);
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation", false);
 			for (int robotID : robotIDs) robotsAlive.put(robotID, false);
-			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
-			locationsFile = params.getString("/" + node.getName() + "/locations_file", "NULL");
-			if (locationsFile.equals("NULL")) locationsFile = null;
 
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
