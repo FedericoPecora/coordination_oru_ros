@@ -26,6 +26,7 @@ import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner
 import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
 import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 
 public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	
@@ -136,6 +137,9 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 					System.out.println("Successfully called ComputeTask service for Robot" + robotID + " (goalID: " + goalID + ")");
 					outcome = true;
 					
+					//Operations used by the current execution service
+					arg0.getTask().getTarget().getStartOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+					arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());					
 					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical mistake.
 	
 					ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
@@ -146,6 +150,7 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 						path.add(ps);
 					}
 					pathPS = path.toArray(new PoseSteering[path.size()]);
+										
 					computing = false;
 				}
 			});

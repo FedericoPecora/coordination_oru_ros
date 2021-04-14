@@ -200,18 +200,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
 		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
-		currentTask.setCts(cts);
-		
-		//Operations used by the current execution service
-		if (!update) {
-			Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-			startOp.setOperation(Operation.NO_OPERATION);
-			currentTask.getTarget().setStartOp(startOp);
-			Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-			goalOp.setOperation(Operation.NO_OPERATION);
-			currentTask.getTarget().setGoalOp(goalOp);
-		}
-		
+		currentTask.setCts(cts);		
 		currentTask.setUpdate(update);
 		currentTask.setCriticalPoint(cp);
 		request.setTask(currentTask);
