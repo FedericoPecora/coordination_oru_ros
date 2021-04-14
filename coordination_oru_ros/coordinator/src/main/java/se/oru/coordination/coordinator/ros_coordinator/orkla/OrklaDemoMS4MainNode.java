@@ -305,7 +305,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					});
 
 					//FIXME Name of the locations ... etc.
-					Subscriber<orunav_msgs.RobotTarget> subscriberGoal = node.newSubscriber("robot"+robotID+"/goal", orunav_msgs.RobotTarget._TYPE);
+					Subscriber<orunav_msgs.RobotTarget> subscriberGoal = node.newSubscriber("robot"+robotID+"/robot_target", orunav_msgs.RobotTarget._TYPE);
 					subscriberGoal.addMessageListener(new MessageListener<orunav_msgs.RobotTarget>() {
 						@Override
 						public void onNewMessage(orunav_msgs.RobotTarget message) {
@@ -408,7 +408,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 		
 		try {	
 			robotIDs = (List<Integer>) params.getList(robotIDsParamName);
-			System.out.print(ANSI_BLUE + "Got RobotIDs ... ");
+			System.out.print(ANSI_BLUE + "Got RobotIDs: " + robotIDs);
 			System.out.println(ANSI_RESET);
 			
 			System.out.print(ANSI_BLUE + "Checking for active_robot_ids parameter.");
@@ -423,6 +423,9 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				for (int robotID : robotIDs) activeRobots.put(robotID, true);
 			}
 			else for (int robotID : activeIDs) if (robotIDs.contains(robotID)) activeRobots.put(robotID, true);
+			
+			System.out.print(ANSI_BLUE + "Got activeRobotIDs: " + activeRobots);
+			System.out.println(ANSI_RESET);
 
 			for (Integer robotID : robotIDs) {
 
@@ -472,9 +475,10 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			CONTROL_PERIOD = params.getInteger("/" + node.getName() + "/control_period");
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			
-			robotsAlive = new HashMap<Integer,Boolean>();
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items", true);
 			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation", false);
+			
+			robotsAlive = new HashMap<Integer,Boolean>();
 			for (int robotID : robotIDs) robotsAlive.put(robotID, false);
 
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
