@@ -366,6 +366,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 										if (succeed && canDispatchNewTask.get(robotID)) {
 											m.setPath(mp.getPath());
 											tec.addMissions(m);
+											System.out.println("DISPATCHING MISSION:\n" + m.toXML());
 										}
 										System.out.print(ANSI_GREEN + "<<<<<<<<<<<<<<<< FINISHED MOTION PLANNING for robot " + robotID);
 										System.out.println(ANSI_RESET);

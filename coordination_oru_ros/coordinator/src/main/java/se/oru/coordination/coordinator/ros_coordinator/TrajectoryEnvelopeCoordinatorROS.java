@@ -52,7 +52,8 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	}
 
 	public orunav_msgs.Task getCurrentTask(int robotID) {
-		return this.currentTasks.get(robotID);
+		if (this.currentTasks.containsKey(robotID)) return this.currentTasks.get(robotID);
+		return null;
 	}
 
 	@Override

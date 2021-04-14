@@ -12,6 +12,7 @@ import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.ServiceException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
+import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceResponseBuilder;
@@ -23,7 +24,7 @@ import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionP
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.util.IliadMissions;
 
-public class CalibrationScenarioGenerator {
+public class CalibrationScenarioGenerator extends AbstractNodeMain {
 
 	// Coordination related variables
 	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
@@ -79,28 +80,21 @@ public class CalibrationScenarioGenerator {
 			@Override
 			protected void setup() {
 
-				ArrayList<Pose> goals = new ArrayList<Pose>();
-				double dth = Math.PI/8;
-				double th = 0;
-				do {
-					goals.add(new Pose(a*Math.sin(th)*Math.cos(th)));
-					th += dth;
-				}
-				while ();
-				
 				for (final int robotID : robotIDs) {
 					//Instantiate a motion planner for this robot
-					tec.setFootprint(robotID, footprintCoords.get(robotID));
+					/*tec.setFootprint(robotID, footprintCoords.get(robotID));
 					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
 					mp.setFootprint(footprintCoords.get(robotID));
-					mp.clearObstacles();
+					mp.clearObstacles();*/
 					
 					//Generate the waypoints for the Lemniscate curve
 					//double xmax = 2*footprintCoords.get(robotID); [check here how to get the footprint coords]
 					//ymax = a/2sqrt(2) -> just to know
-					//th in (-pi/4; pi/4) U (3pi/4; 5pi/4)
+					//t in (-pi/4; pi/4) U (3pi/4; 5pi/4)
 					//x = xmax cost/(1+sin^2t)
 					//y = x sint;
+					//dy = x(1-2x^2-2y^2)/y(1+2x^2+2y^2);
+					//theta = atan(dy);
 					
 					//mp.setGoals(m.getToPose()); //enqueue all poses
 					
@@ -114,9 +108,15 @@ public class CalibrationScenarioGenerator {
 			}
 			
 			//FIXME How to visualize the generated curves?
-
+		
+			@Override
+			protected void loop() throws InterruptedException {
+				return;
+			}
 		});
+		
 	}
+	
 
 	@SuppressWarnings("unchecked")
 	private void readParams() {
@@ -207,4 +207,5 @@ public class CalibrationScenarioGenerator {
 			System.out.println(ANSI_RESET);
 			e.printStackTrace();
 		}
+	}
 }

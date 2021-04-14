@@ -130,6 +130,11 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 			rt.setRobotId(robotID);
 			rt.setTaskId(goalID);
 			rt.setGoalId(goalID);
+			if (operationType == OPERATION_TYPE.UNLOAD_PALLET) {
+				rt.getStartOp().setOperation(OPERATION_TYPE.UNLOAD_PALLET.ordinal());
+				rt.getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+			}
+			else rt.getGoalOp().setOperation(operationType.ordinal());
 			request.setTarget(rt);
 			
 			//Add extra obstacles
@@ -173,7 +178,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 					pathPS = path.toArray(new PoseSteering[path.size()]);
 					
 					//Operations used by the current execution service
-					Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
+					/*Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
 					goalOp.setOperation(operationType.ordinal());
 					//goalOp.setOperation(Operation.NO_OPERATION);
 					if (operationType.equals(OPERATION_TYPE.PICK_ITEMS)) {
@@ -202,7 +207,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 					Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
 					startOp.setOperation(Operation.NO_OPERATION);
 					if (copyGoalOperationToStartoperation) arg0.getTask().getTarget().setStartOp(goalOp);
-					else arg0.getTask().getTarget().setStartOp(startOp);
+					else arg0.getTask().getTarget().setStartOp(startOp);*/
 					
 					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical error
 					computing = false;
