@@ -130,11 +130,6 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 			rt.setRobotId(robotID);
 			rt.setTaskId(goalID);
 			rt.setGoalId(goalID);
-			/*if (operationType == OPERATION_TYPE.UNLOAD_PALLET) {
-				rt.getStartOp().setOperation(OPERATION_TYPE.UNLOAD_PALLET.ordinal());
-				rt.getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
-			}
-			else rt.getGoalOp().setOperation(operationType.ordinal());*/
 			request.setTarget(rt);
 			
 			//Add extra obstacles
@@ -181,6 +176,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 					if (operationType.equals(OPERATION_TYPE.UNLOAD_PALLET)) {
 						arg0.getTask().getTarget().getStartOp().setOperation(OPERATION_TYPE.UNLOAD_PALLET.ordinal());
 						arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+						arg0.getTask().getTarget().setGoal(arg0.getTask().getPath().getPath().get(arg0.getTask().getPath().getPath().size()-1));
 					}
 					else {
 						arg0.getTask().getTarget().getStartOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());

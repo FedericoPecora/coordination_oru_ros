@@ -69,7 +69,6 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		
 	public void replacePath(int robotID, PoseSteering[] newPath, int breakingPathIndex, Set<Integer> lockedRobotIDs) {
 		synchronized(this.solver) {
-			super.replacePath(robotID, newPath, breakingPathIndex, lockedRobotIDs);
 			orunav_msgs.Task currentTask = currentTasks.get(robotID);
 			orunav_msgs.Path pathROS = node.getTopicMessageFactory().newFromType(orunav_msgs.Path._TYPE);
 			for (int i = 0; i < newPath.length; i++) {
@@ -95,6 +94,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				}
 			}
 			currentTask.setPath(pathROS);
+			super.replacePath(robotID, newPath, breakingPathIndex, lockedRobotIDs);
 		}
 	}
 

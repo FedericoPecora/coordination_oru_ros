@@ -91,25 +91,18 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
-	    	  //Need to estimate velocity and distance traveled for use in the FW model...
-	    	  if (waitingForGoalOperation) {
-	    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
-	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, thisTE.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
-	    	  }
-	    	  else {
-	    		  Trajectory traj = thisTE.getTrajectory();
-	    		  double newDistance = 0.0;
-	    		  for (int i = 0; i < index-1; i++) {
-	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
-	    		  }
-	    		  long currentTime = getCurrentTimeInMillis(); 
-	    		  long deltaT = currentTime-lastUpdateTime;
-	    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
-	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
-	    		  
-	    		  lastUpdateTime = currentTime;
-	    		  prevDistance = newDistance;
-	    	  }
+    		  Trajectory traj = thisTE.getTrajectory();
+    		  double newDistance = 0.0;
+    		  for (int i = 0; i < index-1; i++) {
+    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
+    		  }
+    		  long currentTime = getCurrentTimeInMillis(); 
+    		  long deltaT = currentTime-lastUpdateTime;
+    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
+    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
+    		  
+    		  lastUpdateTime = currentTime;
+    		  prevDistance = newDistance;
 	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
 	    	  
@@ -153,15 +146,107 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	
 	@Override
 	protected void finishTracking() {
-		waitingForGoalOperation = true;
-		while (currentVehicleState != null && (!currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK))) {
-			try { Thread.sleep(100); }
-			catch (InterruptedException e) { e.printStackTrace(); }
-		}
 		super.finishTracking();
 		subscriber.shutdown();
 	}
 	
+	@Override
+	protected void startMonitoringThread() {
+		
+		//Start a thread that monitors the sub-envelopes and finishes them when appropriate
+		Thread monitorSubEnvelopes = new Thread("Abstract tracker " + te.getComponent()) {
+			@Override
+			public void run() {	
+
+				int prevSeqNumber = -1;
+
+				if (cb != null) cb.beforeTrackingStart();
+
+				//Monitor the sub-envelopes...
+				while (true) {
+					
+					synchronized(te) { 
+					//Track if past start time
+					if (te.getTemporalVariable().getEST() <= getCurrentTimeInMillis()) {
+		
+							if (cb != null && !calledOnTrackingStart) {
+								calledOnTrackingStart = true;
+								cb.onTrackingStart();
+							}
+							
+							if (!calledStartTracking) {
+								calledStartTracking = true;							
+								startTracking();
+							}
+	
+							//if (!startedGroundEnvelopes.isEmpty()) printStartedGroundEnvelopes();
+							RobotReport rr = null;
+							while ((rr = tec.getRobotReport(te.getRobotID())) == null) {
+								metaCSPLogger.info("(waiting for "+te.getComponent()+"'s tracker to come online)");
+								try { Thread.sleep(100); }
+								catch (InterruptedException e) { e.printStackTrace(); }
+							}
+	
+							//Get current sequence number from robot report...
+							int currentSeqNumber = rr.getPathIndex();
+		
+							//Get all ground envelopes of this super-envelope that are not finished (except the last one)...
+							for (TrajectoryEnvelope subEnv : getAllSubEnvelopes()) {
+								if (subEnv.hasSuperEnvelope()) {
+									if (subEnv.getSequenceNumberStart() <= currentSeqNumber && !startedGroundEnvelopes.contains(subEnv)) {
+										startedGroundEnvelopes.add(subEnv);
+										metaCSPLogger.info(">>>> Dispatched (ground envelope) " + subEnv);
+										if (cb != null) cb.onNewGroundEnvelope();
+									}
+									if (subEnv.getSequenceNumberEnd() < currentSeqNumber && !finishedGroundEnvelopes.contains(subEnv)) {
+										finishedGroundEnvelopes.add(subEnv);
+										metaCSPLogger.info("<<<< Finished (ground envelope) " + subEnv);
+										if (subEnv.getSequenceNumberEnd() < te.getSequenceNumberEnd()) fixDeadline(subEnv, 0);
+									}
+									else if (!finishedGroundEnvelopes.contains(subEnv) && currentSeqNumber > prevSeqNumber) {
+										updateDeadline(subEnv, 0);
+									}
+								}							
+							}
+						
+							//Stop when last path point reached (or we missed that report and the path point is now 0)
+							if (te.getSequenceNumberEnd() == currentSeqNumber || (currentSeqNumber < prevSeqNumber && currentSeqNumber <= 0)) {
+								if (!waitingForGoalOperation) metaCSPLogger.info("At last path point (current: " + currentSeqNumber + ", prev: " + prevSeqNumber + ") of " + te + "...");
+								if (currentVehicleState != null && (!currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK))) {
+									waitingForGoalOperation = true;
+									continue;
+								}
+								for (TrajectoryEnvelope toFinish : startedGroundEnvelopes) {
+									if (!finishedGroundEnvelopes.contains(toFinish)) {
+										metaCSPLogger.info("<<<< Finished (ground envelope) " + toFinish);
+										finishedGroundEnvelopes.add(toFinish);
+									}
+								}
+								break;
+							}
+							//Update previous seq number
+							prevSeqNumber = currentSeqNumber;
+						}
+					}
+				
+					//Sleep a little...
+					try { Thread.sleep(trackingPeriodInMillis); }
+					catch (InterruptedException e) { e.printStackTrace(); }
+
+				}
+
+				synchronized(tec.getSolver()) { 
+					if (cb != null) cb.beforeTrackingFinished();
+					finishTracking();
+					if (cb != null) cb.onTrackingFinished();
+				}
+				
+			}
+		};
+		
+		monitorSubEnvelopes.start();
+	}
+		
 	public void setOperations(String startOperation, String goalOperation) throws IllegalArgumentException, IllegalAccessException {
 		Operation startOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
 		Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
@@ -248,30 +333,34 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	}
 
 	@Override
-	public void onTrajectoryEnvelopeUpdate(TrajectoryEnvelope te) {
-		PoseSteering[] newPS = te.getTrajectory().getPoseSteering();
-		ArrayList<orunav_msgs.PoseSteering> newPath = new ArrayList<orunav_msgs.PoseSteering>();
-		for (PoseSteering ps : newPS) {
-			orunav_msgs.PoseSteering onePS = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
-			geometry_msgs.Pose oneP = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
-			geometry_msgs.Point onePnt = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
-			onePnt.setX(ps.getX());
-			onePnt.setY(ps.getY());
-			onePnt.setZ(0.0);
-			oneP.setPosition(onePnt);
-			Quaternion quat = new Quaternion(ps.getTheta());
-			geometry_msgs.Quaternion oneQ = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
-			oneQ.setX(quat.getX());
-			oneQ.setY(quat.getY());
-			oneQ.setZ(quat.getZ());
-			oneQ.setW(quat.getW());
-			oneP.setOrientation(oneQ);
-			onePS.setPose(oneP);
-			onePS.setSteering(ps.getSteering());
-			newPath.add(onePS);
+	protected void onTrajectoryEnvelopeUpdate() {
+		synchronized(te) {
+			PoseSteering[] newPS = te.getTrajectory().getPoseSteering();
+			ArrayList<orunav_msgs.PoseSteering> newPath = new ArrayList<orunav_msgs.PoseSteering>();
+			for (PoseSteering ps : newPS) {
+				orunav_msgs.PoseSteering onePS = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+				geometry_msgs.Pose oneP = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+				geometry_msgs.Point onePnt = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+				onePnt.setX(ps.getX());
+				onePnt.setY(ps.getY());
+				onePnt.setZ(0.0);
+				oneP.setPosition(onePnt);
+				Quaternion quat = new Quaternion(ps.getTheta());
+				geometry_msgs.Quaternion oneQ = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
+				oneQ.setX(quat.getX());
+				oneQ.setY(quat.getY());
+				oneQ.setZ(quat.getZ());
+				oneQ.setW(quat.getW());
+				oneP.setOrientation(oneQ);
+				onePS.setPose(oneP);
+				onePS.setSteering(ps.getSteering());
+				newPath.add(onePS);
+			}
+			currentTask.getPath().setPath(newPath);
+			System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
+	
+			//Reset the flag
+			waitingForGoalOperation = false;
 		}
-		currentTask.getPath().setPath(newPath);
-		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
-		//tec.setCriticalPoint(te.getRobotID(), -1);		
 	}
 }
