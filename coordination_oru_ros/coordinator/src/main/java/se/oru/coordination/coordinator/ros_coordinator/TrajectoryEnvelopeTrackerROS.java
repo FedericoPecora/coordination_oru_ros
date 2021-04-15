@@ -91,18 +91,25 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
 	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
-    		  Trajectory traj = thisTE.getTrajectory();
-    		  double newDistance = 0.0;
-    		  for (int i = 0; i < index-1; i++) {
-    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
-    		  }
-    		  long currentTime = getCurrentTimeInMillis(); 
-    		  long deltaT = currentTime-lastUpdateTime;
-    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
-    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
-    		  
-    		  lastUpdateTime = currentTime;
-    		  prevDistance = newDistance;
+	    	  //Need to estimate velocity and distance traveled for use in the FW model...
+	    	  if (waitingForGoalOperation) {
+	    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
+	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, thisTE.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
+	    	  }
+	    	  else {
+	    		  Trajectory traj = thisTE.getTrajectory();
+	    		  double newDistance = 0.0;
+	    		  for (int i = 0; i < index-1; i++) {
+	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
+	    		  }
+	    		  long currentTime = getCurrentTimeInMillis(); 
+	    		  long deltaT = currentTime-lastUpdateTime;
+	    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
+	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
+
+	    		  lastUpdateTime = currentTime;
+	    		  prevDistance = newDistance;
+	    	  }
 	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
 	    	  
@@ -212,17 +219,16 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 							//Stop when last path point reached (or we missed that report and the path point is now 0)
 							if (te.getSequenceNumberEnd() == currentSeqNumber || (currentSeqNumber < prevSeqNumber && currentSeqNumber <= 0)) {
 								if (!waitingForGoalOperation) metaCSPLogger.info("At last path point (current: " + currentSeqNumber + ", prev: " + prevSeqNumber + ") of " + te + "...");
-								if (currentVehicleState != null && (!currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK))) {
-									waitingForGoalOperation = true;
-									continue;
-								}
-								for (TrajectoryEnvelope toFinish : startedGroundEnvelopes) {
-									if (!finishedGroundEnvelopes.contains(toFinish)) {
-										metaCSPLogger.info("<<<< Finished (ground envelope) " + toFinish);
-										finishedGroundEnvelopes.add(toFinish);
+								waitingForGoalOperation = true;
+								if (currentVehicleState != null && currentVehicleState.equals(VEHICLE_STATE.WAITING_FOR_TASK)) {
+									for (TrajectoryEnvelope toFinish : startedGroundEnvelopes) {
+										if (!finishedGroundEnvelopes.contains(toFinish)) {
+											metaCSPLogger.info("<<<< Finished (ground envelope) " + toFinish);
+											finishedGroundEnvelopes.add(toFinish);
+										}
 									}
+									break;
 								}
-								break;
 							}
 							//Update previous seq number
 							prevSeqNumber = currentSeqNumber;
