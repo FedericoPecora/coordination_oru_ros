@@ -201,7 +201,7 @@ public class MainNode extends AbstractNodeMain {
 				
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);	
-				tec.setNetworkParameters(0.0, 1000, 0.0); //Set the upper bound of the transmission delay to 500 ms (necessary in practice to break via abort service)
+				tec.setNetworkParameters(0.0, 4000, 0.0); //Set the upper bound of the transmission delay to 500 ms (necessary in practice to break via abort service)
 				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
