@@ -87,6 +87,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				if (i == 0) {
 					pathROS.setTargetStart(poseROS);
 					currentTask.getTarget().setStart(poseROS);
+					System.out.println("SET START POSE (robotID, currentTask): " + pose.toString());
 				}
 				if (i == newPath.length-1) {
 					pathROS.setTargetGoal(poseROS);
@@ -94,6 +95,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				}
 			}
 			currentTask.setPath(pathROS);
+			setCurrentTask(robotID, currentTask);
 			super.replacePath(robotID, newPath, breakingPathIndex, lockedRobotIDs);
 		}
 	}
