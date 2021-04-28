@@ -1,5 +1,6 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +9,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jgrapht.alg.ConnectivityInspector;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
@@ -29,6 +32,8 @@ import orunav_msgs.BrakeTaskRequest;
 import orunav_msgs.BrakeTaskResponse;
 import orunav_msgs.Path;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
+import se.oru.coordination.coordination_oru.Dependency;
+import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeTrackerDummy;
@@ -120,6 +125,22 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	 */
 	@Override
 	public boolean truncateEnvelope(final int robotID) {
+		AbstractTrajectoryEnvelopeTracker tet = null;
+		synchronized(trackers) {
+			tet = trackers.get(robotID); 
+		}
+		if (tet instanceof TrajectoryEnvelopeTrackerDummy) {
+			metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since the robot is parked.");
+			return false;
+		}
+		final TrajectoryEnvelope te = tet.getTrajectoryEnvelope();
+		synchronized (replanningStoppingPoints) {
+			if (replanningStoppingPoints.containsKey(robotID)) {
+				metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since already planning.");
+				return false;
+			}
+		}
+		//Make the robot braking
 		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
 		try {
 			System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
@@ -134,22 +155,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
 				
 				synchronized (solver) {
-					synchronized (replanningStoppingPoints) {
-						if (replanningStoppingPoints.containsKey(robotID)) {
-							metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " at " + response.getCurrentPathIdx() + ".");
-						}
-					}
-					TrajectoryEnvelope te = getCurrentTrajectoryEnvelope(robotID);
-					AbstractTrajectoryEnvelopeTracker tet = null;
-					synchronized(trackers) {
-						tet = trackers.get(robotID); 
-					}
-					if (!(tet instanceof TrajectoryEnvelopeTrackerDummy)) {		
-						//replace the path of this robot (will compute new envelope)
-						PoseSteering[] truncatedPath = Arrays.copyOf(te.getTrajectory().getPoseSteering(),response.getCurrentPathIdx()+1);
-						replacePath(robotID, truncatedPath, truncatedPath.length-1, new HashSet<Integer>(robotID));
-						metaCSPLogger.info("Truncating " + te + " at " + response.getCurrentPathIdx() + ".");
-					}
+					//replace the path of this robot (will compute new envelope)
+					PoseSteering[] truncatedPath = Arrays.copyOf(te.getTrajectory().getPoseSteering(),response.getCurrentPathIdx()+1);
+					replacePath(robotID, truncatedPath, truncatedPath.length-1, new HashSet<Integer>(robotID));
+					metaCSPLogger.info("Truncating " + te + " at " + response.getCurrentPathIdx() + ".");
 				}
 			}
 			@Override
@@ -157,8 +166,70 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				System.out.println("Failed to brake service of robot " + robotID);
 			}
 		});
-		return true;
-		
+		return true;		
 	}
-
+	
+	/**
+	 * Re-plan the path for a given robot.
+	 * @param robotID The robot which path should be re-planned.
+	 * @return <code>true</code> if re-planning is correctly spawned.
+	 */
+	public boolean replanEnvelope(final int robotID) {
+		
+		synchronized (solver) {
+			
+			//Return false if the robot is dummy or if it is already planning
+			AbstractTrajectoryEnvelopeTracker tracker = null;
+			synchronized(trackers) {
+				tracker = trackers.get(robotID);
+			}
+			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
+			
+			synchronized(replanningStoppingPoints) {
+				if (replanningStoppingPoints.containsKey(robotID)) return false;
+			}
+			
+			//Make the robot braking
+			final TrajectoryEnvelope te = tracker.getTrajectoryEnvelope();
+			ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
+			try {
+				System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
+				serviceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
+			}
+			catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
+			final BrakeTaskRequest request = serviceClient.newMessage();
+			serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+				@Override
+				public void onSuccess(BrakeTaskResponse response) {
+					metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
+					try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
+					
+					//Ensure the replanning may be called only once
+					synchronized(replanningStoppingPoints) {
+						replanningStoppingPoints.put(robotID, new Dependency(te, null, response.getCurrentPathIdx(), 0));
+					}
+					
+					//get all the robots in the same weakly connected component (we need to place obstacle)
+					SimpleDirectedGraph<Integer,Dependency> g = depsToGraph(currentDependencies);
+					ConnectivityInspector<Integer,Dependency> connInsp = new ConnectivityInspector<Integer,Dependency>(g);
+					final Set<Integer> allConnectedRobots = g.containsVertex(robotID) ? (HashSet<Integer>) connInsp.connectedSetOf(robotID) : new HashSet<Integer>(); //it may be empty if the robot has no dependency
+					final Set<Integer> robotsToReplan = new HashSet<Integer>();
+					robotsToReplan.add(robotID); 
+					currentDependencies.put(robotID, new Dependency(te, null, response.getCurrentPathIdx(), 0));
+					
+					metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
+					new Thread() {
+						public void run() {
+							rePlanPath(robotsToReplan, allConnectedRobots);
+						}
+					}.start();
+				}
+				@Override
+				public void onFailure(RemoteException arg0) {
+					System.out.println("Failed to brake service of robot " + robotID);
+				}
+			});
+		}
+		return true;
+	}
 }
