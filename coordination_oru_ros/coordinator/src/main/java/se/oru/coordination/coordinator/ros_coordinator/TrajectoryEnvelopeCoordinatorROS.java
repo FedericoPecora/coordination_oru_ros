@@ -1,26 +1,39 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
+import org.ros.exception.RemoteException;
+import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.node.ConnectedNode;
+import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
+import org.ros.node.service.ServiceResponseListener;
 
 import com.vividsolutions.jts.geom.Geometry;
 
 import orunav_msgs.Task;
+import orunav_msgs.BrakeTask;
+import orunav_msgs.BrakeTaskRequest;
+import orunav_msgs.BrakeTaskResponse;
 import orunav_msgs.Path;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
+import se.oru.coordination.coordination_oru.TrajectoryEnvelopeTrackerDummy;
 import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
@@ -87,7 +100,6 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				if (i == 0) {
 					pathROS.setTargetStart(poseROS);
 					currentTask.getTarget().setStart(poseROS);
-					System.out.println("SET START POSE (robotID, currentTask): " + pose.toString());
 				}
 				if (i == newPath.length-1) {
 					pathROS.setTargetGoal(poseROS);
@@ -98,6 +110,55 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			setCurrentTask(robotID, currentTask);
 			super.replacePath(robotID, newPath, breakingPathIndex, lockedRobotIDs);
 		}
+	}
+	
+	/**
+	 * Truncate the {@link TrajectoryEnvelope} of a given robot at the closest dynamically-feasible path point. This path point is computed via the robot's {@link ForwardModel}.
+	 * @param robotID The ID of the robot whose {@link TrajectoryEnvelope} should be truncated.
+	 * @param pathIndex The path index at which the envelope should be truncated (ATTENTION: it should be retrieved after calling the brake_task service).
+	 * @return <code>true</code> iff the envelope is successfully truncated at the desired path index.
+	 */
+	@Override
+	public boolean truncateEnvelope(final int robotID) {
+		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
+		try {
+			System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
+			serviceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
+		}
+		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
+		final BrakeTaskRequest request = serviceClient.newMessage();
+		serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+			@Override
+			public void onSuccess(BrakeTaskResponse response) {
+				metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
+				try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
+				
+				synchronized (solver) {
+					synchronized (replanningStoppingPoints) {
+						if (replanningStoppingPoints.containsKey(robotID)) {
+							metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " at " + response.getCurrentPathIdx() + ".");
+						}
+					}
+					TrajectoryEnvelope te = getCurrentTrajectoryEnvelope(robotID);
+					AbstractTrajectoryEnvelopeTracker tet = null;
+					synchronized(trackers) {
+						tet = trackers.get(robotID); 
+					}
+					if (!(tet instanceof TrajectoryEnvelopeTrackerDummy)) {		
+						//replace the path of this robot (will compute new envelope)
+						PoseSteering[] truncatedPath = Arrays.copyOf(te.getTrajectory().getPoseSteering(),response.getCurrentPathIdx()+1);
+						replacePath(robotID, truncatedPath, truncatedPath.length-1, new HashSet<Integer>(robotID));
+						metaCSPLogger.info("Truncating " + te + " at " + response.getCurrentPathIdx() + ".");
+					}
+				}
+			}
+			@Override
+			public void onFailure(RemoteException arg0) {
+				System.out.println("Failed to brake service of robot " + robotID);
+			}
+		});
+		return true;
+		
 	}
 
 }

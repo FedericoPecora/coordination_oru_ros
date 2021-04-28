@@ -1,40 +1,28 @@
 package se.oru.coordination.coordinator.ros_coordinator.orkla;
 
-import orunav_msgs.Task;
-import orunav_msgs.Operation;
-import orunav_msgs.RobotTarget;
-import orunav_msgs.Abort;
-import orunav_msgs.RePlan;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
-import org.ros.exception.RemoteException;
-import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceException;
-import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
-import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
-import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
 import se.oru.coordination.coordination_oru.*;
-import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordinator.util.IliadMissions;
 import java.util.HashSet;
 
@@ -137,6 +125,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 						newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
 					}
 					
+					System.out.println("Start pose: " + newP.toString());
+					
 					//Update operations too...
 					tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 					System.out.println(ANSI_BLUE + "Update tracker's operations done! Start: " + arg0.getTask().getTarget().getStartOp().getOperation() + ", goal: " + arg0.getTask().getTarget().getGoalOp().getOperation());
@@ -151,6 +141,9 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					//... and finally replace the path.
 					tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
 					
+					System.out.println("Last communicated start pose: (x: " + tec.getCurrentTask(rid).getTarget().getStart().getPose().getPosition().getX() + ", y: "
+							+ tec.getCurrentTask(rid).getTarget().getStart().getPose().getPosition().getY() + ").");
+					
 					System.out.print(ANSI_BLUE + ": new path size " + newP.length);
 					System.out.println(ANSI_RESET);
 				}
@@ -159,7 +152,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 		});
 		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
 			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+			public void build(final orunav_msgs.AbortRequest arg0, final orunav_msgs.AbortResponse arg1) throws ServiceException {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				if (tec.isFree(arg0.getRobotID()) && !isTaskComputing.get(arg0.getRobotID())) {
@@ -189,17 +182,16 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					}
 					while (!tec.isDriving(arg0.getRobotID()));
 				}
-				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
+				if (tec.truncateEnvelope(arg0.getRobotID())) {
 					//Update operations too ... (ATTENTION)
 					tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
 					tec.getCurrentTracker(arg0.getRobotID()).setOperations(tec.getCurrentTask(arg0.getRobotID()).getTarget().getStartOp(), tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp());
-
 					arg1.setSuccess(true);
 					arg1.setMessage("Mission aborted after assignment.");
 					return;
 				}
 				arg1.setSuccess(false);
-				arg1.setMessage("Mission cannot be aborted now (robot" + arg0.getRobotID() + " is replanning).");
+				arg1.setMessage("Mission cannot be aborted.");
 			}
 		});
 		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {

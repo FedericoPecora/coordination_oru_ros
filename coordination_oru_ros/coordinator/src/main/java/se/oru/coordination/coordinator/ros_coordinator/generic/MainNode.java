@@ -32,6 +32,7 @@ import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 
 public class MainNode extends AbstractNodeMain {
@@ -153,13 +154,16 @@ public class MainNode extends AbstractNodeMain {
 					}
 					while (!tec.isDriving(arg0.getRobotID()));
 				}
-				if (tec.truncateEnvelope(arg0.getRobotID(), !arg0.getForce())) {
+				if (tec.truncateEnvelope(arg0.getRobotID())) {
+					//Update operations too ... (ATTENTION)
+					tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+					tec.getCurrentTracker(arg0.getRobotID()).setOperations(tec.getCurrentTask(arg0.getRobotID()).getTarget().getStartOp(), tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp());
 					arg1.setSuccess(true);
 					arg1.setMessage("Mission aborted after assignment.");
 					return;
 				}
 				arg1.setSuccess(false);
-				arg1.setMessage("Mission cannot be aborted now (robot" + arg0.getRobotID() + " is replanning).");
+				arg1.setMessage("Mission cannot be aborted.");
 			}
 		});
 		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {

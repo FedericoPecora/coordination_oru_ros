@@ -86,33 +86,35 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    subscriber.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 	      @Override
 	      public void onNewMessage(orunav_msgs.RobotReport message) {
-	    	  TrajectoryEnvelope thisTE = thisTracker.getTrajectoryEnvelope();
-	    	  if (lastUpdateTime == -1) lastUpdateTime = getCurrentTimeInMillis();
-	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
-	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
-	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
-	    	  //Need to estimate velocity and distance traveled for use in the FW model...
-	    	  if (waitingForGoalOperation) {
-	    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
-	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, thisTE.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
-	    	  }
-	    	  else {
-	    		  Trajectory traj = thisTE.getTrajectory();
-	    		  double newDistance = 0.0;
-	    		  for (int i = 0; i < index-1; i++) {
-	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
-	    		  }
-	    		  long currentTime = getCurrentTimeInMillis(); 
-	    		  long deltaT = currentTime-lastUpdateTime;
-	    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
-	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
-
-	    		  lastUpdateTime = currentTime;
-	    		  prevDistance = newDistance;
-	    	  }
-	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
-	    	  onPositionUpdate();
-	    	  
+	    	  synchronized(thisTracker.getTrajectoryEnvelope()) {
+		    	  TrajectoryEnvelope thisTE = thisTracker.getTrajectoryEnvelope();
+		    	  if (lastUpdateTime == -1) lastUpdateTime = getCurrentTimeInMillis();
+		    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
+		    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
+		    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
+		    	  //Need to estimate velocity and distance traveled for use in the FW model...
+		    	  if (waitingForGoalOperation) {
+		    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
+		    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, traj.getPose().length-1, -1.0, -1.0, -1);
+		    	  }
+		    	  else {
+		    		  Trajectory traj = thisTE.getTrajectory();
+		    		  double newDistance = 0.0;
+		    		  for (int i = 0; i < index-1; i++) {
+		    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
+		    		  }
+		    		  long currentTime = getCurrentTimeInMillis(); 
+		    		  long deltaT = currentTime-lastUpdateTime;
+		    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
+		    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
+		    		  metaCSPLogger.info("Current index of robot" + thisTE.getRobotID() + ": " + index);
+	
+		    		  lastUpdateTime = currentTime;
+		    		  prevDistance = newDistance;
+		    	  }
+		    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
+		    	  onPositionUpdate();
+		      }
 	      }
 	    });
 	    
@@ -172,7 +174,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 				//Monitor the sub-envelopes...
 				while (true) {
 					
-					synchronized(te) { 
+					synchronized(tec.getSolver()) { 
 					//Track if past start time
 					if (te.getTemporalVariable().getEST() <= getCurrentTimeInMillis()) {
 		
