@@ -35,10 +35,9 @@ public class IliadMission extends Mission {
 		this.operationType = opType;
 	}
 
-	private IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat) {
+	public IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat) {
 		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
 		this.repeat = repeat;
-		// TODO Auto-generated constructor stub
 	}
 	
 	public boolean repeatMission() {

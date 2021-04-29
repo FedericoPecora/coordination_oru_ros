@@ -1,27 +1,16 @@
 package se.oru.coordination.coordinator.calibration;
 
-import orunav_msgs.Task;
-import orunav_msgs.Operation;
-import orunav_msgs.RobotTarget;
-import orunav_msgs.Abort;
-import orunav_msgs.RePlan;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
-import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
-import org.ros.exception.RemoteException;
-import org.ros.exception.RosRuntimeException;
 import org.ros.exception.ServiceException;
-import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
-import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseBuilder;
-import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -29,24 +18,18 @@ import com.vividsolutions.jts.geom.Coordinate;
 import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
-import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
-import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
-import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
-import se.oru.coordination.coordinator.util.IliadMissions;
-import java.util.HashSet;
+import se.oru.coordination.coordinator.ros_coordinator.orkla.ComputeIliadTaskServiceMotionPlanner;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import se.oru.coordination.coordinator.util.IliadMissions;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 
@@ -59,10 +42,11 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	
 	// Mission related variables
-	private boolean loadedMissions = false;
 	private String missionsFile = null;
 	private HashMap<Integer,Boolean> robotsAlive;
-	private HashMap<Integer,Boolean> calibrationDone = new HashMap<Integer,Boolean>();
+	private ConcurrentMap<Integer,Boolean> repeatMission = new ConcurrentHashMap<Integer,Boolean>();
+	private HashMap<Integer, Double> curveWidthInOdom = null;
+	private HashMap<Integer, Double> curveHeightInOdom = null;
 	
 	// Robot related variables
 	private List<Integer> robotIDs = null;
@@ -88,28 +72,28 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 	}
 
 	private void setupServices() {
-		node.newServiceServer("coordinator/activate", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
+		node.newServiceServer("coordinator/activate", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> ACTIVATING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
-				activeRobots.put(arg0.getRobotID(),true);
+				activeRobots.put(arg0.getRobotID(), true);
 			}
 		});
-		node.newServiceServer("coordinator/deactivate", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
+		node.newServiceServer("coordinator/deactivate", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> DEACTIVATING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
-				activeRobots.put(arg0.getRobotID(),false);
+				activeRobots.put(arg0.getRobotID(), false);
 			}
 		});
-		node.newServiceServer("coordinator/finish_calibration", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
+		node.newServiceServer("coordinator/enable_calibration", orunav_msgs.SetBool._TYPE, new ServiceResponseBuilder<orunav_msgs.SetBoolRequest, orunav_msgs.SetBoolResponse>() {
 			@Override
-			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
-				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> FINISH CALIBRATION REQUEST for Robot" + arg0.getRobotID());
+			public void build(orunav_msgs.SetBoolRequest arg0, orunav_msgs.SetBoolResponse arg1) throws ServiceException {
+				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> ENABLE CALIBRATION for Robot" + arg0.getRobotID() + ", data: " + arg0.getData() + ".");
 				System.out.println(ANSI_RESET);
-				calibrationDone.put(arg0.getRobotID(),true);
+				repeatMission.put(arg0.getRobotID(), arg0.getData());
 			}
 		});
 	}
@@ -142,7 +126,7 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 				long origin = TimeUnit.NANOSECONDS.toMillis(node.getCurrentTime().totalNsecs());
 				//Instantiate a trajectory envelope coordinator (with ROS support)
 				tec = new TrajectoryEnvelopeCoordinatorROS(CONTROL_PERIOD, TEMPORAL_RESOLUTION, node);
-				tec.setNetworkParameters(0.0, 4000, 0.0); //Set the upper bound of the transmission delay to 4000 ms (necessary in practice to break via abort service)
+				tec.setNetworkParameters(0.0, 1000, 0.0); //Set the upper bound of the transmission delay to 4000 ms (necessary in practice to break via abort service)
 				tec.addComparator(new Comparator<RobotAtCriticalSection> () {
 					@Override
 					public int compare(RobotAtCriticalSection o1, RobotAtCriticalSection o2) {
@@ -170,7 +154,9 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 				final RVizVisualization viz = new RVizVisualization(node, mapFrameID);
 				tec.setVisualization(viz);
 
+				//Load or generate the path
 				if (missionsFile != null) Missions.loadScenario(missionsFile);
+				else generateCalibrationPaths();
 
 				//Sleep to allow loading of motion prims
 				try {
@@ -212,7 +198,7 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 							}
 						}
 					});
-					calibrationDone.put(robotID, false);
+					repeatMission.put(robotID, false);
 
 				}
 			}
@@ -227,22 +213,18 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 						allRobotsAlive = false;
 					}
 				
-				if (allRobotsAlive) {
-					
+				if (allRobotsAlive) {					
 					//Start the thread that revises precedences at every period
 					if (!tec.isStartedInference()) tec.startInference();
-					
-					// Every cycle
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {		
-							if (IliadMissions.hasMissions(robotID) && !calibrationDone.get(robotID) && activeRobots.get(robotID)) {
+							if (IliadMissions.hasMissions(robotID) && !repeatMission.get(robotID) && activeRobots.get(robotID)) {
 								final IliadMission m = (IliadMission)IliadMissions.peekMission(robotID);
 								tec.addMissions(m);
 							}
 						}
 					}
 				}
-
 				Thread.sleep(1000);
 			}
 		});
@@ -297,6 +279,8 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 				};
 				String maxAccelParamName = "/robot" + robotID + "/execution/max_acc";
 				String maxVelParamName = "/robot" + robotID + "/execution/max_vel";
+				String curveWidth = "/robot" + robotID + "/calibration/curve_width_in_odom_frame";
+				String curveHeight = "/robot" + robotID + "/calibration/curve_height_in_odom_frame";
 
 				System.out.print(ANSI_BLUE + "Checking for these robot-specific parameters:\n" + 
 						footprintParamNames[0] + "\n" + footprintParamNames[1] + "\n" +
@@ -310,7 +294,8 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 						!params.has(footprintParamNames[2]) || !params.has(footprintParamNames[3]) || 
 						!params.has(footprintParamNames[4]) || !params.has(footprintParamNames[5]) || 
 						!params.has(footprintParamNames[6]) || !params.has(footprintParamNames[7]) ||
-						!params.has(maxAccelParamName)      || !params.has(maxVelParamName)) {
+						!params.has(maxAccelParamName)      || !params.has(maxVelParamName) ||
+						!params.has(curveWidth)      || !params.has(curveHeight)) {
 					try {
 						Thread.sleep(200);
 					} catch (InterruptedException e) {
@@ -327,6 +312,8 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 
 				max_accel.put(robotID, params.getDouble(maxAccelParamName));
 				max_vel.put(robotID, params.getDouble(maxVelParamName));
+				curveWidthInOdom.put(robotID, params.getDouble(curveWidth));
+				curveHeightInOdom.put(robotID, params.getDouble(curveHeight));
 
 				System.out.print(ANSI_BLUE + "Got all robot-specific params ... ");
 				System.out.println(ANSI_RESET);				
@@ -346,6 +333,35 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 			System.out.print(ANSI_RED + "== Parameter not found ==");
 			System.out.println(ANSI_RESET);
 			e.printStackTrace();
+		}
+	}
+	
+	private void generateCalibrationPaths() {
+		for (final int robotID : robotIDs) {
+			tec.setFootprint(robotID, footprintCoords.get(robotID));
+			ComputeIliadTaskServiceMotionPlanner mp = new ComputeIliadTaskServiceMotionPlanner(robotID, node, tec);
+			mp.setFootprint(footprintCoords.get(robotID));
+			mp.clearObstacles();
+
+			//Generate the eight-shaped curve
+			Pose[] locations = new Pose[7];
+			locations[0] = new Pose(0, 0, 0);
+			locations[1] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), -Math.PI/2);					
+			locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -1.5*curveWidthInOdom.get(robotID), -Math.PI/2);
+			locations[3] = new Pose(0, -curveWidthInOdom.get(robotID), 0);
+			locations[4] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), Math.PI/2);
+			locations[5] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), Math.PI/2);
+			locations[6] = new Pose(0, 0, 0);
+	
+			//start motion planner (piece-by-piece)
+			IliadMission[] m = new IliadMission[locations.length-1];
+			for (int i = 0; i < locations.length-1; i++) {
+				mp.setStart(locations[i]);
+				mp.setGoals(locations[i+1]);
+				if (!mp.plan()) throw new Error("No path found");
+				m[i] = new IliadMission(robotID, mp.getPath(), locations[i].toString(), locations[i+1].toString(), locations[i], locations[i+1], false);
+			}
+			Missions.concatenateMissions(m);
 		}
 	}
 

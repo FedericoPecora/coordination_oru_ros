@@ -20,6 +20,8 @@ import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
+import se.oru.coordination.coordination_oru.Mission;
+import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.util.IliadMissions;
@@ -37,19 +39,23 @@ public class CalibrationScenarioGenerator extends AbstractNodeMain {
 	private HashMap<Integer, Coordinate[]> footprintCoords = null;
 	private HashMap<Integer, Double> max_accel = null;
 	private HashMap<Integer, Double> max_vel = null;
+	private HashMap<Integer, Double> curveWidthInOdom = null;
+	private HashMap<Integer, Double> curveHeightInOdom = null;
 	
 	// ROS related
 	private String reportTopic = "report";
 	private String mapFrameID = "map_laser2d";
 	private ConnectedNode node = null;
 	
-	public static final String ANSI_BG_WHITE = "\u001B[47m";
 	// Nice visualization
+	public static final String ANSI_BG_WHITE = "\u001B[47m";
 	public static final String ANSI_BLUE = "\u001B[34m" + ANSI_BG_WHITE;
 	public static final String ANSI_GREEN = "\u001B[32m" + ANSI_BG_WHITE;
 	public static final String ANSI_RED = "\u001B[31m" + ANSI_BG_WHITE;
 	public static final String ANSI_RESET = "\u001B[0m";
 
+	public TrajectoryEnvelopeCoordinatorROS tec = null;
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("coordinator");
@@ -70,44 +76,49 @@ public class CalibrationScenarioGenerator extends AbstractNodeMain {
 
 		//read parameters from launch file
 		readParams();
+		
+		tec = new TrajectoryEnvelopeCoordinatorROS(1000, 1000, node);
 
 		System.out.print(ANSI_BLUE + "ALL PARAMETERS REQUIRED FOR THE COORDINATOR WERE READ SUCCESSFULLY!");
 		System.out.println(ANSI_RESET);
 
 		// This CancellableLoop will be canceled automatically when the node shuts down.
 		node.executeCancellableLoop(new CancellableLoop() {
-
+		
 			@Override
 			protected void setup() {
 
 				for (final int robotID : robotIDs) {
 					//Instantiate a motion planner for this robot
-					/*tec.setFootprint(robotID, footprintCoords.get(robotID));
+					tec.setFootprint(robotID, footprintCoords.get(robotID));
 					ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
 					mp.setFootprint(footprintCoords.get(robotID));
-					mp.clearObstacles();*/
+					mp.clearObstacles();
 					
-					//Generate the waypoints for the Lemniscate curve
-					//double xmax = 2*footprintCoords.get(robotID); [check here how to get the footprint coords]
-					//ymax = a/2sqrt(2) -> just to know
-					//t in (-pi/4; pi/4) U (3pi/4; 5pi/4)
-					//x = xmax cost/(1+sin^2t)
-					//y = x sint;
-					//dy = x(1-2x^2-2y^2)/y(1+2x^2+2y^2);
-					//theta = atan(dy);
-					
-					//mp.setGoals(m.getToPose()); //enqueue all poses
-					
-					//start motion planner
-					
-					//Enqueue the mission
-
+					//Generate the eight-shaped curve
+					Pose[] locations = new Pose[7];
+					locations[0] = new Pose(0, 0, 0);
+					locations[1] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), -Math.PI/2);					
+					locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -1.5*curveWidthInOdom.get(robotID), -Math.PI/2);
+					locations[3] = new Pose(0, -curveWidthInOdom.get(robotID), 0);
+					locations[4] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), Math.PI/2);
+					locations[5] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), Math.PI/2);
+					locations[6] = new Pose(0, 0, 0);
+			
+					//start motion planner (piece-by-piece)
+					Mission[] m = new Mission[locations.length-1];
+					for (int i = 0; i < locations.length-1; i++) {
+						mp.setStart(locations[i]);
+						mp.setGoals(locations[i+1]);
+						if (!mp.plan()) throw new Error("No path found");
+						m[i] = new Mission(robotID, locations[i].toString(), locations[i+1].toString(), mp.getPath());
+					}
+					Missions.concatenateMissions(m);
 				}
 				
 				//Save the scenario.
+				Missions.saveScenario(missionsFile);
 			}
-			
-			//FIXME How to visualize the generated curves?
 		
 			@Override
 			protected void loop() throws InterruptedException {
@@ -165,20 +176,23 @@ public class CalibrationScenarioGenerator extends AbstractNodeMain {
 				};
 				String maxAccelParamName = "/robot" + robotID + "/execution/max_acc";
 				String maxVelParamName = "/robot" + robotID + "/execution/max_vel";
+				String curveWidth = "/robot" + robotID + "/calibration/curve_width_in_odom_frame";
+				String curveHeight = "/robot" + robotID + "/calibration/curve_height_in_odom_frame";
 
 				System.out.print(ANSI_BLUE + "Checking for these robot-specific parameters:\n" + 
 						footprintParamNames[0] + "\n" + footprintParamNames[1] + "\n" +
 						footprintParamNames[2] + "\n" + footprintParamNames[3] + "\n" +
 						footprintParamNames[4] + "\n" +	footprintParamNames[5] + "\n" +
 						footprintParamNames[6] + "\n" + footprintParamNames[7] + "\n" + 
-						maxAccelParamName + "\n" + maxVelParamName);
+						maxAccelParamName + "\n" + maxVelParamName + curveWidth + "\n" + curveHeight);
 				System.out.println(ANSI_RESET);
 
 				while(!params.has(footprintParamNames[0]) || !params.has(footprintParamNames[1]) || 
 						!params.has(footprintParamNames[2]) || !params.has(footprintParamNames[3]) || 
 						!params.has(footprintParamNames[4]) || !params.has(footprintParamNames[5]) || 
 						!params.has(footprintParamNames[6]) || !params.has(footprintParamNames[7]) ||
-						!params.has(maxAccelParamName)      || !params.has(maxVelParamName)) {
+						!params.has(maxAccelParamName)      || !params.has(maxVelParamName) ||
+						!params.has(curveWidth)      || !params.has(curveHeight)) {
 					try {
 						Thread.sleep(200);
 					} catch (InterruptedException e) {
@@ -195,6 +209,8 @@ public class CalibrationScenarioGenerator extends AbstractNodeMain {
 
 				max_accel.put(robotID, params.getDouble(maxAccelParamName));
 				max_vel.put(robotID, params.getDouble(maxVelParamName));
+				curveWidthInOdom.put(robotID, params.getDouble(curveWidth));
+				curveHeightInOdom.put(robotID, params.getDouble(curveHeight));
 
 				System.out.print(ANSI_BLUE + "Got all robot-specific params ... ");
 				System.out.println(ANSI_RESET);				
