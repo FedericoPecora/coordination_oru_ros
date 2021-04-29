@@ -16,6 +16,8 @@
     <param name="/robot$(arg robot_id)/footprint/front_left_y" value="0.3" />
     <param name="/robot$(arg robot_id)/footprint/front_right_x" value="1.9" />
     <param name="/robot$(arg robot_id)/footprint/front_right_y" value="-0.3" />
+    <param name="/robot$(arg robot_id)/calibration/curve_width_in_odom_frame" value="3" />
+    <param name="/robot$(arg robot_id)/calibration/curve_height_in_odom_frame" value="2" />
   </group>
 
   <group if="$(eval arg('robot_type') == 'bt')">
@@ -27,6 +29,8 @@
     <param name="/robot$(arg robot_id)/footprint/front_left_y" value="0.45" />
     <param name="/robot$(arg robot_id)/footprint/front_right_x" value="2.07" />
     <param name="/robot$(arg robot_id)/footprint/front_right_y" value="-0.45" />
+    <param name="/robot$(arg robot_id)/calibration/curve_width_in_odom_frame" value="3" />
+    <param name="/robot$(arg robot_id)/calibration/curve_height_in_odom_frame" value="2" />
   </group>
   
 </launch>

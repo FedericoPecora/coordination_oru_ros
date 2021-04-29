@@ -1,6 +1,5 @@
 package se.oru.coordination.coordinator.calibration;
 
-
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
@@ -33,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 
-public class SensorCalibrationMainNode extends AbstractNodeMain {
+public class CalibrationMainNode extends AbstractNodeMain {
 	// Coordination related variables
 	private HashMap<Integer,Boolean> activeRobots = new HashMap<Integer,Boolean>();
 	private HashMap<Integer,Pose> initialLocations = new HashMap<Integer,Pose>();
