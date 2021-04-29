@@ -67,17 +67,17 @@ public class MainNode extends AbstractNodeMain {
 	}
 
 	private void setupActivateServices() {
-		node.newServiceServer("coordinator/activate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+		node.newServiceServer("coordinator/activate", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> ACTIVATING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				activeRobots.put(arg0.getRobotID(),true);
 			}
 		});
-		node.newServiceServer("coordinator/deactivate", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+		node.newServiceServer("coordinator/deactivate", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> DEACTIVATING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				activeRobots.put(arg0.getRobotID(),false);
@@ -122,9 +122,9 @@ public class MainNode extends AbstractNodeMain {
 				
 			}
 		});
-		node.newServiceServer("coordinator/abort", orunav_msgs.Abort._TYPE, new ServiceResponseBuilder<orunav_msgs.AbortRequest, orunav_msgs.AbortResponse>() {
+		node.newServiceServer("coordinator/abort", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.AbortRequest arg0, orunav_msgs.AbortResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> ABORTING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				if (tec.isFree(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) {
@@ -166,9 +166,9 @@ public class MainNode extends AbstractNodeMain {
 				arg1.setMessage("Mission cannot be aborted.");
 			}
 		});
-		node.newServiceServer("coordinator/replan", orunav_msgs.RePlan._TYPE, new ServiceResponseBuilder<orunav_msgs.RePlanRequest, orunav_msgs.RePlanResponse>() {
+		node.newServiceServer("coordinator/replan", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
 			@Override
-			public void build(orunav_msgs.RePlanRequest arg0, orunav_msgs.RePlanResponse arg1) throws ServiceException {
+			public void build(orunav_msgs.TriggerRequest arg0, orunav_msgs.TriggerResponse arg1) throws ServiceException {
 				System.out.println(ANSI_RED + ">>>>>>>>>>>>>> REPLANNING Robot" + arg0.getRobotID());
 				System.out.println(ANSI_RESET);
 				arg1.setSuccess(tec.replanEnvelope(arg0.getRobotID()));
