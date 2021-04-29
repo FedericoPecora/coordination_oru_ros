@@ -26,7 +26,7 @@ import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 import se.oru.coordination.coordination_oru.*;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
+
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;

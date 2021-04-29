@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import orunav_msgs.Trigger;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -130,10 +131,10 @@ public class MainNode extends AbstractNodeMain {
 				if (tec.isFree(arg0.getRobotID()) && !isPlanning.get(arg0.getRobotID())) {
 					if (Missions.hasMissions(arg0.getRobotID())) {
 						Missions.dequeueMission(arg0.getRobotID());
-						arg1.setMessage("Mission deleted before planning started.");
+						System.out.println("Mission deleted before planning started.");
 					}
 					arg1.setSuccess(true);
-					arg1.setMessage("No missions to delete.");
+					System.out.println("No missions to delete.");
 					return;
 				} 
 				if (isPlanning.get(arg0.getRobotID())) {
@@ -145,7 +146,7 @@ public class MainNode extends AbstractNodeMain {
 					while (isPlanning.get(arg0.getRobotID()));
 					if (!planningSucceed.get(arg0.getRobotID())) {
 						arg1.setSuccess(true);
-						arg1.setMessage("Mission not assigned");
+						System.out.println("Mission not assigned");
 						return;
 					}
 					do { 
@@ -159,11 +160,11 @@ public class MainNode extends AbstractNodeMain {
 					tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
 					tec.getCurrentTracker(arg0.getRobotID()).setOperations(tec.getCurrentTask(arg0.getRobotID()).getTarget().getStartOp(), tec.getCurrentTask(arg0.getRobotID()).getTarget().getGoalOp());
 					arg1.setSuccess(true);
-					arg1.setMessage("Mission aborted after assignment.");
+					System.out.println("Mission aborted after assignment.");
 					return;
 				}
 				arg1.setSuccess(false);
-				arg1.setMessage("Mission cannot be aborted.");
+				System.out.println("Mission cannot be aborted.");
 			}
 		});
 		node.newServiceServer("coordinator/replan", orunav_msgs.Trigger._TYPE, new ServiceResponseBuilder<orunav_msgs.TriggerRequest, orunav_msgs.TriggerResponse>() {
