@@ -199,7 +199,6 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 						}
 					});
 					repeatMission.put(robotID, false);
-
 				}
 			}
 
@@ -218,7 +217,7 @@ public class SensorCalibrationMainNode extends AbstractNodeMain {
 					if (!tec.isStartedInference()) tec.startInference();
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {		
-							if (IliadMissions.hasMissions(robotID) && !repeatMission.get(robotID) && activeRobots.get(robotID)) {
+							if (IliadMissions.hasMissions(robotID) && repeatMission.get(robotID) && activeRobots.get(robotID)) {
 								final IliadMission m = (IliadMission)IliadMissions.peekMission(robotID);
 								tec.addMissions(m);
 							}
