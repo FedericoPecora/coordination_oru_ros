@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-  <include file="$(find cititruck_gazebo)/launch/cititrucks_empty.launch"/>
+  <include file="$(find cititruck_gazebo)/launch/cititruck_empty.launch"/>
   <include file="$(find gazebo_worlds_oru)/launch/empty_map_server.launch"/>
   <rosparam command="load" file="$(find orunav_params)/config/global.cfg"/>
   <rosparam command="load" file="$(find orunav_params)/config/citi1_simulation.cfg" />
@@ -10,23 +10,21 @@
     <arg name="robot_type" value="cititruck" />
     <arg name="robot_id" value="1" />
   </include>
-  
-  <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.ros_coordinator.calibration.CalibrationMainNode" output="screen">
+
+  <node name="coordinator" pkg="coordination_oru_ros" type="coordinator" args="se.oru.coordination.coordinator.calibration.CalibrationMainNode" output="screen">
     <rosparam param="robot_ids">[1]</rosparam>
-    <rosparam param="active_robot_ids">[1]</rosparam>
-    <param name="control_period" value="1000" />
     <param name="temporal_resolution" value="1000.0" />
     <param name="report_topic" value="control/report"/>
-
+    <param name="control_period" value="1000" />
   </node>
 
   <!-- ALL ROBOT SPECIFIC TASKS -->
   <!-- Robot 1 -->
   <include file="$(find orunav_launch)/launch/cititruck_sim.launch">
     <arg name="robot_id" value="1" />
-    <arg name="use_update_task" value="true" />
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititrucks1.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/cititruck.rviz"/>
 
 </launch>
+

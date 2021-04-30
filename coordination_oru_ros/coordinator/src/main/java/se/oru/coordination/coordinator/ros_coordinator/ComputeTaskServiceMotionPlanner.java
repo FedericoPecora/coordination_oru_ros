@@ -36,6 +36,7 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	private boolean computing = false;
 	private boolean outcome = false;
 	private int robotID = -1;
+	private boolean startFromCurrentState = true;
 	
 	public ComputeTaskServiceMotionPlanner(int robotID, ConnectedNode node, TrajectoryEnvelopeCoordinatorROS tec) {
 		this.node = node;
@@ -50,7 +51,11 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 		return ret;
 	}
 	
-	private void callComputeTaskService(Pose goalPose, final int robotID, boolean startFromCurrentState) {
+	public void setStartFromCurrentState(boolean startFromCurrentState) {
+		this.startFromCurrentState = startFromCurrentState;
+	}
+	
+	private void callComputeTaskService(Pose goalPose, final int robotID) {
 
 		if (!computing) {
 			computing = true;
@@ -160,14 +165,13 @@ public class ComputeTaskServiceMotionPlanner extends AbstractMotionPlanner {
 	@Override
 	public boolean doPlanning() {
 		//Start from the current position only if the robot is idle. 
-		boolean startFromCurrentState = true;
 		if (!(tec.getVehicleState(robotID).equals(VEHICLE_STATE.WAITING_FOR_TASK) ||
 				tec.getVehicleState(robotID).equals(VEHICLE_STATE._IGNORE_))) {
 			//System.out.println("Not planning because Robot" + robotID + " is not idle (in state " + tec.getVehicleState(robotID) + ")");
 			startFromCurrentState = false;
 		}
 		
-		this.callComputeTaskService(this.goal[0], robotID, startFromCurrentState);
+		this.callComputeTaskService(this.goal[0], robotID);
 		while (computing) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 		return outcome;
 	}

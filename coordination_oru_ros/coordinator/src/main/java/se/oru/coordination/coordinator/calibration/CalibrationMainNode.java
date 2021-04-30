@@ -17,11 +17,10 @@ import com.vividsolutions.jts.geom.Coordinate;
 import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
+import se.oru.coordination.coordinator.ros_coordinator.ComputeTaskServiceMotionPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.orkla.ComputeIliadTaskServiceMotionPlanner;
-
-import se.oru.coordination.coordinator.util.IliadMissions;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -116,6 +115,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 		System.out.print(ANSI_BLUE + "ALL PARAMETERS REQUIRED FOR THE COORDINATOR WERE READ SUCCESSFULLY!");
 		System.out.println(ANSI_RESET);
 
+	
 		// This CancellableLoop will be canceled automatically when the node shuts down.
 		node.executeCancellableLoop(new CancellableLoop() {
 
@@ -152,11 +152,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
 				final RVizVisualization viz = new RVizVisualization(node, mapFrameID);
 				tec.setVisualization(viz);
-
-				//Load or generate the path
-				if (missionsFile != null) Missions.loadScenario(missionsFile);
-				else generateCalibrationPaths();
-
+				
 				//Sleep to allow loading of motion prims
 				try {
 					Thread.sleep(10000);
@@ -164,8 +160,12 @@ public class CalibrationMainNode extends AbstractNodeMain {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
+				
 				setupServices();
+
+				//Load or generate the path
+				if (missionsFile != null) Missions.loadScenario(missionsFile);
+				else generateCalibrationPaths();
 
 				for (final int robotID : robotIDs) {
 					tec.setFootprint(robotID, footprintCoords.get(robotID));
@@ -216,8 +216,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 					if (!tec.isStartedInference()) tec.startInference();
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {		
-							if (IliadMissions.hasMissions(robotID) && repeatMission.get(robotID) && activeRobots.get(robotID)) {
-								final IliadMission m = (IliadMission)IliadMissions.peekMission(robotID);
+							if (Missions.hasMissions(robotID) && repeatMission.get(robotID) && activeRobots.get(robotID)) {
+								final Mission m = Missions.peekMission(robotID);
 								tec.addMissions(m);
 							}
 						}
@@ -236,6 +236,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 		footprintCoords = new HashMap<Integer, Coordinate[]>();
 		max_vel = new HashMap<Integer, Double>();
 		max_accel = new HashMap<Integer, Double>();
+		curveWidthInOdom = new HashMap<Integer, Double>();
+		curveHeightInOdom = new HashMap<Integer, Double>();
 
 		// First we get the robot_id
 		String robotIDsParamName = "/" + node.getName() + "/robot_ids";
@@ -285,8 +287,9 @@ public class CalibrationMainNode extends AbstractNodeMain {
 						footprintParamNames[2] + "\n" + footprintParamNames[3] + "\n" +
 						footprintParamNames[4] + "\n" +	footprintParamNames[5] + "\n" +
 						footprintParamNames[6] + "\n" + footprintParamNames[7] + "\n" + 
-						maxAccelParamName + "\n" + maxVelParamName);
-				System.out.println(ANSI_RESET);
+						maxAccelParamName + "\n" + maxVelParamName + "\n" +
+						curveWidth + "\n" + curveHeight);
+						System.out.println(ANSI_RESET);
 
 				while(!params.has(footprintParamNames[0]) || !params.has(footprintParamNames[1]) || 
 						!params.has(footprintParamNames[2]) || !params.has(footprintParamNames[3]) || 
@@ -337,9 +340,10 @@ public class CalibrationMainNode extends AbstractNodeMain {
 	private void generateCalibrationPaths() {
 		for (final int robotID : robotIDs) {
 			tec.setFootprint(robotID, footprintCoords.get(robotID));
-			ComputeIliadTaskServiceMotionPlanner mp = new ComputeIliadTaskServiceMotionPlanner(robotID, node, tec);
+			ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
 			mp.setFootprint(footprintCoords.get(robotID));
 			mp.clearObstacles();
+			mp.setStartFromCurrentState(false);
 
 			//Generate the eight-shaped curve
 			Pose[] locations = new Pose[7];
@@ -352,12 +356,14 @@ public class CalibrationMainNode extends AbstractNodeMain {
 			locations[6] = new Pose(0, 0, 0);
 	
 			//start motion planner (piece-by-piece)
-			IliadMission[] m = new IliadMission[locations.length-1];
+			Mission[] m = new Mission[locations.length-1];
 			for (int i = 0; i < locations.length-1; i++) {
 				mp.setStart(locations[i]);
 				mp.setGoals(locations[i+1]);
-				if (!mp.plan()) throw new Error("No path found");
-				m[i] = new IliadMission(robotID, mp.getPath(), locations[i].toString(), locations[i+1].toString(), locations[i], locations[i+1], false);
+				if (!mp.plan()) throw new Error("#" + i + ": No path found from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
+				System.out.print(ANSI_BLUE + "#" + i + ": Computed path from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
+				System.out.println(ANSI_RESET);
+				m[i] = new Mission(robotID, mp.getPath(), locations[i].toString(), locations[i+1].toString(), locations[i], locations[i+1]);
 			}
 			Missions.concatenateMissions(m);
 		}
