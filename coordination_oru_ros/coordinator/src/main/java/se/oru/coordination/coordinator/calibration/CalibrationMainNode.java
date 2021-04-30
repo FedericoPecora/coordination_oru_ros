@@ -15,6 +15,7 @@ import org.ros.node.topic.Subscriber;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
+import orunav_msgs.Task;
 import se.oru.coordination.coordination_oru.*;
 import se.oru.coordination.coordination_oru.util.Missions;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
@@ -190,6 +191,43 @@ public class CalibrationMainNode extends AbstractNodeMain {
 									e.printStackTrace();
 								}
 								initialLocations.put(robotID, pose);
+								
+								//Translate the 8-shape in the current robot location
+								Mission m = Missions.peekMission(robotID);
+								PoseSteering[] translatedPath = new PoseSteering[m.getPath().length];
+								for (int i = 0; i < m.getPath().length; i++) {
+									translatedPath[i] = new PoseSteering(m.getPath()[i].getX()+pose.getX(),m.getPath()[i].getY()+pose.getY(),m.getPath()[i].getTheta()+pose.getTheta(),m.getPath()[i].getSteering());
+								}
+								m.setPath(translatedPath);
+								
+								//Set the real task
+								Task currentTask = tec.getCurrentTask(robotID);
+								orunav_msgs.Path pathROS = node.getTopicMessageFactory().newFromType(orunav_msgs.Path._TYPE);
+								for (int i = 0; i < translatedPath.length; i++) {
+									PoseSteering pose1 = translatedPath[i];
+									orunav_msgs.PoseSteering poseROS = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+									poseROS.getPose().getPosition().setX(pose1.getX());
+									poseROS.getPose().getPosition().setY(pose1.getY());
+									poseROS.getPose().getPosition().setZ(pose1.getZ());
+									Quaternion quat1 = new Quaternion(pose1.getTheta());
+									poseROS.getPose().getOrientation().setW(quat1.getW());
+									poseROS.getPose().getOrientation().setX(quat1.getX());
+									poseROS.getPose().getOrientation().setY(quat1.getY());
+									poseROS.getPose().getOrientation().setZ(quat1.getZ());
+									poseROS.setSteering(pose1.getSteering());
+									pathROS.getPath().add(poseROS);
+									if (i == 0) {
+										pathROS.setTargetStart(poseROS);
+										currentTask.getTarget().setStart(poseROS);
+									}
+									if (i == translatedPath.length-1) {
+										pathROS.setTargetGoal(poseROS);
+										currentTask.getTarget().setGoal(poseROS);
+									}
+								}
+								currentTask.setPath(pathROS);
+								tec.setCurrentTask(robotID, currentTask);
+								
 								//Place all robots in current positions
 								tec.placeRobot(robotID, pose, null, "r"+robotID+"p");
 								System.out.print(ANSI_BLUE + "PLACED ROBOT " + robotID + " in " + pose);
@@ -367,7 +405,12 @@ public class CalibrationMainNode extends AbstractNodeMain {
 				for (int j = (i == 0) ? 0 : 1; j < mp.getPath().length; j++) pathArr.add(mp.getPath()[j]);
 			}
 			PoseSteering[] path = new PoseSteering[pathArr.size()];
-			Missions.enqueueMission(new Mission(robotID, locations[0].toString(), locations[6].toString(), pathArr.toArray(path)));
+			pathArr.toArray(path);
+			for (int i = 0; i < path.length; i++) System.out.println("[" + path[i].getX() + "," + path[i].getY() + "," + path[i].getTheta() + "].");
+			Missions.enqueueMission(new Mission(robotID, locations[0].toString(), locations[6].toString(), path));
+			
+			//Note that we should inform the coordinator that the current task considers the overall path (see line 203)
+
 		}
 	}
 
