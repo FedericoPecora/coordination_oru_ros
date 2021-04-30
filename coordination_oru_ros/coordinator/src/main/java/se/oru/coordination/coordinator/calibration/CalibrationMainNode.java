@@ -1,6 +1,7 @@
 package se.oru.coordination.coordinator.calibration;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.exception.ServiceException;
@@ -349,23 +350,24 @@ public class CalibrationMainNode extends AbstractNodeMain {
 			Pose[] locations = new Pose[7];
 			locations[0] = new Pose(0, 0, 0);
 			locations[1] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), -Math.PI/2);					
-			locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -1.5*curveWidthInOdom.get(robotID), -Math.PI/2);
+			locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), -Math.PI/2);
 			locations[3] = new Pose(0, -curveWidthInOdom.get(robotID), 0);
 			locations[4] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), Math.PI/2);
 			locations[5] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), Math.PI/2);
 			locations[6] = new Pose(0, 0, 0);
 	
 			//start motion planner (piece-by-piece)
-			Mission[] m = new Mission[locations.length-1];
+			ArrayList<PoseSteering> pathArr = new ArrayList<PoseSteering>();
 			for (int i = 0; i < locations.length-1; i++) {
 				mp.setStart(locations[i]);
 				mp.setGoals(locations[i+1]);
 				if (!mp.plan()) throw new Error("#" + i + ": No path found from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
 				System.out.print(ANSI_BLUE + "#" + i + ": Computed path from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
 				System.out.println(ANSI_RESET);
-				m[i] = new Mission(robotID, mp.getPath(), locations[i].toString(), locations[i+1].toString(), locations[i], locations[i+1]);
+				for (int j = (i == 0) ? 0 : 1; j < mp.getPath().length; j++) pathArr.add(mp.getPath()[j]);
 			}
-			Missions.concatenateMissions(m);
+			PoseSteering[] path = new PoseSteering[pathArr.size()];
+			Missions.enqueueMission(new Mission(robotID, locations[0].toString(), locations[6].toString(), pathArr.toArray(path)));
 		}
 	}
 
