@@ -24,6 +24,7 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.orkla.ComputeIliadTaskServiceMotionPlanner;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -42,7 +43,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 	private double TEMPORAL_RESOLUTION = 1000.0;
 	
 	// Mission related variables
-	private String missionsFile = null;
+	private HashMap<Integer, String> pathFiles = null;
+	private HashMap<Integer,Boolean> generatePaths = null;
 	private HashMap<Integer,Boolean> robotsAlive;
 	private ConcurrentMap<Integer,Boolean> repeatMission = new ConcurrentHashMap<Integer,Boolean>();
 	private HashMap<Integer, Double> curveWidthInOdom = null;
@@ -148,7 +150,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 				tec.setupSolver(origin, origin+100000000L);
 				
 				//Path are planned in odom frame. No coordination is possible.
-				tec.setFakeCoordination(true);
+				//tec.setFakeCoordination(true);
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
@@ -166,8 +168,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 				setupServices();
 
 				//Load or generate the path
-				if (missionsFile != null) Missions.loadScenario(missionsFile);
-				else generateCalibrationPaths();
+				generateCalibrationPaths();
 
 				for (final int robotID : robotIDs) {
 					tec.setFootprint(robotID, footprintCoords.get(robotID));
@@ -243,16 +244,18 @@ public class CalibrationMainNode extends AbstractNodeMain {
 			@Override
 			protected void loop() throws InterruptedException {
 				boolean allRobotsAlive = true;
-				for (int robotID : robotIDs) 
+				boolean oneCanStart = false;
+				for (int robotID : robotIDs) {
+					oneCanStart = oneCanStart || repeatMission.get(robotID);
 					if (!robotsAlive.get(robotID)) {
 						System.out.print(ANSI_RED + "ROBOT " + robotID + " is not active.");
 						System.out.println(ANSI_RESET);
 						allRobotsAlive = false;
 					}
-				
+				}
 				if (allRobotsAlive) {					
 					//Start the thread that revises precedences at every period
-					if (!tec.isStartedInference()) tec.startInference();
+					if (!tec.isStartedInference() && oneCanStart) tec.startInference();
 					for (final int robotID : robotIDs) {
 						if (tec.isFree(robotID)) {		
 							if (Missions.hasMissions(robotID) && repeatMission.get(robotID) && activeRobots.get(robotID)) {
@@ -261,6 +264,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 							}
 						}
 					}
+					if (!oneCanStart && tec.isStartedInference()) tec.stopInference();
 				}
 				Thread.sleep(1000);
 			}
@@ -277,6 +281,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 		max_accel = new HashMap<Integer, Double>();
 		curveWidthInOdom = new HashMap<Integer, Double>();
 		curveHeightInOdom = new HashMap<Integer, Double>();
+		generatePaths = new HashMap<Integer, Boolean>();
+		pathFiles = new HashMap<Integer, String>();
 
 		// First we get the robot_id
 		String robotIDsParamName = "/" + node.getName() + "/robot_ids";
@@ -320,6 +326,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 				String maxVelParamName = "/robot" + robotID + "/execution/max_vel";
 				String curveWidth = "/robot" + robotID + "/calibration/curve_width_in_odom_frame";
 				String curveHeight = "/robot" + robotID + "/calibration/curve_height_in_odom_frame";
+				//String generatePath = "/robot" + robotID + "/calibration/generate_path";
+				//String pathFile = "/robot" + robotID + "/calibration/path_file";
 
 				System.out.print(ANSI_BLUE + "Checking for these robot-specific parameters:\n" + 
 						footprintParamNames[0] + "\n" + footprintParamNames[1] + "\n" +
@@ -327,7 +335,8 @@ public class CalibrationMainNode extends AbstractNodeMain {
 						footprintParamNames[4] + "\n" +	footprintParamNames[5] + "\n" +
 						footprintParamNames[6] + "\n" + footprintParamNames[7] + "\n" + 
 						maxAccelParamName + "\n" + maxVelParamName + "\n" +
-						curveWidth + "\n" + curveHeight);
+						curveWidth + "\n" + curveHeight + "\n"// + generatePath + "\n" + pathFile
+						);
 						System.out.println(ANSI_RESET);
 
 				while(!params.has(footprintParamNames[0]) || !params.has(footprintParamNames[1]) || 
@@ -363,8 +372,12 @@ public class CalibrationMainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			
 			robotsAlive = new HashMap<Integer,Boolean>();
-			for (int robotID : robotIDs) robotsAlive.put(robotID, false);
-			if (params.has("/" + node.getName() + "/missions_file")) missionsFile = params.getString("/" + node.getName() + "/missions_file");
+			for (int robotID : robotIDs) {
+				robotsAlive.put(robotID, false);
+				if (params.has("/" + robotID + "/calibration/path_file")) pathFiles.put(robotID, params.getString("/" + robotID + "/calibration/path_file"));
+				if (params.has("/" + robotID + "/calibration/generate_path")) generatePaths.put(robotID, params.getBoolean("/" + robotID + "/calibration/generate_path"));
+				else generatePaths.put(robotID, true);
+			}
 			this.reportTopic = params.getString("/" + node.getName() + "/report_topic", "report");
 			this.mapFrameID = params.getString("/" + node.getName() + "/map_frame_id", "map");
 
@@ -378,36 +391,58 @@ public class CalibrationMainNode extends AbstractNodeMain {
 	
 	private void generateCalibrationPaths() {
 		for (final int robotID : robotIDs) {
-			tec.setFootprint(robotID, footprintCoords.get(robotID));
-			ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
-			mp.setFootprint(footprintCoords.get(robotID));
-			mp.clearObstacles();
-			mp.setStartFromCurrentState(false);
-
-			//Generate the eight-shaped curve
-			Pose[] locations = new Pose[7];
-			locations[0] = new Pose(0, 0, 0);
-			locations[1] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), -Math.PI/2);					
-			locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), -Math.PI/2);
-			locations[3] = new Pose(0, -curveWidthInOdom.get(robotID), 0);
-			locations[4] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.75*curveWidthInOdom.get(robotID), Math.PI/2);
-			locations[5] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.25*curveWidthInOdom.get(robotID), Math.PI/2);
-			locations[6] = new Pose(0, 0, 0);
-	
-			//start motion planner (piece-by-piece)
-			ArrayList<PoseSteering> pathArr = new ArrayList<PoseSteering>();
-			for (int i = 0; i < locations.length-1; i++) {
-				mp.setStart(locations[i]);
-				mp.setGoals(locations[i+1]);
-				if (!mp.plan()) throw new Error("#" + i + ": No path found from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
-				System.out.print(ANSI_BLUE + "#" + i + ": Computed path from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
+			//FIXME Default paths are saved in /.ros
+			String fileName = null;
+			if (pathFiles == null || !pathFiles.containsKey(robotID)) fileName = "robot"+robotID+"_calibration.path"; 
+			else fileName = pathFiles.get(robotID);
+			
+			
+			if (generatePaths.containsKey(robotID) && generatePaths.get(robotID)) {
+				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> GENERATING CALIBRATION PATH of robot" + robotID + " (saving path file " + fileName + ").");
 				System.out.println(ANSI_RESET);
-				for (int j = (i == 0) ? 0 : 1; j < mp.getPath().length; j++) pathArr.add(mp.getPath()[j]);
+				tec.setFootprint(robotID, footprintCoords.get(robotID));
+				ComputeTaskServiceMotionPlanner mp = new ComputeTaskServiceMotionPlanner(robotID, node, tec);
+				mp.setFootprint(footprintCoords.get(robotID));
+				mp.clearObstacles();
+				mp.setStartFromCurrentState(false);
+	
+				//Generate the eight-shaped curve
+				Pose[] locations = new Pose[7];
+				locations[0] = new Pose(0, 0, 0);
+				locations[1] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.2*curveWidthInOdom.get(robotID), -Math.PI/2);					
+				locations[2] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.8*curveWidthInOdom.get(robotID), -Math.PI/2);
+				locations[3] = new Pose(0, -curveWidthInOdom.get(robotID), 0);
+				locations[4] = new Pose(0.5*curveHeightInOdom.get(robotID), -0.8*curveWidthInOdom.get(robotID), Math.PI/2);
+				locations[5] = new Pose(-0.5*curveHeightInOdom.get(robotID), -0.2*curveWidthInOdom.get(robotID), Math.PI/2);
+				locations[6] = new Pose(0, 0, 0);
+		
+				//start motion planner (piece-by-piece)
+				ArrayList<PoseSteering> pathArr = new ArrayList<PoseSteering>();
+				for (int i = 0; i < locations.length-1; i++) {
+					mp.setStart(locations[i]);
+					mp.setGoals(locations[i+1]);
+					if (!mp.plan()) throw new Error("#" + i + ": No path found from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
+					System.out.print(ANSI_BLUE + "#" + i + ": Computed path from pose " + locations[i].toString() + " to pose " + locations[i+1].toString() + ".");
+					System.out.println(ANSI_RESET);
+					for (int j = (i == 0) ? 0 : 1; j < mp.getPath().length; j++) pathArr.add(mp.getPath()[j]);
+				}
+				path = new PoseSteering[pathArr.size()];
+				pathArr.toArray(path);
+				
+				//Resample the path to ensure the same distance between path points
+				Missions.setMinPathDistance(0.01);
+				path = Missions.resamplePath(path);
+				
+				//Save the path
+				Missions.writePath(fileName, path);//pathFiles.get(robotID), path);*/
 			}
-			PoseSteering[] path = new PoseSteering[pathArr.size()];
-			pathArr.toArray(path);
-			for (int i = 0; i < path.length; i++) System.out.println("[" + path[i].getX() + "," + path[i].getY() + "," + path[i].getTheta() + "].");
-			Missions.enqueueMission(new Mission(robotID, locations[0].toString(), locations[6].toString(), path));
+			else {
+				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> LOADING CALIBRATION PATH of robot" + robotID + " from " + fileName + ").");
+				System.out.println(ANSI_RESET);
+				Missions.loadPathFromFile(fileName);
+			}
+			
+			Missions.enqueueMission(new Mission(robotID, "currentPose", "currentPose", path));
 			
 			//Note that we should inform the coordinator that the current task considers the overall path (see line 203)
 
