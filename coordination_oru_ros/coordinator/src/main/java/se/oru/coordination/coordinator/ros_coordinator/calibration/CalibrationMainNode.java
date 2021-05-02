@@ -1,4 +1,4 @@
-package se.oru.coordination.coordinator.calibration;
+package se.oru.coordination.coordinator.ros_coordinator.calibration;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -391,6 +391,7 @@ public class CalibrationMainNode extends AbstractNodeMain {
 	
 	private void generateCalibrationPaths() {
 		for (final int robotID : robotIDs) {
+			PoseSteering[] path = null;
 			//FIXME Default paths are saved in /.ros
 			String fileName = null;
 			if (pathFiles == null || !pathFiles.containsKey(robotID)) fileName = "robot"+robotID+"_calibration.path"; 

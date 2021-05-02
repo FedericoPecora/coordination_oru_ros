@@ -24,7 +24,6 @@ import orunav_msgs.RobotTarget;
 import orunav_msgs.Shape;
 import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
-import se.oru.coordination.coordination_oru.motionplanning.ompl.ReedsSheppCarPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 
