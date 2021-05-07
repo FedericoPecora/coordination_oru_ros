@@ -109,38 +109,52 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				System.out.println(ANSI_RESET);
 				
 				synchronized(tec.getSolver()) {
+					
 					//Get old path
 					PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
-					System.out.println(ANSI_BLUE + ": old path size " + oldP.length);
-					
 					//Get the new path from the message
 					List<orunav_msgs.PoseSteering> newPath = arg0.getTask().getPath().getPath();
-					PoseSteering[] newP = new PoseSteering[oldP.length + newPath.size()];
+					PoseSteering[] newP = null;
+					boolean concatenatePaths = true;
+					int offset = 0;
 					
-					//Concatenate the new path to the old path...
-					for (int i = 0; i < oldP.length; i++) newP[i] = oldP[i];
+					if (arg0.getTask().getUpdate()) {					
+						newP = new PoseSteering[oldP.length + newPath.size()];
+						
+						//Concatenate the new path to the old path...
+						for (int i = 0; i < oldP.length; i++) newP[i] = oldP[i];
+						offset = oldP.length;
+					}
+					//FIXME concatenation at the end of the path
+					else {
+						RobotReport rep = tec.getRobotReport(rid);
+						if (rep.getPathIndex() == oldP.length-1) {
+							//The robot has traversed the overall old path. We may start a new path.
+							//This allows e.g., to move from a LOAD_DETECT to a LOAD mission
+							concatenatePaths = false;
+						}
+						newP =  new PoseSteering[newPath.size()];
+					}
+					
 					for (int i = 0; i < newPath.size(); i++) {
 						orunav_msgs.PoseSteering ps = newPath.get(i);
 						Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
-						newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+						newP[i+offset] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
 					}
-					
-					System.out.println("Start pose: " + newP.toString());
 					
 					//Update operations too...
 					tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
-					System.out.println(ANSI_BLUE + "Update tracker's operations done! Start: " + arg0.getTask().getTarget().getStartOp().getOperation() + ", goal: " + arg0.getTask().getTarget().getGoalOp().getOperation());
 					
 					//... and tell the coordinator to update the current task (only information related to the current goal) ...
 					orunav_msgs.Task currentTask = tec.getCurrentTask(rid);
 					currentTask.getTarget().setGoal(arg0.getTask().getTarget().getGoal());
 					currentTask.getTarget().setGoalId(arg0.getTask().getTarget().getGoalId());
 					currentTask.getTarget().setGoalOp(arg0.getTask().getTarget().getGoalOp());
-					tec.setCurrentTask(rid, currentTask);
+					tec.setCurrentTask(rid, currentTask);					
 					
-					//... and finally replace the path.
-					tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
-					
+					//... and tell the coordinator to replace the path
+					tec.replacePath(rid, newP, oldP.length-1, concatenatePaths, new HashSet<Integer>(rid));				
+
 					System.out.println("Last communicated start pose: (x: " + tec.getCurrentTask(rid).getTarget().getStart().getPose().getPosition().getX() + ", y: "
 							+ tec.getCurrentTask(rid).getTarget().getStart().getPose().getPosition().getY() + ").");
 					

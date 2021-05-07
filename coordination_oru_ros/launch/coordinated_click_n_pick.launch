@@ -27,7 +27,7 @@
   <!-- ALL ROBOT SPECIFIC TASKS -->
   <include file="$(find orunav_launch)/launch/cititruck_sim.launch">
 	  <arg name="robot_id" value="$(arg robot_id)" />
-	  <arg name="use_update_task" value="false" />
+	  <arg name="use_update_task" value="true" />
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cititruck_description)/launch/click_n_pick.rviz"/>
