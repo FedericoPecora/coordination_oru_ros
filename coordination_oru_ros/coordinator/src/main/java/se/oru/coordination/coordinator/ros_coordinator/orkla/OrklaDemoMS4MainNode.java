@@ -48,7 +48,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 	
 	// Mission related variables
 	private boolean ignorePickItems = false;
-	private boolean copyGoalOperationToStartoperation = false;
 	private HashMap<Integer,Boolean> robotsAlive;
 	
 	// Robot related variables
@@ -287,7 +286,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					ComputeIliadTaskServiceMotionPlanner mp = new ComputeIliadTaskServiceMotionPlanner(robotID, node, tec);
 					mp.setFootprint(footprintCoords.get(robotID));
 					mp.setIgnorePickItems(ignorePickItems);
-					mp.setCopyGoalOperationToStartoperation(copyGoalOperationToStartoperation);
 					tec.setMotionPlanner(robotID, mp);
 					isTaskComputing.put(robotID, false);
 
@@ -333,9 +331,9 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 								ArrayList<IliadItem> items = new ArrayList<IliadItem>();
 								for (orunav_msgs.IliadItem item : message.getGoalOp().getItemlist().getItems()) items.add(new IliadItem(item.getName(), item.getPosition().getX(), item.getPosition().getY(), item.getPosition().getZ(), ROTATION_TYPE.values()[item.getRotationType()]));
 								IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
-								mission = new IliadMission(robotID, "A", "B", startPose, goalPose, false, itemsArray);
+								mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getStartOp().getOperation()], false, itemsArray);
 							}
-							else mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getGoalOp().getOperation()]);
+							else mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getStartOp().getOperation()], OPERATION_TYPE.values()[message.getGoalOp().getOperation()],false);
 							IliadMissions.enqueueMission(mission);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
@@ -370,7 +368,8 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 								final ComputeIliadTaskServiceMotionPlanner mp = (ComputeIliadTaskServiceMotionPlanner)tec.getMotionPlanner(robotID);
 								mp.clearObstacles();
 								mp.setGoals(m.getToPose());
-								mp.setOperationType(m.getOperationType());
+								mp.setStartOperation(m.getStartOperation());
+								mp.setGoalOperation(m.getGoalOperation());
 								mp.setPickItems(m.getItems());
 								canDispatchNewTask.put(robotID, true);
 								isTaskComputing.put(robotID, true);
@@ -493,7 +492,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 			TEMPORAL_RESOLUTION = params.getDouble("/" + node.getName() + "/temporal_resolution");
 			
 			ignorePickItems = params.getBoolean("/" + node.getName() + "/ignore_pick_items", true);
-			copyGoalOperationToStartoperation = params.getBoolean("/" + node.getName() + "/copy_goal_operation_to_start_operation", false);
 			
 			robotsAlive = new HashMap<Integer,Boolean>();
 			for (int robotID : robotIDs) robotsAlive.put(robotID, false);

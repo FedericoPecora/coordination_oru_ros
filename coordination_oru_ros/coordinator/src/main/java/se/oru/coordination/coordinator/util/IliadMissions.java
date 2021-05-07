@@ -55,7 +55,8 @@ public class IliadMissions extends Missions {
 					String toLocation = eElement.getElementsByTagName("toLocation").item(0).getTextContent();
 					Pose fromPose = null;
 					Pose goalPose = null;
-					OPERATION_TYPE missionType = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("type").getTextContent());
+					OPERATION_TYPE startOp = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("startOp").getTextContent());
+					OPERATION_TYPE goalOp = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("goalOp").getTextContent());
 					NodeList poseList = eElement.getElementsByTagName("Pose");
 					if (poseList.getLength() != 0) {
 						for (int j = 0; j < poseList.getLength(); j++) {
@@ -96,12 +97,12 @@ public class IliadMissions extends Missions {
 						items.add(item);
 					}
 							
-					if (missionType.equals(OPERATION_TYPE.PICK_ITEMS)) {
+					if (goalOp.equals(OPERATION_TYPE.PICK_ITEMS)) {
 						IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
-						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, repeatMission, itemsArray));
+						missions.add(new IliadMission(robotID, null, fromLocation, toLocation, fromPose, goalPose, startOp, repeatMission, itemsArray));
 					}
 					else {
-						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, missionType, repeatMission));
+						missions.add(new IliadMission(robotID, null, fromLocation, toLocation, fromPose, goalPose, startOp, goalOp, repeatMission));
 					}
 				}				
 			}

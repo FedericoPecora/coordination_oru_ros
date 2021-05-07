@@ -126,27 +126,39 @@ public class OrklaDemoMS3MainNode extends AbstractNodeMain {
 				
 				//Get old path
 				PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
+				PoseSteering[] newP = null;
+				boolean concatenatePaths = true;
 				
-				//Get the new path from the message
-				List<orunav_msgs.PoseSteering> newPath = arg0.getTask().getPath().getPath();
-				PoseSteering[] newP = new PoseSteering[oldP.length + newPath.size()];
-				
-				//Concatenate the new path to the old path...
-				for (int i = 0; i < oldP.length; i++) {
-					newP[i] = oldP[i];
+				if (arg0.getTask().getUpdate()) {					
+					//Get the new path from the message
+					List<orunav_msgs.PoseSteering> newPath = arg0.getTask().getPath().getPath();
+					newP = new PoseSteering[oldP.length + newPath.size()];
+					
+					//Concatenate the new path to the old path...
+					for (int i = 0; i < oldP.length; i++) {
+						newP[i] = oldP[i];
+					}
+					for (int i = 0; i < newPath.size(); i++) {
+						orunav_msgs.PoseSteering ps = newPath.get(i);
+						Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
+						newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+					}
 				}
-				for (int i = 0; i < newPath.size(); i++) {
-					orunav_msgs.PoseSteering ps = newPath.get(i);
-					Quaternion quatOrientation = new Quaternion(ps.getPose().getOrientation().getX(),ps.getPose().getOrientation().getY(),ps.getPose().getOrientation().getZ(),ps.getPose().getOrientation().getW());
-					newP[i+oldP.length] = new PoseSteering(ps.getPose().getPosition().getX(), ps.getPose().getPosition().getY(), quatOrientation.getTheta(), ps.getSteering());
+				//FIXME concatenation at the end of the path
+				else {
+					RobotReport rep = tec.getRobotReport(rid);
+					if (rep.getPathIndex() == oldP.length-1) {
+						//The robot has traversed the overall old path. We may start a new path.
+						//This allows e.g., to move from a LOAD_DETECT to a LOAD mission
+						concatenatePaths = false;
+					}
 				}
 				
 				//Update operations too...
 				tec.getCurrentTracker(rid).setOperations(arg0.getTask().getTarget().getStartOp(), arg0.getTask().getTarget().getGoalOp());
 				
 				//... and tell the coordinator to replace the path
-				tec.replacePath(rid, newP, oldP.length-1, new HashSet<Integer>(rid));
-				
+				tec.replacePath(rid, newP, oldP.length-1, concatenatePaths, new HashSet<Integer>(rid));				
 			}
 		});
 	}
@@ -269,7 +281,7 @@ public class OrklaDemoMS3MainNode extends AbstractNodeMain {
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+							IliadMission mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION,  OPERATION_TYPE.NO_OPERATION, false);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
 							PrintWriter writer;
@@ -514,9 +526,9 @@ private void callComputeTaskService(final IliadMission iliadMission) {
 				
 				//Operations used by the current execution service
 				Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-				goalOp.setOperation(iliadMission.getOperationType().ordinal());
+				goalOp.setOperation(iliadMission.getGoalOperation().ordinal());
 				//goalOp.setOperation(Operation.NO_OPERATION);
-				if (iliadMission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
+				if (iliadMission.getGoalOperation().equals(OPERATION_TYPE.PICK_ITEMS)) {
 					if (ignorePickItems) {
 						System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
 						goalOp.setOperation(Operation.NO_OPERATION);

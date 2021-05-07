@@ -201,7 +201,7 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION);
+							IliadMission mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION, OPERATION_TYPE.NO_OPERATION, false);
 							callComputeTaskService(mission);
 						}
 					});
@@ -417,9 +417,9 @@ public class RobotLabDemoMS2MainNode extends AbstractNodeMain {
 				
 				//Operations used by the current execution service
 				Operation goalOp = node.getTopicMessageFactory().newFromType(Operation._TYPE);
-				goalOp.setOperation(iliadMission.getOperationType().ordinal());
+				goalOp.setOperation(iliadMission.getGoalOperation().ordinal());
 				//goalOp.setOperation(Operation.NO_OPERATION);
-				if (iliadMission.getOperationType().equals(OPERATION_TYPE.PICK_ITEMS)) {
+				if (iliadMission.getGoalOperation().equals(OPERATION_TYPE.PICK_ITEMS)) {
 					if (ignorePickItems) {
 						System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
 						goalOp.setOperation(Operation.NO_OPERATION);

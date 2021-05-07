@@ -11,32 +11,29 @@ public class IliadMission extends Mission {
 
 	public static enum OPERATION_TYPE {_IGNORE_, NO_OPERATION, UNLOAD_PALLET, LOAD_PALLET, LOAD_DETECT, ACTIVATE_SUPPORT_LEGS, LOAD_DETECT_ACTIVE, PICK_ITEMS, UNWRAP_PALLET};
 	private IliadItem[] items;
-	private OPERATION_TYPE operationType;
+	private OPERATION_TYPE startOp;
+	private OPERATION_TYPE goalOp;
 	private boolean repeat = true;
 	
-	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, IliadItem ... items) {
-		this(robotID, fromLocation, toLocation, fromPose, toPose, true, items);
-	}
-
-	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat, IliadItem ... items) {
-		this(robotID, null, fromLocation, toLocation, fromPose, toPose, repeat);
+	public IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE startOp, boolean repeat, IliadItem ... items) {
+		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
 		this.items = items;
-		this.operationType = OPERATION_TYPE.PICK_ITEMS;
+		this.startOp = startOp;
+		this.goalOp = OPERATION_TYPE.PICK_ITEMS;
 		this.repeat = repeat;
 	}
 
-	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE opType) {
-		this(robotID, fromLocation, toLocation, fromPose, toPose, opType, true);
+	public IliadMission(int robotID,  PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE startOp, OPERATION_TYPE goalOp, boolean repeat) {
+		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
+		this.repeat = repeat;
+		this.startOp = startOp;
+		this.goalOp = goalOp;
 	}
 	
-	public IliadMission(int robotID, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE opType, boolean repeat) {
-		this(robotID, null, fromLocation, toLocation, fromPose, toPose, repeat);
-		this.items = null;
-		this.operationType = opType;
-	}
-
 	public IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat) {
 		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
+		this.startOp = OPERATION_TYPE.NO_OPERATION;
+		this.goalOp = OPERATION_TYPE.NO_OPERATION;
 		this.repeat = repeat;
 	}
 	
@@ -52,8 +49,12 @@ public class IliadMission extends Mission {
 		this.fromPose = startPose;
 	}
 	
-	public OPERATION_TYPE getOperationType() {
-		return this.operationType;
+	public OPERATION_TYPE getStartOperation() {
+		return this.startOp;
+	}
+	
+	public OPERATION_TYPE getGoalOperation() {
+		return this.goalOp;
 	}
 	
 	public IliadItem[] getItems() {
@@ -74,11 +75,12 @@ public class IliadMission extends Mission {
 	
 	public String toString() {
 		//return this.operationType + " " + (this.items != null ? Arrays.toString(items) + " " : "") + super.toString();
-		return this.operationType + " " + (this.items != null ? items.length + " items " : "") + super.toString();
+		return "startOp=" + this.getStartOperation() + ", " + "goalOp=" + this.getGoalOperation() + ", " + (this.items != null ? items.length + " items " : "") + super.toString();
 	}
 	
 	public String toXML() {
-		String ret = "<Mission type=\"" + this.getOperationType() + "\">\n";
+		String ret = "<Mission startOp=\"" + this.getStartOperation() + "\">\n";
+		ret += "goalOp=\"" + this.getGoalOperation() + "\">\n";
 		ret += "   <robotID>" + this.robotID + "</robotID>\n";
 		ret += "   <fromLocation>" + this.getFromLocation() + "</fromLocation>\n";
 		ret += "   <toLocation>" + this.getToLocation() + "</toLocation>\n";

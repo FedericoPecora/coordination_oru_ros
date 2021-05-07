@@ -39,10 +39,10 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	private boolean computing = false;
 	private boolean outcome = false;
 	private int robotID = -1;
-	private OPERATION_TYPE operationType = null;
+	private OPERATION_TYPE startOp = null;
+	private OPERATION_TYPE goalOp = null;
 	private IliadItem[] pickItems = null;
 	private boolean ignorePickItems = false;
-	private boolean copyGoalOperationToStartoperation = false;
 	private boolean startFromCurrentState = true;
 	
 	public ComputeIliadTaskServiceMotionPlanner(int robotID, ConnectedNode node, TrajectoryEnvelopeCoordinatorROS tec) {
@@ -55,23 +55,24 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	public AbstractMotionPlanner getCopy(boolean copyObstacles) {
 		ComputeIliadTaskServiceMotionPlanner ret = new ComputeIliadTaskServiceMotionPlanner(this.robotID, this.node, this.tec);
 		if (this.om != null) ret.om = new OccupancyMap(this.om, copyObstacles);
-		ret.setOperationType(this.operationType);
+		ret.setStartOperation(this.startOp);
+		ret.setGoalOperation(this.goalOp);
 		ret.setPickItems(this.pickItems);
 		return ret;
 	}
 	
-	public void setOperationType(OPERATION_TYPE operationType) {
-		this.operationType = operationType;
+	public void setStartOperation(OPERATION_TYPE startOp) {
+		this.startOp = startOp;
+	}
+	
+	public void setGoalOperation(OPERATION_TYPE goalOp) {
+		this.goalOp = goalOp;
 	}
 	
 	public void setPickItems(IliadItem[] items) {
 		this.pickItems = items;
 	}
-	
-	public void setCopyGoalOperationToStartoperation(boolean copyGoalOperationToStartoperation) {
-		this.copyGoalOperationToStartoperation = copyGoalOperationToStartoperation;
-	}
-	
+		
 	public void setIgnorePickItems(boolean ignorePickItems) {
 		this.ignorePickItems = ignorePickItems;
 	}
@@ -178,35 +179,28 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 					pathPS = path.toArray(new PoseSteering[path.size()]);
 					
 					//Operations used by the current execution service					
-					if (operationType.equals(OPERATION_TYPE.UNLOAD_PALLET)) {
-						arg0.getTask().getTarget().getStartOp().setOperation(OPERATION_TYPE.UNLOAD_PALLET.ordinal());
-						arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
-						arg0.getTask().getTarget().setGoal(arg0.getTask().getPath().getPath().get(arg0.getTask().getPath().getPath().size()-1));
-					}
-					else {
-						arg0.getTask().getTarget().getStartOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
-						arg0.getTask().getTarget().getGoalOp().setOperation(operationType.ordinal());
-						if (operationType.equals(OPERATION_TYPE.PICK_ITEMS)) {
-							if (ignorePickItems) {
-								System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
-								arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
-							}
-							orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
-							ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
-							for (IliadItem item : pickItems) {
-								orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
-								iliadItemMsg.setName(item.getName());
-								geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
-								point.setX(item.getX());
-								point.setY(item.getY());
-								point.setZ(item.getZ());
-								iliadItemMsg.setPosition(point);
-								iliadItemMsg.setRotationType(item.getRotationType().ordinal());
-								itemList.add(iliadItemMsg);
-							}
-							iliadItemArrayMsg.setItems(itemList);
-							arg0.getTask().getTarget().getGoalOp().setItemlist(iliadItemArrayMsg);
+					arg0.getTask().getTarget().getStartOp().setOperation(startOp.ordinal());
+					arg0.getTask().getTarget().getGoalOp().setOperation(goalOp.ordinal());
+					if (goalOp.equals(OPERATION_TYPE.PICK_ITEMS)) {
+						if (ignorePickItems) {
+							System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
+							arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
 						}
+						orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
+						ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+						for (IliadItem item : pickItems) {
+							orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+							iliadItemMsg.setName(item.getName());
+							geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+							point.setX(item.getX());
+							point.setY(item.getY());
+							point.setZ(item.getZ());
+							iliadItemMsg.setPosition(point);
+							iliadItemMsg.setRotationType(item.getRotationType().ordinal());
+							itemList.add(iliadItemMsg);
+						}
+						iliadItemArrayMsg.setItems(itemList);
+						arg0.getTask().getTarget().getGoalOp().setItemlist(iliadItemArrayMsg);
 					}
 					
 					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical error				
