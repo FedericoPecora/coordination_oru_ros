@@ -52,7 +52,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 	
 	// Robot related variables
 	private List<Integer> robotIDs = null;
-	private HashMap<Integer,Boolean> isTaskComputing = new HashMap<Integer,Boolean>();
+	private ConcurrentHashMap<Integer,Boolean> isTaskComputing = new ConcurrentHashMap<Integer,Boolean>();
 	private ConcurrentHashMap<Integer,Boolean> taskComputingSucceed = new ConcurrentHashMap<Integer,Boolean>();
 	private ConcurrentHashMap<Integer,Boolean> canDispatchNewTask = new ConcurrentHashMap<Integer,Boolean>();
 	private HashMap<Integer, Coordinate[]> footprintCoords = null;
