@@ -268,7 +268,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node, mapFrameID);
+				final RVizVisualization viz = new RVizVisualization(node, mapFrameID, true);
 				tec.setVisualization(viz);
 
 				//Sleep to allow loading of motion prims

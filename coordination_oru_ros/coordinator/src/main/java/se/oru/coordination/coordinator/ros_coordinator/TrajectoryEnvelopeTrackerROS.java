@@ -57,7 +57,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
 		
 	Publisher<orunav_msgs.Task> task_pub_;
-	Publisher<geometry_msgs.PolygonStamped> subenvelope_pub_;
 	
 	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
 		super(te, temporalResolution, tec, tec.getRobotTrackingPeriodInMillis(te.getRobotID()), cb);
@@ -81,9 +80,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		// mfc: exposed to 
 		task_pub_ = node.newPublisher("robot"+te.getRobotID()+"/control/task", orunav_msgs.Task._TYPE);
 		task_pub_.setLatchMode(true);
-		subenvelope_pub_ = node.newPublisher("robot"+te.getRobotID()+"/control/subenvelope", geometry_msgs.PolygonStamped._TYPE);
-		subenvelope_pub_.setLatchMode(true);
-		
 		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
 		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/"+reportTopic, orunav_msgs.RobotReport._TYPE);
@@ -114,21 +110,6 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    		  prevDistance = newDistance;
 		    	  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState + ", received index: " + message.getSequenceNum() + " [in internal report:" + currentRR.getPathIndex() + "]");
 		    	  onPositionUpdate();
-		    	  /*Coordinate[] poly = thisTE.getBackwardSubPolygon(index).getCoordinates();
-		    	  if (poly != null) {
-			    	geometry_msgs.PolygonStamped polyROS = node.getTopicMessageFactory().newFromType(geometry_msgs.PolygonStamped._TYPE);
-		    		List<geometry_msgs.Point32> points = new ArrayList<geometry_msgs.Point32>(); 
-			    	for (int i = 0; i < poly.length; i++) {
-		    			geometry_msgs.Point32 point = node.getTopicMessageFactory().newFromType(geometry_msgs.PolygonStamped._TYPE);
-		    			point.setX((float)poly[i].x);
-		    			point.setY((float)poly[i].y);
-		    			point.setZ((float)poly[i].z);
-		    			points.add(point);
-		    		}
-	    			polyROS.getPolygon().setPoints(points);
-	    			//polyROS.getHeader().setFrameId("map"); TODO
-		    		subenvelope_pub_.publish(polyROS);
-		    	  }*/
 		      }
 	      }
 	    });
