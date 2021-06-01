@@ -230,6 +230,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				}
 			});
 		}
+		replanningStoppingPoints.remove(robotID);
 		return true;
 	}
 }
