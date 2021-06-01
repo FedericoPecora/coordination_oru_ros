@@ -219,6 +219,9 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 			//System.out.println("Not planning because Robot" + robotID + " is not idle (in state " + tec.getVehicleState(robotID) + ")");
 			startFromCurrentState = false;
 		}		
+		else {
+			startFromCurrentState = true;
+		}
 		this.callComputeTaskService();
 		while (computing) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 		return outcome;
