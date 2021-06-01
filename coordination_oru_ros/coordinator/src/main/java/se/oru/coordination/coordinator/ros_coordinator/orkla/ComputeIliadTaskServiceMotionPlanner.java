@@ -96,6 +96,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	
 			final ComputeTaskRequest request = serviceClient.newMessage();
 			request.setStartFromCurrentState(startFromCurrentState);
+			System.out.println("startFromCurrentState is " + startFromCurrentState);
 			RobotTarget rt = node.getTopicMessageFactory().newFromType(RobotTarget._TYPE);
 			orunav_msgs.PoseSteering ps1 = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
 			geometry_msgs.Pose gpose1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
