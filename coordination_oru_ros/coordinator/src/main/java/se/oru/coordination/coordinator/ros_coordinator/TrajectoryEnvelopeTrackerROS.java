@@ -46,6 +46,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected static int goalID = 0;
 	protected ConnectedNode node = null;
 	protected RobotReport currentRR = null;
+	protected Boolean isBraking = null;
 	protected Subscriber<orunav_msgs.RobotReport> subscriber = null;
 	protected Task currentTask = null;
 	protected VEHICLE_STATE currentVehicleState = null;
@@ -54,7 +55,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	private long lastUpdateTime = -1;
 	int prevSeqNumber = -1;
 
-	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
+	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT, BRAKE}
 		
 	Publisher<orunav_msgs.Task> task_pub_;
 	
@@ -106,6 +107,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		    		  vel = (newDistance-prevDistance)/(deltaT/1000.0);
 		    	  }
 	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
+	    		  isBraking = new Boolean(message.getNbActiveBrakeReasons() > 0);
 	    		  lastUpdateTime = currentTime;
 	    		  prevDistance = newDistance;
 		    	  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState + ", received index: " + message.getSequenceNum() + " [in internal report:" + currentRR.getPathIndex() + "]");
@@ -115,6 +117,10 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	    });
 	    
 	    calledExecuteFirstTime = false;
+	}
+	
+	public Boolean isBraking() {
+		return isBraking;
 	}
 	
 	public VEHICLE_STATE getVehicleState() {

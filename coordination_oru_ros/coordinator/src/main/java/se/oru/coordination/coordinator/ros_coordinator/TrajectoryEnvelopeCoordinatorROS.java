@@ -45,9 +45,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 
 	protected ConnectedNode node = null;
 	protected HashMap<Integer, orunav_msgs.Task> currentTasks = new HashMap<Integer, orunav_msgs.Task>();
-	
-	protected boolean isBraking = false;
-	protected boolean canReplan = false;
+	protected HashMap<Integer,Boolean> canReplan = new HashMap<Integer,Boolean>();
 	protected int currentStartPathIndex = -1;
 
 	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
@@ -189,14 +187,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
 			
-//			synchronized(replanningStoppingPoints) {
-//				if (replanningStoppingPoints.containsKey(robotID)) return false;
-//			}
-			
-			if (!isBraking) {
-				this.isBraking = true;
+			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking()) canReplan.put(robotID, true);
+			else {			
 				//Make the robot braking
-				final TrajectoryEnvelope te = tracker.getTrajectoryEnvelope();
 				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
 				try {
 					System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
@@ -210,45 +203,38 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 						currentStartPathIndex = response.getCurrentPathIdx();
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
-						
-						canReplan = true;
-						
-//						//Ensure the replanning may be called only once
-//						synchronized(replanningStoppingPoints) {
-//							replanningStoppingPoints.put(robotID, new Dependency(te, null, response.getCurrentPathIdx(), 0));
-//						}
-						
+						canReplan.put(robotID, true);
 					}
 					@Override
 					public void onFailure(RemoteException arg0) {
 						System.out.println("Failed to brake service of robot " + robotID);
-						canReplan = false;
+						canReplan.put(robotID, false);
 					}
 				});
-				
-				//Call the replanning if we can replan
-				if (this.canReplan) {
-					//get all the robots in the same weakly connected component (we need to place obstacle)
-					SimpleDirectedGraph<Integer,Dependency> g = depsToGraph(currentDependencies);
-					ConnectivityInspector<Integer,Dependency> connInsp = new ConnectivityInspector<Integer,Dependency>(g);
-					final Set<Integer> allConnectedRobots = g.containsVertex(robotID) ? (HashSet<Integer>) connInsp.connectedSetOf(robotID) : new HashSet<Integer>(); //it may be empty if the robot has no dependency
-					final Set<Integer> robotsToReplan = new HashSet<Integer>();
-					robotsToReplan.add(robotID); 
-					currentDependencies.put(robotID, new Dependency(te, null, Math.max(currentStartPathIndex, getRobotReport(robotID).getPathIndex()), 0));
-					
-					metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
-					new Thread() {
-						public void run() {
-							canReplan = false;
-							rePlanPath(robotsToReplan, allConnectedRobots);
-							canReplan = true;
-						}
-					}.start();
-				}
-				
 			}
+				
+			//Call the replanning if we can replan
+			if (canReplan.get(robotID)) {
+				//get all the robots in the same weakly connected component (we need to place obstacle)
+				SimpleDirectedGraph<Integer,Dependency> g = depsToGraph(currentDependencies);
+				ConnectivityInspector<Integer,Dependency> connInsp = new ConnectivityInspector<Integer,Dependency>(g);
+				final Set<Integer> allConnectedRobots = g.containsVertex(robotID) ? (HashSet<Integer>) connInsp.connectedSetOf(robotID) : new HashSet<Integer>(); //it may be empty if the robot has no dependency
+				final Set<Integer> robotsToReplan = new HashSet<Integer>();
+				robotsToReplan.add(robotID); 
+				final TrajectoryEnvelope te = tracker.getTrajectoryEnvelope();
+				currentDependencies.put(robotID, new Dependency(te, null, Math.max(currentStartPathIndex, getRobotReport(robotID).getPathIndex()), 0));
+				
+				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
+				new Thread() {
+					public void run() {
+						canReplan.put(robotID, false);
+						rePlanPath(robotsToReplan, allConnectedRobots);
+						canReplan.put(robotID, true);
+					}
+				}.start();
+			}
+				
 		}
-		//replanningStoppingPoints.remove(robotID);
 		return true;
 	}
 }
