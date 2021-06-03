@@ -172,10 +172,6 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		return true;		
 	}
 	
-	public void setCanRobotReplan(int robotID, boolean value) {
-		canReplan.put(robotID, new Boolean(value));
-	}
-	
 	/**
 	 * Re-plan the path for a given robot.
 	 * @param robotID The robot which path should be re-planned.
@@ -194,10 +190,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			
 			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) {
 				metaCSPLogger.info("Service brake already called for Robot" + robotID + ".");
-				setCanRobotReplan(robotID, true);
+				canReplan.put(robotID, new Boolean(true));
 			}
 			else {	
-				setCanRobotReplan(robotID, false);
+				canReplan.put(robotID, new Boolean(false));
 				
 				//Make the robot braking
 				System.out.println("Going to call brake service of robot " + robotID);
@@ -206,7 +202,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
 						currentStartPathIndex = response.getCurrentPathIdx();
-						setCanRobotReplan(robotID, true);
+						canReplan.put(robotID, new Boolean(true));
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
 					}
@@ -233,9 +229,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
 				new Thread() {
 					public void run() {
-						setCanRobotReplan(robotID, false);
+						canReplan.put(robotID, new Boolean(false));
 						rePlanPath(robotsToReplan, allConnectedRobots);
-						setCanRobotReplan(robotID, true);
+						canReplan.put(robotID, new Boolean(true));
 					}
 				}.start();
 			}
