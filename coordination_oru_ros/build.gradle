@@ -18,9 +18,11 @@
  *
  */
 
+/*
 task wrapper(type: Wrapper) {
     gradleVersion = '2.14.1'
 }
+*/
 
 buildscript {
   apply from: "https://github.com/rosjava/rosjava_bootstrap/raw/kinetic/buildscript.gradle"
