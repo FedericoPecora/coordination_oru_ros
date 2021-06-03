@@ -47,6 +47,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	protected HashMap<Integer, orunav_msgs.Task> currentTasks = new HashMap<Integer, orunav_msgs.Task>();
 	protected HashMap<Integer,Boolean> canReplan = new HashMap<Integer,Boolean>();
 	protected int currentStartPathIndex = -1;
+	protected ServiceClient<BrakeTaskRequest, BrakeTaskResponse> brakeServiceClient = null;
 
 	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
 		return (TrajectoryEnvelopeTrackerROS)this.trackers.get(robotID);
@@ -79,6 +80,11 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	@Override
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
 		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, this, cb, this.node, getCurrentTask(te.getRobotID()));
+		try {
+			System.out.println("-------> Going to create service client: /robot" + te.getRobotID() + "/brake_task");
+			brakeServiceClient = node.newServiceClient("/robot" + te.getRobotID() + "/brake_task", BrakeTask._TYPE);
+		}
+		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		return tet;
 	}
 	
@@ -143,14 +149,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 		}
 		//Make the robot braking
-		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
-		try {
-			System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
-			serviceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
-		}
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		final BrakeTaskRequest request = serviceClient.newMessage();
-		serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+		System.out.println("Going to call brake service of robot " + robotID);
+		final BrakeTaskRequest request = brakeServiceClient.newMessage();
+		brakeServiceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 			@Override
 			public void onSuccess(BrakeTaskResponse response) {
 				metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
@@ -199,19 +200,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				setCanRobotReplan(robotID, false);
 				
 				//Make the robot braking
-				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
-				try {
-					System.out.println("-------> Going to call service: /robot" + robotID + "/brake_task");
-					serviceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
-				}
-				catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-				final BrakeTaskRequest request = serviceClient.newMessage();
-				final TrajectoryEnvelopeCoordinatorROS tec = this;
-				serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+				System.out.println("Going to call brake service of robot " + robotID);
+				final BrakeTaskRequest request = brakeServiceClient.newMessage();
+				brakeServiceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
 						currentStartPathIndex = response.getCurrentPathIdx();
-						tec.setCanRobotReplan(robotID, true);
+						setCanRobotReplan(robotID, true);
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
 					}
