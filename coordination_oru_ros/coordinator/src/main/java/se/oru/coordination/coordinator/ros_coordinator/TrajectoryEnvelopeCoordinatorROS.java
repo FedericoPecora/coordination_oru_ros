@@ -187,7 +187,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
 			
-			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking()) canReplan.put(robotID, true);
+			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) canReplan.put(robotID, true);
 			else {			
 				//Make the robot braking
 				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
