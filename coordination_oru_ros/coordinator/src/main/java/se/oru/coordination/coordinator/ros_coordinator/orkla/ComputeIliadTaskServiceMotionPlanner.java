@@ -167,44 +167,51 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	
 				@Override
 				public void onSuccess(ComputeTaskResponse arg0) {
-					System.out.println("Successfully called ComputeTask service for Robot" + robotID + " (goalID: " + goalID + ")");
-					outcome = true;
-	
-					ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
-					for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
-						orunav_msgs.PoseSteering onePS = arg0.getTask().getPath().getPath().get(i);
-						Quaternion quat = new Quaternion(onePS.getPose().getOrientation().getX(), onePS.getPose().getOrientation().getY(), onePS.getPose().getOrientation().getZ(), onePS.getPose().getOrientation().getW());
-						PoseSteering ps = new PoseSteering(onePS.getPose().getPosition().getX(), onePS.getPose().getPosition().getY(), quat.getTheta(), onePS.getSteering());
-						path.add(ps);
-					}
-					pathPS = path.toArray(new PoseSteering[path.size()]);
 					
-					//Operations used by the current execution service					
-					arg0.getTask().getTarget().getStartOp().setOperation(startOp.ordinal());
-					arg0.getTask().getTarget().getGoalOp().setOperation(goalOp.ordinal());
-					if (goalOp.equals(OPERATION_TYPE.PICK_ITEMS)) {
-						if (ignorePickItems) {
-							System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
-							arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+					if (arg0.getTask().getPath().getPath() != null && arg0.getTask().getPath().getPath().size() != 0) {
+						System.out.println("ComputeTask service succeeds in finding a plan for Robot" + robotID + " (goalID: " + goalID + ")");
+						outcome = true;
+						
+						ArrayList<PoseSteering> path = new ArrayList<PoseSteering>();
+						for (int i = 0; i < arg0.getTask().getPath().getPath().size(); i++) {
+							orunav_msgs.PoseSteering onePS = arg0.getTask().getPath().getPath().get(i);
+							Quaternion quat = new Quaternion(onePS.getPose().getOrientation().getX(), onePS.getPose().getOrientation().getY(), onePS.getPose().getOrientation().getZ(), onePS.getPose().getOrientation().getW());
+							PoseSteering ps = new PoseSteering(onePS.getPose().getPosition().getX(), onePS.getPose().getPosition().getY(), quat.getTheta(), onePS.getSteering());
+							path.add(ps);
 						}
-						orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
-						ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
-						for (IliadItem item : pickItems) {
-							orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
-							iliadItemMsg.setName(item.getName());
-							geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
-							point.setX(item.getX());
-							point.setY(item.getY());
-							point.setZ(item.getZ());
-							iliadItemMsg.setPosition(point);
-							iliadItemMsg.setRotationType(item.getRotationType().ordinal());
-							itemList.add(iliadItemMsg);
+						pathPS = path.toArray(new PoseSteering[path.size()]);
+						
+						//Operations used by the current execution service					
+						arg0.getTask().getTarget().getStartOp().setOperation(startOp.ordinal());
+						arg0.getTask().getTarget().getGoalOp().setOperation(goalOp.ordinal());
+						if (goalOp.equals(OPERATION_TYPE.PICK_ITEMS)) {
+							if (ignorePickItems) {
+								System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
+								arg0.getTask().getTarget().getGoalOp().setOperation(OPERATION_TYPE.NO_OPERATION.ordinal());
+							}
+							orunav_msgs.IliadItemArray iliadItemArrayMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItemArray._TYPE);
+							ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+							for (IliadItem item : pickItems) {
+								orunav_msgs.IliadItem iliadItemMsg = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+								iliadItemMsg.setName(item.getName());
+								geometry_msgs.Point point = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+								point.setX(item.getX());
+								point.setY(item.getY());
+								point.setZ(item.getZ());
+								iliadItemMsg.setPosition(point);
+								iliadItemMsg.setRotationType(item.getRotationType().ordinal());
+								itemList.add(iliadItemMsg);
+							}
+							iliadItemArrayMsg.setItems(itemList);
+							arg0.getTask().getTarget().getGoalOp().setItemlist(iliadItemArrayMsg);
 						}
-						iliadItemArrayMsg.setItems(itemList);
-						arg0.getTask().getTarget().getGoalOp().setItemlist(iliadItemArrayMsg);
+						
+						tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical error
 					}
-					
-					tec.setCurrentTask(arg0.getTask().getTarget().getRobotId(), arg0.getTask()); //FIXME This is a logical error				
+					else {
+						System.out.println("ComputeTask service failed to find a plan for Robot" + robotID + " (goalID: " + goalID + ")");
+						outcome = false;
+					}
 					computing = false;
 				}
 			});
