@@ -171,6 +171,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		return true;		
 	}
 	
+	public void setCanRobotReplan(int robotID, boolean value) {
+		canReplan.put(robotID, new Boolean(value));
+	}
+	
 	/**
 	 * Re-plan the path for a given robot.
 	 * @param robotID The robot which path should be re-planned.
@@ -189,10 +193,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			
 			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) {
 				metaCSPLogger.info("Service brake already called for Robot" + robotID + ".");
-				canReplan.put(robotID, true);
+				setCanRobotReplan(robotID, true);
 			}
 			else {	
-				canReplan.put(robotID, false);
+				setCanRobotReplan(robotID, false);
 				
 				//Make the robot braking
 				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
@@ -202,11 +206,12 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				}
 				catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 				final BrakeTaskRequest request = serviceClient.newMessage();
+				final TrajectoryEnvelopeCoordinatorROS tec = this;
 				serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
 						currentStartPathIndex = response.getCurrentPathIdx();
-						canReplan.put(robotID, true);
+						tec.setCanRobotReplan(robotID, true);
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
 					}
@@ -217,7 +222,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				});
 			}
 			
-			metaCSPLogger.info("Can robot " + robotID + " replan? " + canReplan.get(robotID) + ".");
+			metaCSPLogger.info("Can robot " + robotID + " replan? " + canReplan.get(robotID) + ", currentStartPathIndex: " + currentStartPathIndex);
 				
 			//Call the replanning if we can replan
 			if (canReplan.get(robotID)) {
@@ -233,9 +238,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
 				new Thread() {
 					public void run() {
-						canReplan.put(robotID, false);
+						setCanRobotReplan(robotID, false);
 						rePlanPath(robotsToReplan, allConnectedRobots);
-						canReplan.put(robotID, true);
+						setCanRobotReplan(robotID, true);
 					}
 				}.start();
 			}
