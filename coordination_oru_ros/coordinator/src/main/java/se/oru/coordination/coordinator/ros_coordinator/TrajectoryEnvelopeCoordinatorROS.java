@@ -187,8 +187,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
 			
-			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) canReplan.put(robotID, true);
-			else {			
+			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) {
+				metaCSPLogger.info("Service brake already called for Robot" + robotID + ".");
+				canReplan.put(robotID, true);
+			}
+			else {	
+				canReplan.put(robotID, false);
+				
 				//Make the robot braking
 				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient;
 				try {
@@ -201,17 +206,18 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
 						currentStartPathIndex = response.getCurrentPathIdx();
+						canReplan.put(robotID, true);
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
-						canReplan.put(robotID, true);
 					}
 					@Override
 					public void onFailure(RemoteException arg0) {
 						System.out.println("Failed to brake service of robot " + robotID);
-						canReplan.put(robotID, false);
 					}
 				});
 			}
+			
+			metaCSPLogger.info("Can robot " + robotID + " replan? " + canReplan.get(robotID) + ".");
 				
 			//Call the replanning if we can replan
 			if (canReplan.get(robotID)) {
