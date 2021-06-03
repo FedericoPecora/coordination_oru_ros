@@ -234,7 +234,12 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				final Set<Integer> robotsToReplan = new HashSet<Integer>();
 				robotsToReplan.add(robotID); 
 				final TrajectoryEnvelope te = tracker.getTrajectoryEnvelope();
-				currentDependencies.put(robotID, new Dependency(te, null, Math.max(currentStartPathIndex, getRobotReport(robotID).getPathIndex()), 0));
+				Dependency dep = new Dependency(te, null, Math.max(currentStartPathIndex, getRobotReport(robotID).getPathIndex()), 0);
+				//Create a virtual dependency to keep track of the robot start and goal till the replanning will ends.
+				currentDependencies.put(robotID, dep);
+				synchronized(replanningStoppingPoints) {
+					replanningStoppingPoints.put(robotID, dep);
+				}
 				
 				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
 				new Thread() {
