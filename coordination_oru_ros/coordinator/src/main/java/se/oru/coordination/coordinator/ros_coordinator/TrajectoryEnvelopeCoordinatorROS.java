@@ -202,6 +202,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				}
 				catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 				final BrakeTaskRequest request = brakeServiceClient.newMessage();
+				final ArrayList<Boolean> ret = new ArrayList<Boolean>();
 				brakeServiceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
@@ -209,12 +210,17 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 						canReplan.put(robotID, new Boolean(true));
 						metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
 						try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
+						ret.add(new Boolean(true));
 					}
 					@Override
 					public void onFailure(RemoteException arg0) {
 						System.out.println("Failed to brake service of robot " + robotID);
+						ret.add(new Boolean(true));
 					}
 				});
+				while (ret.isEmpty()) {
+					try { Thread.sleep(100); } catch (InterruptedException e) {}
+				}
 			}
 			
 			metaCSPLogger.info("Can robot " + robotID + " replan? " + canReplan.get(robotID) + ", currentStartPathIndex: " + currentStartPathIndex);
