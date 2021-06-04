@@ -121,48 +121,53 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	 */
 	@Override
 	public boolean truncateEnvelope(final int robotID) {
-		AbstractTrajectoryEnvelopeTracker tet = null;
-		synchronized(trackers) {
-			tet = trackers.get(robotID); 
-		}
-		if (tet instanceof TrajectoryEnvelopeTrackerDummy) {
-			metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since the robot is parked.");
-			return false;
-		}
-		final TrajectoryEnvelope te = tet.getTrajectoryEnvelope();
-		synchronized (replanningStoppingPoints) {
-			if (replanningStoppingPoints.containsKey(robotID)) {
-				metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since already planning.");
+		synchronized(solver) {
+			metaCSPLogger.info("Locking the solver to abort mission of robot " + robotID + ".");
+		
+			AbstractTrajectoryEnvelopeTracker tet = null;
+			synchronized(trackers) {
+				metaCSPLogger.info("Locking the trackers to abort mission of robot " + robotID + ".");
+				tet = trackers.get(robotID); 
+			}
+			if (tet instanceof TrajectoryEnvelopeTrackerDummy) {
+				metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since the robot is parked.");
 				return false;
 			}
-		}
-		//Make the robot braking
-		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient = null;
-		try {
-			System.out.println("-------> Going to call service client: /robot" + te.getRobotID() + "/brake_task");
-			serviceClient = node.newServiceClient("/robot" + te.getRobotID() + "/brake_task", BrakeTask._TYPE);
-		}
-		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		final BrakeTaskRequest request = serviceClient.newMessage();
-		serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
-			@Override
-			public void onSuccess(BrakeTaskResponse response) {
-				metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
-				try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
-				
-				synchronized (solver) {
-					//replace the path of this robot (will compute new envelope)
-					PoseSteering[] truncatedPath = Arrays.copyOf(te.getTrajectory().getPoseSteering(),response.getCurrentPathIdx()+1);
-					replacePath(robotID, truncatedPath, truncatedPath.length-1, new HashSet<Integer>(robotID));
-					metaCSPLogger.info("Truncating " + te + " at " + response.getCurrentPathIdx() + ".");
+			final TrajectoryEnvelope te = tet.getTrajectoryEnvelope();
+			synchronized (replanningStoppingPoints) {
+				if (replanningStoppingPoints.containsKey(robotID)) {
+					metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since already planning.");
+					return false;
 				}
 			}
-			@Override
-			public void onFailure(RemoteException arg0) {
-				System.out.println("Failed to brake service of robot " + robotID);
+			//Make the robot braking
+			ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient = null;
+			try {
+				System.out.println("-------> Going to call service client: /robot" + te.getRobotID() + "/brake_task");
+				serviceClient = node.newServiceClient("/robot" + te.getRobotID() + "/brake_task", BrakeTask._TYPE);
 			}
-		});
-		return true;		
+			catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
+			final BrakeTaskRequest request = serviceClient.newMessage();
+			serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+				@Override
+				public void onSuccess(BrakeTaskResponse response) {
+					metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
+					try { Thread.sleep(1000); } catch (Exception e) {}; //Let the controller change the status
+					
+					synchronized (solver) {
+						//replace the path of this robot (will compute new envelope)
+						PoseSteering[] truncatedPath = Arrays.copyOf(te.getTrajectory().getPoseSteering(),response.getCurrentPathIdx()+1);
+						replacePath(robotID, truncatedPath, truncatedPath.length-1, new HashSet<Integer>(robotID));
+						metaCSPLogger.info("Truncating " + te + " at " + response.getCurrentPathIdx() + ".");
+					}
+				}
+				@Override
+				public void onFailure(RemoteException arg0) {
+					System.out.println("Failed to brake service of robot " + robotID);
+				}
+			});
+			return true;
+		}
 	}
 	
 	/**
@@ -171,12 +176,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	 * @return <code>true</code> if re-planning is correctly spawned.
 	 */
 	public boolean replanEnvelope(final int robotID) {
-		
-		synchronized (solver) {
+		synchronized(solver) {
+			metaCSPLogger.info("Locking the solver to replan for robot " + robotID + ".");
 			
 			//Return false if the robot is dummy or if it is already planning
 			AbstractTrajectoryEnvelopeTracker tracker = null;
 			synchronized(trackers) {
+				metaCSPLogger.info("Locking the tracker to replan for robot " + robotID + ".");
 				tracker = trackers.get(robotID);
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
