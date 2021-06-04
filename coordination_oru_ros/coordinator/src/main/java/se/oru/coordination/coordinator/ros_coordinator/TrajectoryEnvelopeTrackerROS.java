@@ -2,8 +2,6 @@ package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
@@ -13,18 +11,14 @@ import org.metacsp.multi.spatioTemporal.paths.Trajectory;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
-import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.parameter.ParameterTree;
 import org.ros.node.service.ServiceClient;
-import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 import org.ros.node.topic.Publisher;
-
-import com.vividsolutions.jts.geom.Coordinate;
 
 import orunav_msgs.CoordinatorTime;
 import orunav_msgs.CoordinatorTimeVec;
@@ -38,8 +32,6 @@ import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
-import std_msgs.Empty;
-import std_msgs.Int32;
 
 public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTracker {
 

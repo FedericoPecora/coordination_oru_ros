@@ -1,44 +1,33 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jgrapht.alg.ConnectivityInspector;
 import org.jgrapht.graph.SimpleDirectedGraph;
-import org.metacsp.multi.spatioTemporal.paths.Pose;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
-import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
-import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
-
-import com.vividsolutions.jts.geom.Geometry;
 
 import orunav_msgs.Task;
 import orunav_msgs.BrakeTask;
 import orunav_msgs.BrakeTaskRequest;
 import orunav_msgs.BrakeTaskResponse;
-import orunav_msgs.Path;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.Dependency;
-import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeTrackerDummy;
-import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
-import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
@@ -88,7 +77,12 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	}
 		
 	public void replacePath(int robotID, PoseSteering[] newPath, int breakingPathIndex, Set<Integer> lockedRobotIDs) {
+		
 		synchronized(this.solver) {
+			if (breakingPathIndex > newPath.length-1) {
+				metaCSPLogger.warning("Invalid braking path index. We will not replace the path (new path length : " + newPath.length + ", braking path index: " + breakingPathIndex + ")!");
+				return;
+			}
 			orunav_msgs.Task currentTask = currentTasks.get(robotID);
 			orunav_msgs.Path pathROS = node.getTopicMessageFactory().newFromType(orunav_msgs.Path._TYPE);
 			for (int i = 0; i < newPath.length; i++) {
@@ -143,14 +137,14 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 		}
 		//Make the robot braking
-		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> brakeServiceClient = null;
+		ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient = null;
 		try {
 			System.out.println("-------> Going to call service client: /robot" + te.getRobotID() + "/brake_task");
-			brakeServiceClient = node.newServiceClient("/robot" + te.getRobotID() + "/brake_task", BrakeTask._TYPE);
+			serviceClient = node.newServiceClient("/robot" + te.getRobotID() + "/brake_task", BrakeTask._TYPE);
 		}
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-		final BrakeTaskRequest request = brakeServiceClient.newMessage();
-		brakeServiceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+		final BrakeTaskRequest request = serviceClient.newMessage();
+		serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 			@Override
 			public void onSuccess(BrakeTaskResponse response) {
 				metaCSPLogger.info("Braking envelope of Robot" + robotID + " at " + response.getCurrentPathIdx() + ".");
@@ -195,15 +189,15 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				canReplan.put(robotID, new Boolean(false));
 				
 				//Make the robot braking
-				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> brakeServiceClient = null;
+				ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient = null;
 				try {
 					System.out.println("-------> Going to call service client: /robot" + robotID + "/brake_task");
-					brakeServiceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
+					serviceClient = node.newServiceClient("/robot" + robotID + "/brake_task", BrakeTask._TYPE);
 				}
 				catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
-				final BrakeTaskRequest request = brakeServiceClient.newMessage();
+				final BrakeTaskRequest request = serviceClient.newMessage();
 				final ArrayList<Boolean> ret = new ArrayList<Boolean>();
-				brakeServiceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
+				serviceClient.call(request, new ServiceResponseListener<BrakeTaskResponse>() {
 					@Override
 					public void onSuccess(BrakeTaskResponse response) {
 						currentStartPathIndex = response.getCurrentPathIdx();

@@ -103,12 +103,17 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 					System.out.println(ANSI_RESET);
 					return;
 				}
+				if (tec.isParked(rid)) {
+					System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Ignoring task update request as the robot " + rid + " is parked!");
+					System.out.println(ANSI_RESET);
+					return;
+				}
 				
 				System.out.print(ANSI_BLUE + ">>>>>>>>>>>>>> Updating task for Robot" + rid + ": new path piece size " + arg0.getTask().getPath().getPath().size());
 				System.out.println(ANSI_RESET);
 				
 				synchronized(tec.getSolver()) {
-					
+										
 					//Get old path
 					PoseSteering[] oldP = tec.getCurrentTrajectoryEnvelope(rid).getTrajectory().getPoseSteering();
 					//Get the new path from the message
