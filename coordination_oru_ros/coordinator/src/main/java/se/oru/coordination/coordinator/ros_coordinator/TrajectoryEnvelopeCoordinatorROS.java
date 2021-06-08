@@ -68,6 +68,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	@Override
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
 		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, this, cb, this.node, getCurrentTask(te.getRobotID()));
+		canReplan.put(te.getRobotID(), new Boolean(true));
 		return tet;
 	}
 	
@@ -186,6 +187,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				tracker = trackers.get(robotID);
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
+
+			//There is another re-planning instance already ongoing.
+			if (!canReplan.get(robotID) && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) return false;
 			
 			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) {
 				metaCSPLogger.info("Service brake already called for Robot" + robotID + ".");
