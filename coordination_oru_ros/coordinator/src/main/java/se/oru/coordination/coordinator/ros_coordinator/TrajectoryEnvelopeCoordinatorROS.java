@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jgrapht.alg.ConnectivityInspector;
 import org.jgrapht.graph.SimpleDirectedGraph;
@@ -19,11 +20,13 @@ import org.ros.exception.ServiceNotFoundException;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Publisher;
 
 import orunav_msgs.Task;
 import orunav_msgs.BrakeTask;
 import orunav_msgs.BrakeTaskRequest;
 import orunav_msgs.BrakeTaskResponse;
+import orunav_msgs.ReplanStatus;
 import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.TrackingCallback;
@@ -35,8 +38,9 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 
 	protected ConnectedNode node = null;
 	protected HashMap<Integer, orunav_msgs.Task> currentTasks = new HashMap<Integer, orunav_msgs.Task>();
-	protected ConcurrentHashMap<Integer,Boolean> canReplan = new ConcurrentHashMap<Integer,Boolean>();
+	protected ConcurrentHashMap<Integer, AtomicBoolean> canReplan = new ConcurrentHashMap<Integer,AtomicBoolean>();
 	protected ConcurrentHashMap<Integer,Integer> currentBreakingPathIndex = new ConcurrentHashMap<Integer,Integer>();
+	protected Publisher<orunav_msgs.ReplanStatus> replanStatusPublisher = null;
 
 	public TrajectoryEnvelopeTrackerROS getCurrentTracker(int robotID) {
 		return (TrajectoryEnvelopeTrackerROS)this.trackers.get(robotID);
@@ -45,6 +49,8 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	public TrajectoryEnvelopeCoordinatorROS(int CONTROL_PERIOD, double TEMPORAL_RESOLUTION, final ConnectedNode connectedNode) {
 		super(CONTROL_PERIOD, TEMPORAL_RESOLUTION);
 		this.node = connectedNode;
+		replanStatusPublisher = node.newPublisher("/coordinator/replan/status", orunav_msgs.ReplanStatus._TYPE);
+		replanStatusPublisher.setLatchMode(true);
 	}
 
 	public TrajectoryEnvelopeCoordinatorROS(final ConnectedNode connectedNode) {
@@ -69,7 +75,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	@Override
 	public AbstractTrajectoryEnvelopeTracker getNewTracker(TrajectoryEnvelope te, TrackingCallback cb) {
 		TrajectoryEnvelopeTrackerROS tet = new TrajectoryEnvelopeTrackerROS(te, this.TEMPORAL_RESOLUTION, this, cb, this.node, getCurrentTask(te.getRobotID()));
-		canReplan.put(te.getRobotID(), new Boolean(true));
+		canReplan.put(te.getRobotID(), new AtomicBoolean(true));
 		return tet;
 	}
 	
@@ -79,7 +85,6 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	}
 		
 	public void replacePath(int robotID, PoseSteering[] newPath, int breakingPathIndex, Set<Integer> lockedRobotIDs) {
-		
 		synchronized(this.solver) {
 			if (breakingPathIndex > newPath.length-1) {
 				metaCSPLogger.warning("Invalid braking path index. We will not replace the path (new path length : " + newPath.length + ", braking path index: " + breakingPathIndex + ")!");
@@ -137,13 +142,11 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 			}
 			final TrajectoryEnvelope te = tet.getTrajectoryEnvelope();
 					
-			synchronized(canReplan.get(robotID)) {
-				if (!canReplan.get(robotID)) {
+			if (!canReplan.get(robotID).compareAndSet(true, false)) {
 					metaCSPLogger.info("Cannot truncate envelope of robot " + robotID + " since already re-planning.");
 					return false;
-				}
-				canReplan.put(robotID, false);
 			}
+
 			
 			//Make the robot braking
 			ServiceClient<BrakeTaskRequest, BrakeTaskResponse> serviceClient = null;
@@ -180,9 +183,8 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 					metaCSPLogger.info("Truncating " + te + " at " + breakingIndex + ".");	
 				}
 			}
-			synchronized(canReplan.get(robotID)) {
-				canReplan.put(robotID, true);
-			}
+			canReplan.get(robotID).set(true);
+
 			return true;
 		}
 	}
@@ -193,6 +195,7 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 	 * @return <code>true</code> if re-planning is correctly spawned.
 	 */
 	public boolean replanEnvelope(final int robotID) {
+			
 		synchronized(solver) {
 			metaCSPLogger.info("Locking the solver to replan for robot " + robotID + ".");
 			
@@ -203,15 +206,25 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				tracker = trackers.get(robotID);
 			}
 			if (tracker instanceof TrajectoryEnvelopeTrackerDummy) return false;
+			
+			orunav_msgs.Task currentTask = getCurrentTask(robotID);
+			if (currentTask == null) {
+				metaCSPLogger.info("Invalid task for robot " + robotID + ".");
+				return false;
+			}
 
 			//There is another re-planning instance already ongoing.
-			synchronized(canReplan.get(robotID)) {
-				if (!canReplan.get(robotID)) {
-					metaCSPLogger.info("Cannot replan envelope of robot " + robotID + " since already re-planning.");
-					return false;
-				}
-				canReplan.put(robotID, false);
+			if (!canReplan.get(robotID).compareAndSet(true, false)) {
+				metaCSPLogger.info("Cannot replan envelope of robot " + robotID + " since already re-planning.");
+				return false;
 			}
+			
+			final int taskID = currentTask.getTarget().getTaskId();
+			orunav_msgs.ReplanStatus msg = node.getTopicMessageFactory().newFromType(orunav_msgs.ReplanStatus._TYPE);
+			msg.setRobotId(robotID);
+			msg.setTaskId(taskID);
+			msg.setStatus(orunav_msgs.ReplanStatus.REPLAN_SERVICE_START);
+			replanStatusPublisher.publish(msg);
 			
 			final ArrayList<Boolean> isBraked = new ArrayList<Boolean>();
 			if (((TrajectoryEnvelopeTrackerROS)tracker).isBraking() != null && ((TrajectoryEnvelopeTrackerROS)tracker).isBraking().booleanValue()) {
@@ -265,10 +278,13 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
 				new Thread() {
 					public void run() {
-						rePlanPath(robotsToReplan, allConnectedRobots);
-						synchronized(canReplan.get(robotID)) {
-							canReplan.put(robotID, new Boolean(true));
-						}
+						boolean ret = rePlanPath(robotsToReplan, allConnectedRobots);
+						orunav_msgs.ReplanStatus msg = node.getTopicMessageFactory().newFromType(orunav_msgs.ReplanStatus._TYPE);
+						msg.setRobotId(robotID);
+						msg.setTaskId(taskID);
+						msg.setStatus(ret ? orunav_msgs.ReplanStatus.REPLAN_SUCCESS : orunav_msgs.ReplanStatus.REPLAN_FAILURE);
+						replanStatusPublisher.publish(msg);
+						canReplan.get(robotID).set(true);
 					}
 				}.start();
 			}

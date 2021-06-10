@@ -330,7 +330,12 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 						public void onNewMessage(orunav_msgs.RobotTarget message) {
 							Quaternion quat = new Quaternion(message.getGoal().getPose().getOrientation().getX(), message.getGoal().getPose().getOrientation().getY(), message.getGoal().getPose().getOrientation().getZ(), message.getGoal().getPose().getOrientation().getW());
 							Pose goalPose = new Pose(message.getGoal().getPose().getPosition().getX(), message.getGoal().getPose().getPosition().getY(),quat.getTheta());
-							Pose startPose = tec.getRobotReport(robotID).getPose();
+							RobotReport rr = tec.getRobotReport(robotID);
+							if (rr == null) {
+								System.out.println("Target cannot be assigned. Wait Robot " + robotID + " to become alive.");
+								return;
+							}
+							Pose startPose = rr.getPose();
 							IliadMission mission = null;
 							if (message.getGoalOp().getOperation() == OPERATION_TYPE.PICK_ITEMS.ordinal()) {
 								ArrayList<IliadItem> items = new ArrayList<IliadItem>();
