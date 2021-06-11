@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.alg.ConnectivityInspector;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
@@ -22,6 +23,8 @@ import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 
+import com.vividsolutions.jts.geom.Geometry;
+
 import orunav_msgs.Task;
 import orunav_msgs.BrakeTask;
 import orunav_msgs.BrakeTaskRequest;
@@ -32,7 +35,11 @@ import se.oru.coordination.coordination_oru.Dependency;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeTrackerDummy;
+import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
+import org.metacsp.multi.allenInterval.AllenIntervalConstraint;
+import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.Trajectory;
 
 public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordinator {
 
@@ -270,11 +277,10 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 				final TrajectoryEnvelope te = tracker.getTrajectoryEnvelope();
 				Dependency dep = new Dependency(te, null, Math.max(currentBreakingPathIndex.get(robotID), getRobotReport(robotID).getPathIndex()), 0);
 				//Create a virtual dependency to keep track of the robot start and goal till the replanning will ends.
-				currentDependencies.put(robotID, dep);
+				System.out.println("Stopping point: " + dep.toString());
 				synchronized(replanningStoppingPoints) {
 					replanningStoppingPoints.put(robotID, dep);
 				}
-				
 				metaCSPLogger.info("Will re-plan for robot " + robotID + " (" + allConnectedRobots + ")...");
 				new Thread() {
 					public void run() {
@@ -292,4 +298,96 @@ public class TrajectoryEnvelopeCoordinatorROS extends TrajectoryEnvelopeCoordina
 		}
 		return true;
 	}
+	
+	/**
+	 * Try re-planning ONE path AMONG the set of robots robotsToReplan while considering robotsAsObstacles placed in their current CP as additional obstacles. 
+	 * @param robotsToReplan The set of robots which may attempt to re-plan the path.
+	 * @param robotsAsObstacles The set of robots to consider as additional obstacles while re-planning (only if they have a critical point).
+	 * @param useStaticReplan <code>true</code> iff all robotsToReplan should yield in their current critical point before starting the re-plan.
+	 */
+	@Override
+	protected boolean rePlanPath(Set<Integer> robotsToReplan, Set<Integer> robotsAsObstacles) {
+		boolean ret = false;
+		
+		for (int robotID : robotsToReplan) {
+			int currentWaitingIndex = -1;
+			Pose currentWaitingPose = null;
+			Pose currentWaitingGoal = null;
+			PoseSteering[] oldPath = null;
+
+			//FIXME not synchronized on current dependencies
+			Geometry[] obstacles = null;
+			HashSet<Integer> otherRobotIDs = new HashSet<Integer>();
+			synchronized (getCurrentDependencies()) {
+				HashMap<Integer, Dependency> currentDeps = getCurrentDependencies();
+				Dependency dep = null;
+				if (robotsToReplan.size() == 1) {
+					synchronized(replanningStoppingPoints) {
+						if (!replanningStoppingPoints.containsKey(robotID)) {
+							metaCSPLogger.info("Invalid replan " + robotID + " ... ");
+							return false;
+						}
+						dep = replanningStoppingPoints.get(robotID);
+					}
+				}
+				else { //replanning for deadlock
+					if (!currentDeps.containsKey(robotID)) {
+						metaCSPLogger.info("Robot " + robotID + " is not deadlocked ... ");
+						continue;
+					}
+					dep = currentDeps.get(robotID);
+				}
+				currentWaitingIndex = dep.getWaitingPoint();
+				currentWaitingPose = dep.getWaitingPose();
+				if (currentWaitingPose == null) throw new Error("Waiting pose should not be null in dep: " + dep);
+				Trajectory traj = dep.getWaitingTrajectoryEnvelope().getTrajectory();
+				oldPath = traj.getPoseSteering();
+				currentWaitingGoal = oldPath[oldPath.length-1].getPose();
+				if (currentWaitingGoal == null) throw new Error("Waiting goal should not be null in dep: " + dep);
+				
+				if (robotsAsObstacles.size() > 0) {
+					otherRobotIDs = new HashSet<Integer>();
+					for (int otherRobotID : robotsAsObstacles) if (otherRobotID != robotID) otherRobotIDs.add(otherRobotID);
+					if (!otherRobotIDs.isEmpty()) obstacles = getObstaclesInCriticalPoints(ArrayUtils.toPrimitive(otherRobotIDs.toArray(new Integer[0])));
+				}
+			}
+
+			if (currentWaitingPose == null) throw new Error("Waiting pose should not be null in dep of robot " + robotID);
+			if (currentWaitingGoal == null) throw new Error("Waiting goal should not be null in dep of robot " + robotID);
+			metaCSPLogger.info("Other bstacles: " + otherRobotIDs.toString());
+			metaCSPLogger.info("Attempting to re-plan path of Robot" + robotID + " (with obstacles for robots " + otherRobotIDs.toString() + ", from " + 
+					currentWaitingPose + ", to " + currentWaitingGoal + ")...");
+			AbstractMotionPlanner mp = null;
+			if (this.motionPlanners.containsKey(robotID)) mp = this.motionPlanners.get(robotID);
+			else {
+				metaCSPLogger.severe("Motion planner is not initialized for Robot" + robotID + ", cannot replan");
+				continue;
+			}
+			synchronized (mp) {
+				PoseSteering[] newPath = doReplanning(mp, currentWaitingPose, currentWaitingGoal, obstacles);
+				replanningTrialsCounter.incrementAndGet();
+				if (newPath != null && newPath.length > 0) {
+					PoseSteering[] newCompletePath = new PoseSteering[newPath.length+currentWaitingIndex];
+					for (int i = 0; i < newCompletePath.length; i++) {
+						if (i < currentWaitingIndex) newCompletePath[i] = oldPath[i];
+						else newCompletePath[i] = newPath[i-currentWaitingIndex];
+					}
+					replacePath(robotID, newCompletePath, currentWaitingIndex, robotsToReplan);
+					successfulReplanningTrialsCounter.incrementAndGet();
+					metaCSPLogger.info("Successfully re-planned path of Robot" + robotID);
+					ret = true;
+					break;
+				}
+				else {
+					metaCSPLogger.info("Failed to re-plan path of Robot" + robotID);
+				}
+			}
+		}
+		synchronized(replanningStoppingPoints) {
+			for (int robotID : robotsToReplan) replanningStoppingPoints.remove(robotID);
+			metaCSPLogger.info("Removing replanning stopping points of robots: " + robotsToReplan.toString());
+		}
+		return ret;
+	}
+
 }
