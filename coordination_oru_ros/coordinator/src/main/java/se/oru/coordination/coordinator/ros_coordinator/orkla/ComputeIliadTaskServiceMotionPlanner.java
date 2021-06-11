@@ -215,14 +215,16 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	@Override
 	public boolean doPlanning() {
 		//Start from the current position only if the robot is idle. 
-		if (!(tec.getVehicleState(robotID).equals(VEHICLE_STATE.WAITING_FOR_TASK) ||
+		startFromCurrentState = true;
+		//FIXME dynamic replan
+		/*if (!(tec.getVehicleState(robotID).equals(VEHICLE_STATE.WAITING_FOR_TASK) ||
 				tec.getVehicleState(robotID).equals(VEHICLE_STATE._IGNORE_))) {
 			//System.out.println("Not planning because Robot" + robotID + " is not idle (in state " + tec.getVehicleState(robotID) + ")");
 			startFromCurrentState = false;
 		}		
 		else {
 			startFromCurrentState = true;
-		}
+		}*/
 		this.callComputeTaskService();
 		while (computing) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 		return outcome;
