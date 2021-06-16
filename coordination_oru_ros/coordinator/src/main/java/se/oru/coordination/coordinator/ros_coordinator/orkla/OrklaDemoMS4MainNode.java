@@ -45,7 +45,6 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 	private TrajectoryEnvelopeCoordinatorROS tec = null;
 	private int CONTROL_PERIOD = 1000;
 	private double TEMPORAL_RESOLUTION = 1000.0;
-	private int COLLISION_ENVELOPE_LOOKAHEAD = 10000; //FIXME: this should be a ROS Parameter
 	
 	// Mission related variables
 	private boolean ignorePickItems = false;
@@ -274,7 +273,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 				
 				//Setup a simple GUI (null means empty map, otherwise provide yaml file)
 				//final JTSDrawingPanelVisualization viz = new JTSDrawingPanelVisualization();
-				final RVizVisualization viz = new RVizVisualization(node, mapFrameID, true, tec, COLLISION_ENVELOPE_LOOKAHEAD);
+				final RVizVisualization viz = new RVizVisualization(node, mapFrameID, true);
 				tec.setVisualization(viz);
 
 				//Sleep to allow loading of motion prims
