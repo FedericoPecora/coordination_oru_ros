@@ -19,7 +19,9 @@ import com.vividsolutions.jts.geom.Geometry;
 import se.oru.coordination.coordination_oru.motionplanning.AbstractMotionPlanner;
 import se.oru.coordination.coordination_oru.motionplanning.OccupancyMap;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
+import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
@@ -97,7 +99,10 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 			final ComputeTaskRequest request = serviceClient.newMessage();
 			request.setStartFromCurrentState(startFromCurrentState);
 			//System.out.println("startFromCurrentState is " + startFromCurrentState);
+			
+			//Set the robot target ...
 			RobotTarget rt = node.getTopicMessageFactory().newFromType(RobotTarget._TYPE);
+			// ... start and goal pose ...
 			orunav_msgs.PoseSteering ps1 = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
 			geometry_msgs.Pose gpose1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
 			geometry_msgs.Point point1 = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
@@ -134,9 +139,26 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 				ps2.setSteering(0.0);
 				rt.setStart(ps2);
 			}
+			// ... robot, task and goal IDs ...
 			rt.setRobotId(robotID);
 			rt.setTaskId(goalID);
 			rt.setGoalId(goalID);
+			// ... start operation, goal operation and iliad items.
+			rt.getStartOp().setOperation(this.startOp.ordinal());
+			rt.getGoalOp().setOperation(this.goalOp.ordinal());
+			if (this.goalOp.ordinal() == OPERATION_TYPE.PICK_ITEMS.ordinal()) {
+				ArrayList<orunav_msgs.IliadItem> itemList = new ArrayList<orunav_msgs.IliadItem>();
+				for (IliadItem item : this.pickItems) {
+					orunav_msgs.IliadItem itemROS = node.getTopicMessageFactory().newFromType(orunav_msgs.IliadItem._TYPE);
+					itemROS.setName(item.getName());
+					itemROS.getPosition().setX(item.getX());
+					itemROS.getPosition().setY(item.getY());
+					itemROS.getPosition().setZ(item.getZ());
+					itemROS.setRotationType(item.getRotationType().ordinal());
+					itemList.add(itemROS);
+				}
+				rt.getGoalOp().getItemlist().setItems(itemList);
+			}
 			request.setTarget(rt);
 			
 			//Add extra obstacles
@@ -183,6 +205,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 					//Operations used by the current execution service					
 					arg0.getTask().getTarget().getStartOp().setOperation(startOp.ordinal());
 					arg0.getTask().getTarget().getGoalOp().setOperation(goalOp.ordinal());
+					//This should contain the same items required by the compute task service ...
 					if (goalOp.equals(OPERATION_TYPE.PICK_ITEMS)) {
 						if (ignorePickItems) {
 							System.out.println("Ignoring PICK_ITEMS operation (see launch file)");
