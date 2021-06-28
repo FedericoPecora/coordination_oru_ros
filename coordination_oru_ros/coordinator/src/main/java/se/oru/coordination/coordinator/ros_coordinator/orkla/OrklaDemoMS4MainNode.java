@@ -23,6 +23,7 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.LOAD_TYPE;
 import se.oru.coordination.coordinator.util.IliadMissions;
 import java.util.HashSet;
 
@@ -343,7 +344,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 								IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
 								mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getStartOp().getOperation()], false, itemsArray);
 							}
-							else mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getStartOp().getOperation()], OPERATION_TYPE.values()[message.getGoalOp().getOperation()],false);
+							else mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.values()[message.getStartOp().getOperation()], OPERATION_TYPE.values()[message.getGoalOp().getOperation()], LOAD_TYPE.values()[message.getGoalLoad().getStatus()], false);
 							IliadMissions.enqueueMission(mission);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
@@ -380,6 +381,7 @@ public class OrklaDemoMS4MainNode extends AbstractNodeMain {
 								mp.setGoals(m.getToPose());
 								mp.setStartOperation(m.getStartOperation());
 								mp.setGoalOperation(m.getGoalOperation());
+								mp.setGoalLoad(m.getGoalLoad());
 								mp.setPickItems(m.getItems());
 								canDispatchNewTask.put(robotID, true);
 								isTaskComputing.put(robotID, true);

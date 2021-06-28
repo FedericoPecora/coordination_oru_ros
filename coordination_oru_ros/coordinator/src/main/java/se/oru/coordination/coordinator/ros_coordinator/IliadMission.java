@@ -10,9 +10,11 @@ import se.oru.coordination.coordination_oru.Mission;
 public class IliadMission extends Mission {
 
 	public static enum OPERATION_TYPE {_IGNORE_, NO_OPERATION, UNLOAD_PALLET, LOAD_PALLET, LOAD_DETECT, ACTIVATE_SUPPORT_LEGS, LOAD_DETECT_ACTIVE, PICK_ITEMS, UNWRAP_PALLET};
+	public static enum LOAD_TYPE {EMPTY, EUR_PALLET, HALF_PALLET, UNKNOWN};
 	private IliadItem[] items;
 	private OPERATION_TYPE startOp;
 	private OPERATION_TYPE goalOp;
+	private LOAD_TYPE goalLoad;
 	private boolean repeat = true;
 	
 	public IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE startOp, boolean repeat, IliadItem ... items) {
@@ -20,20 +22,24 @@ public class IliadMission extends Mission {
 		this.items = items;
 		this.startOp = startOp;
 		this.goalOp = OPERATION_TYPE.PICK_ITEMS;
+		System.out.println("Default goal load: assuming EUR_PALLET.");
+		this.goalLoad = LOAD_TYPE.EUR_PALLET;
 		this.repeat = repeat;
 	}
 
-	public IliadMission(int robotID,  PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE startOp, OPERATION_TYPE goalOp, boolean repeat) {
+	public IliadMission(int robotID,  PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, OPERATION_TYPE startOp, OPERATION_TYPE goalOp, LOAD_TYPE goalLoad, boolean repeat) {
 		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
 		this.repeat = repeat;
 		this.startOp = startOp;
 		this.goalOp = goalOp;
+		this.goalLoad = goalLoad;
 	}
 	
 	public IliadMission(int robotID, PoseSteering[] path, String fromLocation, String toLocation, Pose fromPose, Pose toPose, boolean repeat) {
 		super(robotID, path, fromLocation, toLocation, fromPose, toPose);
 		this.startOp = OPERATION_TYPE.NO_OPERATION;
 		this.goalOp = OPERATION_TYPE.NO_OPERATION;
+		this.goalLoad = LOAD_TYPE.UNKNOWN;
 		this.repeat = repeat;
 	}
 	
@@ -55,6 +61,10 @@ public class IliadMission extends Mission {
 	
 	public OPERATION_TYPE getGoalOperation() {
 		return this.goalOp;
+	}
+	
+	public LOAD_TYPE getGoalLoad() {
+		return this.goalLoad;
 	}
 	
 	public IliadItem[] getItems() {

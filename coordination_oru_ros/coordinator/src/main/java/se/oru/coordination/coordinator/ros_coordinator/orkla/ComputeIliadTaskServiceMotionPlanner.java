@@ -22,6 +22,7 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.LOAD_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeTrackerROS.VEHICLE_STATE;
 
@@ -43,6 +44,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	private int robotID = -1;
 	private OPERATION_TYPE startOp = null;
 	private OPERATION_TYPE goalOp = null;
+	private LOAD_TYPE goalLoad = null;
 	private IliadItem[] pickItems = null;
 	private boolean ignorePickItems = false;
 	private boolean startFromCurrentState = true;
@@ -59,6 +61,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 		if (this.om != null) ret.om = new OccupancyMap(this.om, copyObstacles);
 		ret.setStartOperation(this.startOp);
 		ret.setGoalOperation(this.goalOp);
+		ret.setGoalLoad(this.goalLoad);
 		ret.setPickItems(this.pickItems);
 		return ret;
 	}
@@ -69,6 +72,10 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 	
 	public void setGoalOperation(OPERATION_TYPE goalOp) {
 		this.goalOp = goalOp;
+	}
+	
+	public void setGoalLoad(LOAD_TYPE goalLoad) {
+		this.goalLoad = goalLoad;
 	}
 	
 	public void setPickItems(IliadItem[] items) {
@@ -143,6 +150,7 @@ public class ComputeIliadTaskServiceMotionPlanner extends AbstractMotionPlanner 
 			rt.setRobotId(robotID);
 			rt.setTaskId(goalID);
 			rt.setGoalId(goalID);
+			rt.getGoalLoad().setStatus(this.goalLoad.ordinal());
 			// ... start operation, goal operation and iliad items.
 			rt.getStartOp().setOperation(this.startOp.ordinal());
 			rt.getGoalOp().setOperation(this.goalOp.ordinal());

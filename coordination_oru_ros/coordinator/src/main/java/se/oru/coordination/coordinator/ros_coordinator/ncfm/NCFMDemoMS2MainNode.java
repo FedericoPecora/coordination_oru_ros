@@ -43,6 +43,7 @@ import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.util.RVizVisualization;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.LOAD_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.TrajectoryEnvelopeCoordinatorROS;
 import se.oru.coordination.coordinator.util.IliadMissions;
@@ -182,7 +183,7 @@ public class NCFMDemoMS2MainNode extends AbstractNodeMain {
 							Quaternion quat = new Quaternion(message.getPose().getOrientation().getX(), message.getPose().getOrientation().getY(), message.getPose().getOrientation().getZ(), message.getPose().getOrientation().getW());
 							Pose goalPose = new Pose(message.getPose().getPosition().getX(), message.getPose().getPosition().getY(),quat.getTheta());
 							Pose startPose = tec.getRobotReport(robotID).getPose();
-							IliadMission mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION, OPERATION_TYPE.NO_OPERATION, false);
+							IliadMission mission = new IliadMission(robotID, null, "A", "B", startPose, goalPose, OPERATION_TYPE.NO_OPERATION, OPERATION_TYPE.NO_OPERATION, LOAD_TYPE.EMPTY, false);
 							System.out.println("POSTED MISSION:\n" + mission.toXML());
 							String postedGoalLog = System.getProperty("user.home")+File.separator+"posted_goals.xml";
 							PrintWriter writer;

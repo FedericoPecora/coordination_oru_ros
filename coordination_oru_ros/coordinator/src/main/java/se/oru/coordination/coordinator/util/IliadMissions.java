@@ -22,6 +22,7 @@ import se.oru.coordination.coordinator.ros_coordinator.IliadItem;
 import se.oru.coordination.coordinator.ros_coordinator.IliadItem.ROTATION_TYPE;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission;
 import se.oru.coordination.coordinator.ros_coordinator.IliadMission.OPERATION_TYPE;
+import se.oru.coordination.coordinator.ros_coordinator.IliadMission.LOAD_TYPE;
 
 public class IliadMissions extends Missions {
 	
@@ -57,6 +58,11 @@ public class IliadMissions extends Missions {
 					Pose goalPose = null;
 					OPERATION_TYPE startOp = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("startOp").getTextContent());
 					OPERATION_TYPE goalOp = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("goalOp").getTextContent());
+					LOAD_TYPE goalLoad = LOAD_TYPE.valueOf(eElement.getAttributes().getNamedItem("goalLoad").getTextContent());
+					if (goalLoad == null) {
+						System.out.println("WARNING: Null goal load field. Set to unknown.");
+						goalLoad = LOAD_TYPE.UNKNOWN;
+					}
 					NodeList poseList = eElement.getElementsByTagName("Pose");
 					if (poseList.getLength() != 0) {
 						for (int j = 0; j < poseList.getLength(); j++) {
@@ -102,7 +108,7 @@ public class IliadMissions extends Missions {
 						missions.add(new IliadMission(robotID, null, fromLocation, toLocation, fromPose, goalPose, startOp, repeatMission, itemsArray));
 					}
 					else {
-						missions.add(new IliadMission(robotID, null, fromLocation, toLocation, fromPose, goalPose, startOp, goalOp, repeatMission));
+						missions.add(new IliadMission(robotID, null, fromLocation, toLocation, fromPose, goalPose, startOp, goalOp, goalLoad, repeatMission));
 					}
 				}				
 			}
